@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hexavante - Hexa Meet</title>
+    <link rel="stylesheet" href="hexa-meet.css">
+  </head>
+  <body>
+    <header>
+      <h1>Hexa Meet</h1>
+      <button id="btn-voltar">Voltar ao Painel</button>
+    </header>
+
+    <main>
+      <section class="controles">
+        <div class="card">
+          <h3>Nova Reunião</h3>
+          <input type="text" id="nome-sala" placeholder="Nome da Aula (ex: Java)">
+          <button id="btn-criar-sala">Criar e Entrar</button>
+        </div>
+
+        <div class="card">
+          <h3>Salas Ativas</h3>
+          <ul id="lista-salas">
+            <li>Carregando salas...</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="video-container">
+        <div id="local-video" class="stream">Seu Vídeo</div>
+        <div id="remote-video" class="stream">Vídeo do Professor/Aluno</div>
+      </section>
+    </main>
+
+    <script type="module" src="./hexa-meet.ts"></script>
+  </body>
+</html>

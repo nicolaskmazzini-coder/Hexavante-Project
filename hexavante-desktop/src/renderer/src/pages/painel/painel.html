@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Hexavante - Hub Educacional</title>
+    <link rel="stylesheet" href="painel.css">
+  </head>
+  <body>
+    
+    <nav class="sidebar">
+      <div class="sidebar-logo">
+        <h2>Hexavante</h2>
+      </div>
+
+      <ul class="nav-links">
+        <li><button class="nav-btn" id="btn-nav-inicio">Início</button></li>
+        
+        <li><button class="nav-btn ativo" id="btn-nav-aulas">Aulas</button></li>
+        
+        <li><button class="nav-btn" id="btn-nav-meet">Hexa Meet</button></li>
+        
+        <li><button class="nav-btn" id="btn-nav-perfil">Perfil</button></li>
+      </ul>
+
+      <div class="sidebar-footer">
+        <button id="btn-sair" class="nav-btn sair">Sair</button>
+      </div>
+    </nav>
+
+    <main class="conteudo-principal">
+      <header class="cabecalho-conteudo">
+        <h1>Aulas e Plataformas</h1>
+        <p>Acesse seus conteúdos integrados</p>
+      </header>
+
+      <section class="grid-ferramentas">
+        <div class="card-ferramenta">
+          <h3>Classroom</h3>
+          <p>Turmas e atividades.</p>
+          <button id="btn-classroom">Abrir</button>
+        </div>
+
+        <div class="card-ferramenta">
+          <h3>Fundação Bradesco</h3>
+          <p>Tecnologia e administração.</p>
+          <button id="btn-bradesco">Abrir</button>
+        </div>
+
+        <div class="card-ferramenta">
+          <h3>Alura</h3>
+          <p>Aprofunde-se em programação.</p>
+          <button id="btn-alura">Abrir</button>
+        </div>
+
+        <div class="card-ferramenta">
+          <h3>Khan Academy</h3>
+          <p>Matemática e ciências.</p>
+          <button id="btn-khan">Abrir</button>
+        </div>
+
+        <div class="card-ferramenta">
+          <h3>SoloLearn</h3>
+          <p>Lógica e programação.</p>
+          <button id="btn-sololearn">Abrir</button>
+        </div>
+      </section>
+    </main>
+
+    <script type="module" src="./painel.ts"></script>
+  </body>
+</html>
