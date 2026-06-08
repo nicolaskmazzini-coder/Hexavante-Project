@@ -1,0 +1,78 @@
+import NextAuth from "next-auth";
+import Credentials from "next-auth/providers/credentials";
+import Google from "next-auth/providers/google";
+import { PrismaAdapter } from "@auth/prisma-adapter";
+import { prisma } from "@/lib/prisma";
+import { loginSchema } from "@/lib/validations/auth";
+import { validateCredentials } from "@/services/auth.service";
+
+const googleEnabled =
+  Boolean(process.env.AUTH_GOOGLE_ID) && Boolean(process.env.AUTH_GOOGLE_SECRET);
+
+export const { handlers, signIn, signOut, auth } = NextAuth({
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: "jwt" },
+  pages: {
+    signIn: "/login",
+  },
+  providers: [
+    Credentials({
+      credentials: {
+        email: { label: "E-mail", type: "email" },
+        password: { label: "Senha", type: "password" },
+      },
+      async authorize(credentials) {
+        const parsed = loginSchema.safeParse(credentials);
+        if (!parsed.success) return null;
+        return validateCredentials(parsed.data);
+      },
+    }),
+    ...(googleEnabled
+      ? [
+          Google({
+            clientId: process.env.AUTH_GOOGLE_ID!,
+            clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+            allowDangerousEmailAccountLinking: true,
+          }),
+        ]
+      : []),
+  ],
+  callbacks: {
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.username = user.username;
+        token.roles = user.roles;
+        token.image = (user as any).avatarUrl;
+      }
+
+      if (token.id) {
+        const roles = await prisma.userRole.findMany({
+          where: { userId: token.id as string },
+          include: { role: true },
+        });
+        token.roles = roles.map((r) => r.role.name);
+        
+        // Buscar avatarUrl atualizado
+        const userWithAvatar = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { avatarUrl: true },
+        });
+        if (userWithAvatar) {
+          token.image = userWithAvatar.avatarUrl;
+        }
+      }
+
+      return token;
+    },
+    async session({ session, token }) {
+      if (session.user) {
+        session.user.id = token.id as string;
+        session.user.username = token.username as string;
+        session.user.roles = (token.roles as string[]) ?? [];
+        session.user.image = token.image as string | null | undefined;
+      }
+      return session;
+    },
+  },
+});

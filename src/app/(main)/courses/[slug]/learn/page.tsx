@@ -1,0 +1,30 @@
+import { auth } from "@/auth";
+import { getCourseBySlug } from "@/services/course.service";
+import { getEnrollment } from "@/services/enrollment.service";
+import Link from "next/link";
+import { notFound, redirect } from "next/navigation";
+
+type Props = { params: Promise<{ slug: string }> };
+
+export default async function LearnIndexPage({ params }: Props) {
+  const { slug } = await params;
+  const session = await auth();
+  if (!session?.user?.id) redirect(`/login?callbackUrl=/courses/${slug}/learn`);
+
+  const course = await getCourseBySlug(slug);
+  if (!course || course.status !== "APPROVED") notFound();
+
+  const enrollment = await getEnrollment(session.user.id, course.id);
+  if (!enrollment) redirect(`/courses/${slug}`);
+
+  const firstLesson = course.modules.flatMap((m) => m.lessons)[0];
+  if (!firstLesson) {
+    return (
+      <div className="mx-auto max-w-4xl px-4 py-10 text-center text-slate-500">
+        Este curso ainda não possui aulas.
+      </div>
+    );
+  }
+
+  redirect(`/courses/${slug}/learn/${firstLesson.id}`);
+}

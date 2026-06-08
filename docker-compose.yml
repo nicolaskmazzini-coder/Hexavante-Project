@@ -1,0 +1,17 @@
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: hexavante-db
+    restart: unless-stopped
+    ports:
+      - "3306:3306"
+    environment:
+      MARIADB_ROOT_PASSWORD: hexavante
+      MARIADB_DATABASE: hexavante
+      MARIADB_USER: hexavante
+      MARIADB_PASSWORD: hexavante
+    volumes:
+      - hexavante_data:/var/lib/mysql
+
+volumes:
+  hexavante_data:

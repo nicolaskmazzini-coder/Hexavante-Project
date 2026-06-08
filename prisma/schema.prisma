@@ -1,0 +1,618 @@
+// Schema oficial — espelha docs/der-logico.md (MVP Sprint 1+)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String    @id @default(cuid())
+  username          String    @unique
+  fullName          String    @map("full_name")
+  email             String    @unique
+  passwordHash      String?   @map("password_hash")
+  provider          String    @default("local")
+  providerId        String?   @map("provider_id")
+  avatarUrl         String?   @map("avatar_url") @db.LongText
+  birthDate         DateTime  @map("birth_date") @db.Date
+  phone             String?
+  city              String?
+  state             String?
+  bio               String?   @db.Text
+  profileVisibility String    @default("private") @map("profile_visibility")
+  isVerified        Boolean   @default(false) @map("is_verified")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  lastLogin         DateTime? @map("last_login")
+
+  roles              UserRole[]
+  xp                 UserXP?
+  wallet             UserWallet?
+  accounts           Account[]
+  sessions           Session[]
+  instructedCourses  CourseInstructor[]
+  enrollments        CourseEnrollment[]
+  lessonProgresses   LessonProgress[]
+  examAttempts           ExamAttempt[]
+  instructorApplications InstructorApplication[]
+  moderatedCourses       CourseModeration[]      @relation("ModeratorReviews")
+  reviewedApplications   InstructorApplication[] @relation("ApplicationReviewer")
+  xpTransactions         XpTransaction[]
+  schoolMemberships      SchoolUser[]
+  schoolClassTeachers    SchoolClassTeacher[]
+  schoolEnrollments      SchoolEnrollment[]
+  certificates           Certificate[]
+  instructedLiveRooms    LiveRoom[]
+  liveRoomParticipations LiveRoomParticipant[]
+  liveChatMessages       LiveChatMessage[]
+
+  @@map("users")
+}
+
+enum CourseType {
+  FREE
+  PAID
+  PREMIUM
+}
+
+enum ProgressionType {
+  FREE
+  PROGRESSIVE
+}
+
+enum CourseStatus {
+  PENDING_REVIEW
+  APPROVED
+  REJECTED
+  REVISION_REQUIRED
+}
+
+enum ApplicationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum VideoProvider {
+  youtube
+  vimeo
+  other
+}
+
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  description String?
+  courses     Course[]
+
+  @@map("categories")
+}
+
+model Course {
+  id               String          @id @default(cuid())
+  categoryId       String          @map("category_id")
+  title            String
+  slug             String          @unique
+  shortDescription String?         @map("short_description") @db.VarChar(255)
+  description      String?         @db.Text
+  thumbnailUrl     String?         @map("thumbnail_url")
+  courseType       CourseType      @default(FREE) @map("course_type")
+  progressionType  ProgressionType @default(FREE) @map("progression_type")
+  status           CourseStatus    @default(PENDING_REVIEW)
+  createdAt        DateTime        @default(now()) @map("created_at")
+  updatedAt        DateTime        @updatedAt @map("updated_at")
+
+  category     Category           @relation(fields: [categoryId], references: [id])
+  instructors  CourseInstructor[]
+  modules      Module[]
+  enrollments  CourseEnrollment[]
+  moderations  CourseModeration[]
+  schoolCourses SchoolCourse[]
+  certificates Certificate[]
+  liveRooms    LiveRoom[]
+
+  @@index([categoryId])
+  @@index([status])
+  @@map("courses")
+}
+
+model CourseInstructor {
+  id       String @id @default(cuid())
+  courseId String @map("course_id")
+  userId   String @map("user_id")
+
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([courseId, userId])
+  @@map("course_instructors")
+}
+
+model InstructorApplication {
+  id           String            @id @default(cuid())
+  userId       String            @map("user_id")
+  motivation   String            @db.Text
+  experience   String            @db.Text
+  portfolioUrl String?           @map("portfolio_url")
+  status       ApplicationStatus @default(PENDING)
+  reviewedById String?           @map("reviewed_by")
+  createdAt    DateTime          @default(now()) @map("created_at")
+  reviewedAt   DateTime?         @map("reviewed_at")
+
+  user       User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  reviewedBy User? @relation("ApplicationReviewer", fields: [reviewedById], references: [id])
+
+  @@index([userId])
+  @@index([status])
+  @@map("instructor_applications")
+}
+
+model CourseModeration {
+  id          String       @id @default(cuid())
+  courseId    String       @map("course_id")
+  moderatorId String       @map("moderator_id")
+  status      CourseStatus
+  reviewNotes String?      @map("review_notes") @db.Text
+  reviewedAt  DateTime     @default(now()) @map("reviewed_at")
+
+  course    Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  moderator User   @relation("ModeratorReviews", fields: [moderatorId], references: [id])
+
+  @@index([courseId])
+  @@map("course_moderations")
+}
+
+model Module {
+  id          String  @id @default(cuid())
+  courseId    String  @map("course_id")
+  title       String
+  description String? @db.Text
+  orderNumber Int     @map("order_number")
+
+  course    Course     @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessons   Lesson[]
+  materials Material[]
+
+  @@index([courseId])
+  @@map("modules")
+}
+
+model Lesson {
+  id            String         @id @default(cuid())
+  moduleId      String         @map("module_id")
+  title         String
+  description   String?        @db.Text
+  videoUrl      String?        @map("video_url")
+  videoProvider VideoProvider? @map("video_provider")
+  duration      Int?
+  orderNumber   Int            @map("order_number")
+
+  module     Module           @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+  progresses LessonProgress[]
+
+  @@index([moduleId])
+  @@map("lessons")
+}
+
+model Material {
+  id       String @id @default(cuid())
+  moduleId String @map("module_id")
+  title    String
+  fileUrl  String @map("file_url")
+  fileType String @default("pdf") @map("file_type")
+
+  module Module @relation(fields: [moduleId], references: [id], onDelete: Cascade)
+
+  @@index([moduleId])
+  @@map("materials")
+}
+
+model CourseEnrollment {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  courseId    String    @map("course_id")
+  progress    Float     @default(0)
+  enrolledAt  DateTime  @default(now()) @map("enrolled_at")
+  completedAt DateTime? @map("completed_at")
+
+  user             User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course           Course           @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  lessonProgresses LessonProgress[]
+
+  @@unique([userId, courseId])
+  @@map("course_enrollments")
+}
+
+model LessonProgress {
+  id           String    @id @default(cuid())
+  userId       String    @map("user_id")
+  lessonId     String    @map("lesson_id")
+  enrollmentId String    @map("enrollment_id")
+  completed    Boolean   @default(false)
+  completedAt  DateTime? @map("completed_at")
+
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  lesson     Lesson           @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  enrollment CourseEnrollment @relation(fields: [enrollmentId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, lessonId])
+  @@map("lesson_progress")
+}
+
+enum ExamType {
+  ENEM
+  VESTIBULAR
+  TECNOLOGIA
+}
+
+model Exam {
+  id          String   @id @default(cuid())
+  title       String
+  slug        String   @unique
+  examType    ExamType @map("exam_type")
+  description String?  @db.Text
+  timeLimit   Int?     @map("time_limit")
+  isPublished Boolean  @default(true) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  questions ExamQuestion[]
+  attempts  ExamAttempt[]
+
+  @@map("exams")
+}
+
+model ExamQuestion {
+  id          String @id @default(cuid())
+  examId      String @map("exam_id")
+  statement   String @db.Text
+  orderNumber Int    @map("order_number")
+  points      Int    @default(1)
+
+  exam         Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
+  alternatives ExamAlternative[]
+  answers      ExamAnswer[]
+
+  @@index([examId])
+  @@map("exam_questions")
+}
+
+model ExamAlternative {
+  id         String @id @default(cuid())
+  questionId String @map("question_id")
+  text       String @db.Text
+  isCorrect  Boolean @default(false) @map("is_correct")
+
+  question ExamQuestion @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  answers  ExamAnswer[]
+
+  @@index([questionId])
+  @@map("exam_alternatives")
+}
+
+model ExamAttempt {
+  id             String    @id @default(cuid())
+  examId         String    @map("exam_id")
+  userId         String    @map("user_id")
+  score          Float     @default(0)
+  correctAnswers Int       @default(0) @map("correct_answers")
+  totalQuestions Int       @default(0) @map("total_questions")
+  startedAt      DateTime  @default(now()) @map("started_at")
+  finishedAt     DateTime? @map("finished_at")
+
+  exam    Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
+  user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  answers ExamAnswer[]
+
+  @@index([userId])
+  @@index([examId])
+  @@map("exam_attempts")
+}
+
+model ExamAnswer {
+  id            String  @id @default(cuid())
+  attemptId     String  @map("attempt_id")
+  questionId    String  @map("question_id")
+  alternativeId String  @map("alternative_id")
+  isCorrect     Boolean @map("is_correct")
+
+  attempt     ExamAttempt     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question    ExamQuestion    @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  alternative ExamAlternative @relation(fields: [alternativeId], references: [id], onDelete: Cascade)
+
+  @@unique([attemptId, questionId])
+  @@map("exam_answers")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verification_tokens")
+}
+
+model Role {
+  id          String     @id @default(cuid())
+  name        String     @unique
+  description String?
+  users       UserRole[]
+
+  @@map("roles")
+}
+
+model UserRole {
+  id         String   @id @default(cuid())
+  userId     String   @map("user_id")
+  roleId     String   @map("role_id")
+  assignedAt DateTime @default(now()) @map("assigned_at")
+  assignedBy String?  @map("assigned_by")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, roleId])
+  @@map("user_roles")
+}
+
+model UserXP {
+  id        String @id @default(cuid())
+  userId    String @unique @map("user_id")
+  level     Int    @default(1)
+  currentXp Int    @default(0) @map("current_xp")
+  totalXp   Int    @default(0) @map("total_xp")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_xp")
+}
+
+model UserWallet {
+  id     String @id @default(cuid())
+  userId String @unique @map("user_id")
+  coins  Int    @default(0)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_wallets")
+}
+
+enum XpSource {
+  LESSON
+  MODULE
+  COURSE
+  EXAM
+}
+
+model XpTransaction {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  amount      Int
+  source      XpSource
+  sourceId    String   @map("source_id")
+  description String?
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source, sourceId])
+  @@index([userId])
+  @@map("xp_transactions")
+}
+
+enum SchoolStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum InstitutionRole {
+  DIRECTOR
+  ADMIN
+  COORDINATOR
+  TEACHER
+  STUDENT
+}
+
+model School {
+  id        String       @id @default(cuid())
+  name      String
+  email     String
+  phone     String?
+  status    SchoolStatus @default(ACTIVE)
+  createdAt DateTime     @default(now()) @map("created_at")
+
+  members SchoolUser[]
+  courses SchoolCourse[]
+
+  @@map("schools")
+}
+
+model SchoolUser {
+  id              String          @id @default(cuid())
+  schoolId        String          @map("school_id")
+  userId          String          @map("user_id")
+  institutionRole InstitutionRole @map("institution_role")
+  joinedAt        DateTime        @default(now()) @map("joined_at")
+
+  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([schoolId, userId])
+  @@index([schoolId])
+  @@map("school_users")
+}
+
+model SchoolCourse {
+  id          String   @id @default(cuid())
+  schoolId    String   @map("school_id")
+  courseId    String?  @map("course_id")
+  title       String
+  description String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  school  School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
+  course  Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  classes SchoolClass[]
+
+  @@index([schoolId])
+  @@map("school_courses")
+}
+
+model SchoolClass {
+  id             String   @id @default(cuid())
+  schoolCourseId String   @map("school_course_id")
+  name           String
+  semester       String?
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  schoolCourse SchoolCourse         @relation(fields: [schoolCourseId], references: [id], onDelete: Cascade)
+  enrollments  SchoolEnrollment[]
+  teachers     SchoolClassTeacher[]
+
+  @@index([schoolCourseId])
+  @@map("school_classes")
+}
+
+model SchoolClassTeacher {
+  id      String @id @default(cuid())
+  classId String @map("class_id")
+  userId  String @map("user_id")
+
+  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@map("school_class_teachers")
+}
+
+model SchoolEnrollment {
+  id         String   @id @default(cuid())
+  classId    String   @map("class_id")
+  userId     String   @map("user_id")
+  enrolledAt DateTime @default(now()) @map("enrolled_at")
+
+  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
+  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, userId])
+  @@index([userId])
+  @@map("school_enrollments")
+}
+
+model Certificate {
+  id              String   @id @default(cuid())
+  userId          String   @map("user_id")
+  courseId        String   @map("course_id")
+  code            String   @unique
+  issuedAt        DateTime @default(now()) @map("issued_at")
+  verifiedAt      DateTime? @map("verified_at")
+
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([courseId])
+  @@index([code])
+  @@map("certificates")
+}
+
+enum LiveRoomStatus {
+  SCHEDULED
+  LIVE
+  ENDED
+  CANCELLED
+}
+
+model LiveRoom {
+  id          String        @id @default(cuid())
+  instructorId String        @map("instructor_id")
+  courseId    String?       @map("course_id")
+  title       String
+  description String?       @db.Text
+  videoUrl    String?       @map("video_url")
+  videoProvider String?     @map("video_provider")
+  scheduledAt DateTime      @map("scheduled_at")
+  startedAt   DateTime?     @map("started_at")
+  endedAt     DateTime?     @map("ended_at")
+  status      LiveRoomStatus @default(SCHEDULED)
+  maxParticipants Int?      @map("max_participants")
+  createdAt   DateTime      @default(now()) @map("created_at")
+  updatedAt   DateTime      @updatedAt @map("updated_at")
+
+  instructor   User               @relation(fields: [instructorId], references: [id], onDelete: Cascade)
+  course      Course?            @relation(fields: [courseId], references: [id], onDelete: SetNull)
+  participants LiveRoomParticipant[]
+  messages     LiveChatMessage[]
+
+  @@index([instructorId])
+  @@index([courseId])
+  @@index([status])
+  @@index([scheduledAt])
+  @@map("live_rooms")
+}
+
+model LiveRoomParticipant {
+  id        String   @id @default(cuid())
+  roomId    String   @map("room_id")
+  userId    String   @map("user_id")
+  joinedAt  DateTime @default(now()) @map("joined_at")
+  leftAt    DateTime? @map("left_at")
+
+  room LiveRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([roomId])
+  @@index([userId])
+  @@map("live_room_participants")
+}
+
+model LiveChatMessage {
+  id        String   @id @default(cuid())
+  roomId    String   @map("room_id")
+  userId    String   @map("user_id")
+  message   String   @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  room LiveRoom @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("live_chat_messages")
+}

@@ -1,0 +1,2591 @@
+ele fez isso mais acho que tenho um melhor posso te mostrar sem ser esse
+
+Olha fiz no base44 a um tempo essa era minha ideia
+
+Excelente. Essas categorias já são suficientes para a primeira versão do sistema.
+
+Vou organizar de forma mais formal para a documentação:
+Categorias de Cursos
+
+A plataforma Hexavante disponibilizará inicialmente as seguintes categorias de cursos:
+Vestibulares e Preparatórios
+
+    ENEM
+
+    Vestibulares
+
+Tecnologia da Informação
+
+    Programação
+
+    Linguagens de Programação
+
+    Banco de Dados
+
+    Desenvolvimento Web
+
+    Desenvolvimento Mobile
+
+    Análise de Sistemas
+
+Disciplinas Fundamentais
+
+    Matemática
+
+    Português
+
+Próximo Passo: Entidades do Banco
+
+Agora vamos descobrir quais tabelas realmente existirão.
+
+Com base em tudo que definimos até agora, eu enxergo estas entidades principais:
+Núcleo
+
+    Usuário
+
+    Perfil
+
+    Instituição
+
+    Curso
+
+    Categoria
+
+    Aula
+
+    Matrícula
+
+Estudos
+
+    Tarefa
+
+    Meta
+
+    Simulado
+
+    Questão
+
+    Resposta
+
+Comunicação
+
+    Sala Ao Vivo
+
+    Mensagem
+
+    Notificação
+
+Certificação
+
+    Certificado
+
+HexaSchools
+
+    Turma
+
+    Professor
+
+    AlunoInstitucional
+
+Mas antes de desenhar o DER, preciso tirar uma dúvida importante:
+Como funcionarão os instrutores da Hexavante?
+
+Escolha uma das opções:
+
+A) Qualquer usuário pode criar cursos imediatamente.
+
+B) Usuário solicita virar instrutor e um moderador aprova.
+
+C) Apenas administradores podem criar instrutores.
+
+D) Outro modelo.
+
+Eu recomendo B, porque evita spam e cursos de baixa qualidade, mas a decisão é sua. Depois dessa resposta vamos montar a primeira lista oficial de entidades do banco e o DER conceitual.
+
+Matricula acho que mais do Hexaschools e Aula tam bem de resto tudo certo
+
+E)Instrutor se registra cria o curso so que ele nao postado na hora ele vai pra analise onde moderador ve se o conteudo condiz com o discrito e libera a postagem ou venda do curso
+
+Gostei da opção E. Ela é mais realista e até melhora o modelo de negócio.
+
+Na documentação eu escreveria assim:
+Publicação de Cursos por Instrutores
+
+A plataforma Hexavante permitirá que usuários solicitem cadastro como instrutores.
+
+Após a aprovação do cadastro, o instrutor poderá criar cursos e enviar conteúdos para análise.
+
+Todo curso enviado passará por um processo de moderação antes de sua publicação.
+
+O moderador será responsável por verificar:
+
+    Conformidade com as diretrizes da plataforma.
+
+    Qualidade mínima do conteúdo.
+
+    Correspondência entre a descrição do curso e seu conteúdo.
+
+    Ausência de materiais proibidos ou inadequados.
+
+Após a análise, o curso poderá ser:
+
+    Aprovado.
+
+    Reprovado.
+
+    Devolvido para correção.
+
+Somente cursos aprovados serão disponibilizados aos usuários da plataforma.
+
+Agora uma observação importante sobre o banco:
+
+Você está certo sobre Matrícula.
+
+Na verdade teremos dois conceitos diferentes:
+Hexavante
+
+O usuário simplesmente se inscreve em cursos.
+
+Então podemos ter:
+
+Usuário
+ ↓
+Inscrição
+ ↓
+Curso
+
+Tabela:
+
+course_enrollments
+
+HexaSchools
+
+Aqui existe:
+
+Instituição
+ ↓
+Turma
+ ↓
+Aluno
+
+Isso é uma matrícula acadêmica de verdade.
+
+Tabela:
+
+student_enrollments
+
+ou
+
+school_enrollments
+
+Sobre as aulas:
+
+Eu dividiria em:
+Curso
+
+Curso Java
+
+↓
+Módulo
+
+Introdução
+POO
+Banco de Dados
+
+↓
+Aula
+
+Vídeo 1
+Vídeo 2
+PDF
+Quiz
+
+Isso facilita muito a organização.
+Entidades confirmadas até agora
+Usuários
+
+    User
+
+    UserProfile
+
+    Role
+
+Conteúdo
+
+    Course
+
+    Category
+
+    Module
+
+    Lesson
+
+Aprendizado
+
+    CourseEnrollment
+
+    Goal
+
+    Task
+
+    Certificate
+
+Simulados
+
+    Exam
+
+    Question
+
+    Answer
+
+    UserExamAttempt
+
+Comunicação
+
+    LiveRoom
+
+    ChatMessage
+
+    Notification
+
+HexaSchools
+
+    School
+
+    SchoolUser
+
+    SchoolClass
+
+    SchoolEnrollment
+
+Moderação
+
+    InstructorApplication
+
+    CourseReview
+
+Próxima pergunta (muito importante para o DER)
+
+Os cursos da Hexavante podem ser:
+A)
+
+Somente gratuitos
+B)
+
+Gratuitos ou pagos
+C)
+
+Gratuitos, pagos ou por assinatura Premium
+
+Minha recomendação é C, porque combina com o plano gratuito limitado que você mencionou e deixa o modelo de negócio mais completo para o TCC. Isso vai impactar diretamente as tabelas de cursos, planos e assinaturas.
+
+C)
+
+Perfeito. Então acabamos de definir uma parte importante do modelo de negócio da Hexavante.
+
+Vou registrar a decisão:
+Modelo de Monetização
+
+A plataforma Hexavante utilizará um modelo híbrido de monetização.
+Cursos Gratuitos
+
+Cursos disponibilizados gratuitamente para todos os usuários da plataforma.
+Cursos Pagos
+
+Cursos comercializados individualmente por instrutores ou pela própria plataforma.
+Assinatura Premium
+
+Usuários assinantes terão acesso a benefícios adicionais definidos pela plataforma, podendo incluir:
+
+    Acesso a cursos exclusivos.
+
+    Benefícios em simulados.
+
+    Recursos avançados de planejamento.
+
+    Certificados premium.
+
+    Conteúdos complementares.
+
+HexaSchools
+
+O HexaSchools será comercializado através de assinatura institucional.
+
+As instituições terão acesso completo aos recursos da plataforma sem as limitações existentes nos planos gratuitos do Hexavante.
+O que já temos definido
+
+✅ Público-alvo
+
+✅ Produtos (Hexavante e HexaSchools)
+
+✅ Papéis do sistema
+
+✅ Categorias
+
+✅ Publicação de cursos
+
+✅ Monetização
+
+✅ Primeiros requisitos funcionais
+Próxima etapa: papéis administrativos do HexaSchools
+
+Isso vai definir o DER e os Casos de Uso.
+
+Hoje temos:
+
+    Aluno
+
+    Professor
+
+    Coordenador
+
+    Administrador da Instituição
+
+Mas preciso entender uma coisa:
+
+Imagine uma faculdade usando o HexaSchools.
+O Coordenador pode:
+
+    Criar cursos?
+
+    Criar turmas?
+
+    Gerenciar professores?
+
+    Emitir certificados?
+
+O Administrador da Instituição pode:
+
+    Fazer tudo acima?
+
+    Gerenciar assinatura do HexaSchools?
+
+    Adicionar outros administradores?
+
+Responda com "Sim" ou "Não" para cada item.
+
+Depois disso vamos fazer a primeira tabela de permissões (RBAC), que normalmente é uma das partes que mais impressiona em documentação de TCC porque mostra que você pensou na segurança e organização do sistema.
+
+O cordenador Sim pode fazer essas coisas
+o Administrador pode fazer tudo acima e nao pode gerenciar a assinatura so quem pode e o diretor da instituição  e sim ele pode adcionar outros administradores
+
+Excelente. Acabamos de descobrir que no HexaSchools existe mais um papel:
+Hierarquia Institucional
+
+Diretor
+│
+├── Administrador
+│   │
+│   ├── Coordenador
+│   │   │
+│   │   ├── Professor
+│   │   │
+│   │   └── Aluno
+
+Isso é ótimo porque deixa o sistema mais próximo de uma instituição real.
+
+Crie um arquivo chamado:
+
+docs/permissoes.md
+Papéis e Permissões
+Diretor
+
+Responsável máximo pela instituição dentro do HexaSchools.
+
+Permissões:
+
+    Gerenciar assinatura da plataforma.
+
+    Adicionar administradores.
+
+    Remover administradores.
+
+    Visualizar todos os dados institucionais.
+
+    Gerenciar cursos.
+
+    Gerenciar turmas.
+
+    Gerenciar professores.
+
+    Gerenciar alunos.
+
+    Emitir certificados.
+
+Administrador Institucional
+
+Responsável pela administração operacional da instituição.
+
+Permissões:
+
+    Gerenciar cursos.
+
+    Gerenciar turmas.
+
+    Gerenciar professores.
+
+    Gerenciar alunos.
+
+    Emitir certificados.
+
+    Adicionar coordenadores.
+
+    Gerenciar configurações institucionais.
+
+Não possui acesso à assinatura da instituição.
+Coordenador
+
+Responsável pela coordenação acadêmica.
+
+Permissões:
+
+    Criar cursos.
+
+    Editar cursos.
+
+    Criar turmas.
+
+    Gerenciar professores.
+
+    Emitir certificados.
+
+    Acompanhar atividades acadêmicas.
+
+Professor
+
+Responsável pelo conteúdo acadêmico.
+
+Permissões:
+
+    Criar aulas.
+
+    Editar aulas.
+
+    Aplicar simulados.
+
+    Gerenciar conteúdos de suas turmas.
+
+Aluno
+
+Participante da instituição.
+
+Permissões:
+
+    Participar de cursos.
+
+    Participar de aulas.
+
+    Realizar simulados.
+
+    Visualizar certificados.
+
+Próxima etapa: entidades principais do banco
+
+Agora vamos definir a primeira versão do DER conceitual.
+
+Antes disso preciso de uma resposta importante:
+No HexaSchools
+
+Uma instituição pode ter:
+
+A) Apenas um curso por aluno.
+
+Exemplo:
+
+    Técnico em Informática
+
+ou
+
+B) Vários cursos por aluno.
+
+Exemplo:
+
+    Técnico em Informática
+
+    Inglês
+
+    Programação Web
+
+ao mesmo tempo.
+Outra dúvida
+
+Professor pode dar aula em várias turmas?
+
+Exemplo:
+
+Professor João
+
+→ Turma A
+→ Turma B
+→ Turma C
+
+Sim ou Não?
+
+Essas duas respostas vão definir os relacionamentos principais do DER. Depois disso começamos a desenhar o banco conceitualmente.
+
+1) B)
+2)Sim
+
+Perfeito. Essas respostas definem alguns dos relacionamentos mais importantes do banco.
+Decisões confirmadas
+HexaSchools
+
+✅ Um aluno pode estar matriculado em vários cursos.
+
+Exemplo:
+
+Aluno Nicolas
+
+→ Redes
+→ Banco de Dados
+→ Programação Web
+
+Isso significa um relacionamento N:N (muitos para muitos) entre Aluno e Curso.
+
+✅ Um professor pode atuar em várias turmas.
+
+Exemplo:
+
+Professor João
+
+→ Turma A
+→ Turma B
+→ Turma C
+
+Também é um relacionamento N:N.
+Primeira versão do DER Conceitual
+
+Não vamos desenhar ainda. Vamos validar as entidades primeiro.
+Núcleo
+
+User
+Role
+Profile
+
+Hexavante
+
+Category
+Course
+Module
+Lesson
+CourseEnrollment
+Certificate
+
+Planejamento
+
+Goal
+Task
+
+Simulados
+
+Exam
+Question
+Alternative
+ExamAttempt
+ExamAnswer
+
+Comunicação
+
+LiveRoom
+ChatMessage
+Notification
+
+Monetização
+
+SubscriptionPlan
+UserSubscription
+CoursePurchase
+
+HexaSchools
+
+School
+SchoolCourse
+SchoolClass
+SchoolEnrollment
+
+Equipe Institucional
+
+SchoolTeacher
+SchoolCoordinator
+SchoolAdministrator
+SchoolDirector
+
+Instrutores da Hexavante
+
+InstructorApplication
+CourseReview
+
+Próxima decisão (muito importante)
+
+No HexaSchools:
+O professor cria cursos completos?
+
+ou
+O coordenador cria o curso e o professor apenas cria aulas dentro dele?
+
+Exemplo:
+Opção A
+
+Professor:
+
+Cria Curso Java
+Cria Módulos
+Cria Aulas
+
+Opção B
+
+Coordenador:
+
+Cria Curso Java
+
+Professor:
+
+Cria as aulas do Curso Java
+
+Eu recomendaria a Opção B, porque é mais parecida com escolas e faculdades reais e simplifica o controle institucional.
+
+Depois dessa resposta vamos montar o primeiro DER conceitual oficial da documentação.
+
+Opção B
+
+Ótimo. A Opção B deixa a estrutura muito mais organizada.
+
+Então, no HexaSchools:
+
+Diretor
+   ↓
+Administrador
+   ↓
+Coordenador
+   ↓
+Curso
+   ↓
+Professor
+   ↓
+Aulas
+
+Ou seja:
+
+    Coordenador cria e organiza os cursos.
+
+    Professor produz o conteúdo das aulas.
+
+    Alunos consomem o conteúdo.
+
+    Administradores supervisionam.
+
+    Diretor gerencia a instituição.
+
+Primeira versão do DER Conceitual (validar antes de desenhar)
+Usuários
+
+User
+ ├─ Profile
+ ├─ Role
+ ├─ Goals
+ ├─ Tasks
+ ├─ Certificates
+ └─ Notifications
+
+Cursos Hexavante
+
+Category
+   ↓
+Course
+   ↓
+Module
+   ↓
+Lesson
+
+Relacionamentos:
+
+User
+ ↔ CourseEnrollment ↔ Course
+
+Simulados
+
+Exam
+ ├─ Question
+ ├─ Alternative
+ └─ ExamAttempt
+
+Aulas Ao Vivo
+
+LiveRoom
+ └─ ChatMessage
+
+HexaSchools
+
+School
+
+↓
+
+SchoolCourse
+
+↓
+
+SchoolClass
+
+↓
+
+SchoolEnrollment
+
+Equipe da Instituição
+
+School
+ ├─ Director
+ ├─ Administrator
+ ├─ Coordinator
+ ├─ Teacher
+ └─ Student
+
+Publicação de Cursos
+
+InstructorApplication
+
+↓
+
+CourseReview
+
+↓
+
+Course
+
+Monetização
+
+SubscriptionPlan
+ ├─ UserSubscription
+ └─ CoursePurchase
+
+Próxima etapa
+
+Agora vamos começar a desenhar a tabela User, porque ela é o coração do sistema.
+
+Preciso de mais algumas decisões:
+Foto de perfil
+
+A) Upload próprio
+
+B) Google/Microsoft + Upload próprio
+Nome de usuário (@usuario)
+
+Exemplo:
+
+@nicolas
+
+Será:
+
+A) Obrigatoriamente único no sistema
+
+B) Pode repetir
+Idade mínima
+
+Você pretende permitir:
+
+A) Qualquer idade
+
+B) 13+
+
+C) 16+
+
+D) 18+
+Certificados
+
+Quem pode emitir?
+
+    Apenas Hexavante?
+
+    Apenas HexaSchools?
+
+    Ambos?
+
+Responda essas 4 decisões e então montaremos a primeira tabela real (users) da documentação do banco.
+
+B)
+A)unico
+então queria focar nos adolecentes então eu acho B) 13+ pra afastar crianças
+ambos podem so que HexaSchools gera com assinatura do condernador  que criou o curso
+
+Perfeito. Essas decisões já são suficientes para fecharmos a primeira entidade principal do sistema.
+Decisões Registradas
+Foto de Perfil
+
+✅ Google/Microsoft + Upload próprio
+
+O usuário poderá:
+
+    Usar a foto do Google.
+
+    Usar a foto da Microsoft.
+
+    Fazer upload de uma foto personalizada.
+
+Nome de Usuário
+
+✅ Único no sistema
+
+Exemplos válidos:
+
+@nicolas
+@joao
+@ana_dev
+
+Exemplos inválidos:
+
+@nicolas
+@nicolas
+
+Idade Mínima
+
+✅ 13 anos
+
+Isso é uma boa decisão porque:
+
+    Evita problemas com crianças muito novas.
+
+    É compatível com várias políticas de serviços online.
+
+    Continua atendendo ensino médio e ENEM.
+
+Certificados
+
+✅ Hexavante pode emitir.
+
+✅ HexaSchools pode emitir.
+
+No HexaSchools:
+
+    O certificado fica vinculado ao curso.
+
+    O certificado carrega a assinatura do coordenador responsável pelo curso.
+
+    Futuramente você pode permitir assinatura digital institucional.
+
+Primeira Versão da Tabela Users
+
+Para a documentação:
+
+users
+-----
+id
+username
+full_name
+email
+password_hash
+provider
+provider_id
+avatar_url
+birth_date
+phone
+city
+state
+bio
+is_verified
+is_instructor
+created_at
+updated_at
+last_login
+
+Explicação
+Campo	Descrição
+id	Identificador único
+username	Nome de usuário único
+full_name	Nome completo
+email	E-mail
+password_hash	Senha criptografada
+provider	local/google/microsoft
+provider_id	ID do Google/Microsoft
+avatar_url	Foto
+birth_date	Data de nascimento
+phone	Telefone
+city	Cidade
+state	Estado
+bio	Biografia
+is_verified	Conta verificada
+is_instructor	Pode publicar cursos
+created_at	Data de criação
+updated_at	Última atualização
+last_login	Último acesso
+Próxima decisão (última antes de começarmos o DER)
+
+No Hexavante, os cursos podem ter:
+A)
+
+Um único instrutor
+
+Exemplo:
+
+Curso React
+→ Nicolas
+
+B)
+
+Múltiplos instrutores
+
+Exemplo:
+
+Curso Full Stack
+
+→ Nicolas
+→ João
+→ Maria
+
+Isso muda bastante a modelagem do banco.
+
+Eu recomendaria B, porque:
+
+    Permite cursos colaborativos.
+
+    Permite convidados.
+
+    É comum em plataformas grandes.
+
+Qual opção você prefere?
+
+B
+
+Perfeito. Então vamos fechar mais uma decisão importante:
+Cursos com múltiplos instrutores
+
+Exemplo:
+
+Curso Full Stack
+│
+├── Nicolas
+├── João
+└── Maria
+
+Isso significa que no banco teremos:
+
+User
+ ↔ CourseInstructor ↔ Course
+
+Ou seja, um relacionamento N:N (muitos para muitos).
+Atualização das entidades principais
+Usuários
+
+User
+Profile
+Role
+
+Cursos
+
+Category
+Course
+Module
+Lesson
+CourseInstructor
+CourseEnrollment
+
+Simulados
+
+Exam
+Question
+Alternative
+ExamAttempt
+ExamAnswer
+
+Planejamento
+
+Goal
+Task
+
+Comunicação
+
+LiveRoom
+ChatMessage
+Notification
+
+Monetização
+
+SubscriptionPlan
+UserSubscription
+CoursePurchase
+
+Certificados
+
+Certificate
+
+HexaSchools
+
+School
+SchoolCourse
+SchoolClass
+SchoolEnrollment
+
+Moderação
+
+InstructorApplication
+CourseReview
+
+Próxima etapa: definir os Planos da Hexavante
+
+Como você escolheu:
+
+✅ Gratuito
+
+✅ Curso Pago
+
+✅ Assinatura Premium
+
+precisamos definir exatamente o que o plano gratuito perde.
+
+Isso vai para os requisitos, banco de dados e modelo de negócio.
+
+Responda o que você imagina para cada item:
+Usuário Gratuito
+
+Cursos gratuitos?
+
+    Sim/Não
+
+Cursos pagos comprados?
+
+    Sim/Não
+
+Aulas ao vivo?
+
+    Sim/Não
+
+Download offline?
+
+    Sim/Não
+
+Certificados?
+
+    Sim/Não
+
+Simulados?
+
+    Sim/Não
+
+Planner?
+
+    Sim/Não
+
+Gamificação?
+
+    Sim/Não
+
+Usuário Premium
+
+O que ele ganha além do gratuito?
+
+Por exemplo:
+
+    Simulados ilimitados
+
+    Certificados premium
+
+    Download offline
+
+    Cursos exclusivos
+
+    Sem anúncios
+
+Liste o que você imagina.
+
+Depois disso vamos conseguir documentar completamente o modelo de negócio da Hexavante e partir para o DER conceitual oficial.
+
+Sim
+Sim se ele pagou tem poder usar ne kkk
+Sim
+Não
+Sim
+So alguns
+Sim
+Sim
+
+Premium ganha Alguns cursos especificos e alem de um requisição de uma aula pra tirar duvidas um vez por mes com um de nossos membros e dowlaod offline e Todos os Simulados e Tam bem Prioridade em eventos futuros ao vivo e chance de participar de um concurso pra ingressar na equipe do projeto no final de cada mes 
+
+Perfeito. Isso já está ficando com cara de um produto real e não apenas um TCC.
+
+Inclusive, o benefício de "sessão mensal para tirar dúvidas com a equipe" é um diferencial interessante porque não depende de uma infraestrutura gigantesca e agrega bastante valor ao Premium.
+
+Vou organizar o que definimos:
+Plano Gratuito
+
+✅ Cursos gratuitos
+
+✅ Cursos pagos comprados individualmente
+
+✅ Aulas ao vivo
+
+❌ Download offline
+
+✅ Certificados
+
+⚠️ Apenas alguns simulados
+
+✅ Planner
+
+✅ Gamificação
+Plano Premium
+
+Inclui tudo do Gratuito e:
+
+✅ Download offline
+
+✅ Acesso a todos os simulados
+
+✅ Cursos exclusivos
+
+✅ Sessão mensal de dúvidas com a equipe Hexavante
+
+✅ Prioridade em eventos ao vivo
+
+✅ Participação em seleção mensal para ingresso na equipe do projeto
+Próxima etapa do banco
+
+Agora precisamos definir como será o sistema de cursos.
+
+Imagine um curso:
+
+Curso de Java
+
+Como você imagina a estrutura?
+Opção A
+
+Curso
+ ├─ Aula 1
+ ├─ Aula 2
+ ├─ Aula 3
+
+Opção B
+
+Curso
+ ├─ Módulo 1
+ │   ├─ Aula 1
+ │   ├─ Aula 2
+ │
+ ├─ Módulo 2
+ │   ├─ Aula 3
+ │   ├─ Aula 4
+
+Opção C
+
+Curso
+ ├─ Módulo
+ │
+ ├─ Aula
+ │
+ ├─ Material PDF
+ │
+ ├─ Exercício
+ │
+ ├─ Quiz
+
+Eu recomendo fortemente a Opção C, porque ela é a mais flexível e se aproxima do que plataformas como Udemy, Alura e Coursera fazem.
+
+Depois dessa decisão, começaremos a desenhar as entidades de Course, Module, Lesson e Material, que serão a base do DER oficial.
+
+Opção D 
+Modulos depois dentro dele as aulas ai depois das exercicios com um aba pra acessar material pdf na parte referente a o exercicio e um quiz valendo uma moeda do app e xp pra subir no rank caso gabarite 
+
+Gostei mais da sua Opção D do que da C, porque ela cria uma progressão clara para o aluno.
+
+Ficaria algo assim:
+
+Curso
+│
+├── Módulo 1
+│   │
+│   ├── Aula 1
+│   ├── Aula 2
+│   ├── Aula 3
+│   │
+│   ├── Exercícios
+│   │   ├── Questão 1
+│   │   ├── Questão 2
+│   │   └── Questão 3
+│   │
+│   ├── Materiais
+│   │   ├── PDF
+│   │   ├── Slides
+│   │   └── Links
+│   │
+│   └── Quiz Final
+│
+├── Módulo 2
+│   ...
+│
+└── Certificado
+
+Sistema de Progressão
+
+Você acabou de definir outra parte importante da documentação:
+XP
+
+O usuário ganha XP ao:
+
+    Concluir aulas
+
+    Concluir módulos
+
+    Gabaritar quizzes
+
+    Completar metas
+
+    Participar de eventos
+
+    Finalizar cursos
+
+Moedas
+
+O usuário ganha moedas ao:
+
+    Gabaritar quizzes
+
+    Finalizar módulos
+
+    Finalizar cursos
+
+    Participar de eventos especiais
+
+Ranking
+
+Bronze
+Prata
+Ouro
+Platina
+Diamante
+Mestre
+Lendário
+HexaMaster
+
+(Podemos ajustar depois.)
+Entidades novas descobertas
+
+Até agora não tínhamos isso no banco.
+
+Agora teremos:
+
+Module
+
+Lesson
+
+Exercise
+
+Question
+
+Quiz
+
+QuizAttempt
+
+Material
+
+UserXP
+
+UserWallet
+
+Achievement
+
+Outra ideia que combina muito com a Hexavante
+
+Quando o aluno terminar um módulo:
+
+Módulo 1 Completo
+
+✔ Aula 1
+✔ Aula 2
+✔ Aula 3
+✔ Exercícios
+✔ Quiz
+
+O módulo recebe 100% de conclusão.
+
+Só então o próximo módulo é desbloqueado.
+Você prefere:
+
+A) Todos os módulos liberados desde o início.
+
+B) Desbloqueio progressivo.
+
+Exemplo:
+
+Módulo 1 -> concluído
+↓
+Módulo 2 desbloqueado
+↓
+Módulo 3 desbloqueado
+
+C) O instrutor escolhe se o curso é livre ou progressivo.
+
+Eu recomendaria C, porque atende tanto cursos rápidos quanto cursos mais estruturados. Isso também fica muito bonito na documentação e no modelo de banco.
+
+C)
+
+Excelente. A opção C é exatamente o tipo de decisão que deixa o sistema flexível.
+
+Vou registrar:
+Progressão de Cursos
+
+RF044 - O instrutor poderá definir o método de progressão do curso.
+
+Modos disponíveis:
+Livre
+
+Módulo 1
+Módulo 2
+Módulo 3
+
+Todos disponíveis imediatamente.
+
+Progressivo
+
+Módulo 1
+↓
+Módulo 2
+↓
+Módulo 3
+
+O próximo módulo só é liberado após a conclusão do anterior.
+Entidades do Curso (praticamente fechadas)
+
+Category
+Course
+CourseInstructor
+Module
+Lesson
+Exercise
+Material
+Quiz
+Question
+Alternative
+QuizAttempt
+
+Sistema de Gamificação
+
+Você definiu XP e Moedas, mas antes de modelar preciso saber o objetivo das moedas.
+
+O usuário poderá gastar moedas em quê?
+Ideias
+
+A) Cosméticos de perfil
+
+    Molduras
+
+    Selos
+
+    Badges
+
+B) Benefícios de estudo
+
+    Tentativas extras
+
+    Simulados especiais
+
+    Materiais premium
+
+C) Sorteios/Eventos
+
+    Participação em concursos
+
+    Eventos especiais
+
+D) Loja completa
+
+Moedas
+ ↓
+Itens
+ ↓
+Benefícios
+ ↓
+Cosméticos
+
+Outra dúvida importante
+
+No Hexavante você quer ter:
+Conquistas (Achievements)?
+
+Exemplo:
+
+Primeiro Curso Concluído
+
+100 Questões Respondidas
+
+7 Dias de Sequência
+
+10 Cursos Finalizados
+
+Primeira Aula Ao Vivo
+
+Isso costuma funcionar muito bem junto com XP, rankings e moedas.
+
+Responda:
+
+    O que as moedas podem comprar?
+
+    Quer sistema de conquistas? (Sim/Não)
+
+Depois disso vamos fechar a gamificação e partir para o DER dos usuários (User, XP, Wallet, Achievement, Role), que será provavelmente o próximo bloco do banco.
+
+D)
+2)não
+
+Perfeito. Isso simplifica bastante o sistema.
+Gamificação Oficial da Hexavante
+XP
+
+Utilizado para:
+
+    Evolução do usuário.
+
+    Ranking geral.
+
+    Ranking por categoria.
+
+    Destaque de usuários.
+
+Moedas
+
+Utilizadas na Loja Hexavante.
+
+Os usuários poderão adquirir:
+Cosméticos
+
+    Molduras de perfil
+
+    Badges
+
+    Temas de perfil
+
+    Efeitos visuais
+
+Benefícios
+
+    Simulados especiais
+
+    Materiais exclusivos
+
+    Conteúdos temporários
+
+    Participação em eventos
+
+Eventos
+
+    Inscrições em eventos especiais
+
+    Sorteios da comunidade
+
+Conquistas
+
+❌ Não existirão na primeira versão.
+
+Isso reduz bastante a complexidade do banco.
+Atualização das Entidades
+
+Agora teremos:
+
+User
+UserXP
+UserWallet
+
+StoreItem
+StorePurchase
+
+SubscriptionPlan
+UserSubscription
+
+Não precisaremos de:
+
+Achievement
+UserAchievement
+
+Próxima etapa: Perfil Público
+
+Antes de desenharmos o DER de usuários, preciso saber como você imagina o perfil.
+
+Exemplo:
+
+@nicolas
+
+Nível 42
+
+XP: 18.500
+
+Cursos concluídos: 12
+
+Moedas: 350
+
+Bio
+
+[Seguir]
+[Mensagem]
+
+O perfil será público?
+
+A) Sim
+
+B) Não
+Seguir usuários?
+
+Exemplo:
+
+Nicolas segue Rafael
+
+A) Sim
+
+B) Não
+Mensagem privada?
+
+Exemplo:
+
+Nicolas
+↓
+Rafael
+
+"Olá"
+
+A) Sim
+
+B) Não
+Instrutores terão perfil especial?
+
+Exemplo:
+
+✓ Instrutor Verificado
+
+Cursos: 15
+
+Alunos: 2.300
+
+A) Sim
+
+B) Não
+
+Essas quatro respostas vão definir se teremos tabelas como:
+
+Follow
+Conversation
+Message
+InstructorProfile
+
+ou se o sistema ficará mais simples. Depois disso começamos a desenhar o primeiro DER formal do núcleo de usuários.
+
+Escolha do usuario se o perfil e publico
+Não
+Não
+Sim
+
+Ótimo. Isso deixa a plataforma mais focada em estudos e evita virar uma rede social, o que simplifica bastante o projeto.
+Decisões Confirmadas
+Perfil Público
+
+✅ Configurável pelo usuário
+
+O usuário poderá escolher:
+
+Perfil Público
+ou
+Perfil Privado
+
+Se público:
+
+    Nome
+
+    Foto
+
+    Bio
+
+    Nível
+
+    Cursos concluídos
+
+    Ranking
+
+poderão ser exibidos.
+Sistema de Seguidores
+
+❌ Não terá
+
+Não existirá:
+
+Seguir usuário
+Seguidores
+Seguindo
+
+Mensagens Privadas
+
+❌ Não terá
+
+O chat ficará focado em:
+
+    Cursos
+
+    Salas ao vivo
+
+    Ambientes educacionais
+
+Perfil de Instrutor
+
+✅ Terá perfil especial
+
+Exemplo:
+
+✓ Instrutor Verificado
+
+Cursos Publicados: 12
+
+Alunos Inscritos: 2.450
+
+Avaliação Média: 4.8
+
+Descrição Profissional
+
+Entidades de Usuário (quase fechadas)
+
+User
+
+Role
+
+UserXP
+
+UserWallet
+
+InstructorProfile
+
+Notification
+
+UserSubscription
+
+Próxima decisão importante
+
+Agora vamos entrar no sistema de avaliação dos cursos.
+
+Quando um aluno termina ou faz parte de um curso, ele poderá avaliar?
+Opção A
+
+Somente nota
+
+★★★★★
+
+Opção B
+
+Nota + comentário
+
+★★★★★
+
+"Curso muito bom."
+
+Opção C
+
+Nota + comentário + pontos fortes
+
+★★★★★
+
+Comentário
+
+Didática
+Material
+Organização
+
+Outra dúvida
+
+Os instrutores terão vendas?
+
+Exemplo:
+
+Curso vendido por R$ 49,90
+
+O instrutor recebe uma porcentagem.
+
+Tipo:
+
+Hexavante: 20%
+
+Instrutor: 80%
+
+Ou inicialmente todos os cursos pagos serão vendidos pela própria Hexavante?
+
+Essa decisão impacta muito o banco e o modelo de negócio, então vale a pena defini-la antes do DER.
+
+Opção C)
+
+Perfeito.
+
+Então vamos registrar:
+Avaliações dos Cursos
+
+✅ Opção C
+
+Cada avaliação terá:
+
+Nota Geral (1-5 estrelas)
+
+Comentário
+
+Didática
+Material
+Organização
+
+Exemplo:
+
+★★★★★
+
+Curso muito bom.
+
+Didática: 5
+Material: 4
+Organização: 5
+
+Isso é excelente porque permite mostrar métricas detalhadas no perfil do instrutor.
+Nova Entidade
+
+CourseReview
+
+id
+user_id
+course_id
+
+rating
+didactics_rating
+material_rating
+organization_rating
+
+comment
+
+created_at
+
+Falta responder a segunda pergunta 😅
+
+Ela é uma das mais importantes do projeto:
+Cursos pagos dos instrutores
+
+Quando um instrutor vender um curso pago:
+Opção A
+
+O dinheiro vai para a Hexavante.
+
+Aluno compra curso
+↓
+Hexavante recebe
+
+Opção B
+
+Marketplace.
+
+Aluno compra curso
+↓
+Hexavante recebe
+↓
+Instrutor recebe porcentagem
+
+Exemplo:
+
+Instrutor 80%
+Hexavante 20%
+
+Opção C
+
+Na primeira versão não haverá vendas de instrutores.
+
+Somente cursos pagos da própria Hexavante.
+
+Eu recomendaria B porque combina muito com a ideia de permitir instrutores independentes e deixa o modelo de negócio mais forte para a banca.
+
+Depois dessa resposta, vamos fechar:
+
+    Monetização
+
+    Marketplace
+
+    Avaliações
+
+e finalmente desenhar o DER Conceitual Oficial v1 do Hexavante.
+
+Os cursos vendidos pela hexavante vao so pra hexavante agora o do instrutor vai ser 85 pro instrutor e 15 pro hexavante
+
+Excelente. Essa decisão fecha praticamente todo o modelo de monetização da Hexavante.
+Marketplace da Hexavante
+Cursos Oficiais
+
+Cursos criados pela equipe Hexavante.
+
+Venda
+ ↓
+100% Hexavante
+
+Cursos de Instrutores
+
+Cursos criados por instrutores independentes.
+
+Venda
+ ↓
+85% Instrutor
+15% Hexavante
+
+O que isso adiciona ao banco
+
+Teremos algo parecido com:
+
+Course
+
+CourseInstructor
+
+CoursePurchase
+
+Transaction
+
+Payout
+
+Requisito Funcional Novo
+
+Você pode adicionar:
+
+RF045 - O sistema deve permitir a comercialização de cursos produzidos por instrutores independentes.
+
+RF046 - O sistema deve realizar a divisão automática da receita dos cursos vendidos por instrutores.
+
+RF047 - O sistema deve permitir o acompanhamento de vendas pelos instrutores.
+
+Estado Atual do Projeto
+
+Já definimos:
+Plataforma
+
+✅ Hexavante
+
+✅ HexaSchools
+Usuários
+
+✅ Visitante
+
+✅ Usuário
+
+✅ Instrutor
+
+✅ Moderador
+
+✅ Administrador
+HexaSchools
+
+✅ Diretor
+
+✅ Administrador
+
+✅ Coordenador
+
+✅ Professor
+
+✅ Aluno
+Cursos
+
+✅ Gratuitos
+
+✅ Pagos
+
+✅ Premium
+
+✅ Marketplace
+Monetização
+
+✅ Assinatura Premium
+
+✅ Venda de cursos
+
+✅ Divisão 85/15
+Estudos
+
+✅ Planner
+
+✅ Metas
+
+✅ Simulados
+
+✅ Cursos
+
+✅ Certificados
+Comunicação
+
+✅ Chat
+
+✅ Aulas ao vivo
+Gamificação
+
+✅ XP
+
+✅ Moedas
+
+✅ Loja
+
+❌ Conquistas
+Perfil
+
+✅ Público ou privado
+
+✅ Perfil especial de instrutor
+
+❌ Seguir usuários
+
+❌ Mensagens privadas
+Próxima etapa (muito importante)
+
+Agora precisamos definir como funcionará o HexaSchools financeiramente, porque isso afeta o DER.
+
+Qual modelo você imagina?
+A)
+
+Assinatura única por instituição.
+
+Exemplo:
+
+R$ 199/mês
+
+Tudo liberado
+
+B)
+
+Cobrança por quantidade de alunos.
+
+Exemplo:
+
+Até 100 alunos
+
+Até 500 alunos
+
+Até 1000 alunos
+
+C)
+
+Plano Base + adicional por aluno.
+
+Exemplo:
+
+R$ 99/mês
+
++ R$ 1 por aluno ativo
+
+D)
+
+Outro modelo.
+
+Depois dessa decisão, eu monto o Documento de Modelo de Negócio e partimos para o DER Conceitual Oficial v1, que será o primeiro diagrama sério do banco de dados.
+
+b) com C) um pouco dos dois
+
+Boa escolha. Na prática você está propondo um modelo híbrido, que é o que muitos SaaS educacionais usam.
+
+Eu documentaria assim:
+Modelo de Assinatura do HexaSchools
+
+O HexaSchools utilizará um modelo híbrido de cobrança para instituições.
+Plano Base
+
+Toda instituição deverá possuir uma assinatura ativa para utilizar a plataforma.
+
+O plano base garante acesso aos recursos fundamentais do sistema.
+Escalabilidade por Alunos
+
+Além da assinatura base, o valor poderá variar de acordo com a quantidade de alunos ativos cadastrados na instituição.
+
+Exemplo:
+
+    Até 100 alunos
+
+    Até 500 alunos
+
+    Até 1000 alunos
+
+    Acima de 1000 alunos
+
+Recursos Inclusos
+
+    Gestão de alunos
+
+    Gestão de professores
+
+    Gestão de cursos
+
+    Gestão de turmas
+
+    Emissão de certificados
+
+    Simulados próprios
+
+    Aulas ao vivo
+
+    Materiais didáticos
+
+    Eventos institucionais
+
+Administração da Assinatura
+
+Somente usuários com o cargo de Diretor poderão gerenciar informações financeiras e administrativas da assinatura institucional.
+Situação Atual
+
+Sinceramente, já temos informação suficiente para começar o DER Conceitual v1.
+
+Mas antes disso, quero fechar um último bloco para evitar retrabalho:
+Armazenamento de Vídeos
+
+Você definiu que:
+
+    Há aulas gravadas.
+
+    Há download offline para Premium.
+
+Agora preciso saber:
+Opção A
+
+Os vídeos ficam hospedados pela própria Hexavante.
+
+Vídeo
+↓
+Servidor Hexavante
+
+Opção B
+
+Os vídeos ficam em plataformas externas.
+
+Exemplos:
+
+YouTube Privado
+Vimeo
+Cloudflare Stream
+
+Opção C
+
+Ambos.
+
+O instrutor escolhe.
+
+Eu recomendo C, porque:
+
+    Reduz custos para instrutores.
+
+    Permite vídeos profissionais para cursos premium.
+
+    Dá flexibilidade ao sistema.
+
+Depois dessa resposta, o próximo passo será o DER Conceitual Oficial v1 (primeiro diagrama de banco que vamos montar juntos).
+
+Opção B
+
+Perfeito. Isso simplifica bastante a infraestrutura inicial do TCC.
+Decisão Registrada
+Hospedagem de Vídeos
+
+✅ Opção B — Plataforma Externa
+
+A Hexavante não armazenará os vídeos diretamente.
+
+Os vídeos serão hospedados em serviços externos e apenas referenciados pela plataforma.
+
+Exemplos possíveis futuramente:
+
+    YouTube (não listado)
+
+    Vimeo
+
+    Cloudflare Stream
+
+    Outros provedores compatíveis
+
+Impacto no Banco
+
+Isso simplifica muito a entidade Lesson.
+
+Em vez de armazenar vídeos:
+
+video_file
+video_storage
+video_bucket
+
+teremos apenas:
+
+video_url
+video_provider
+duration
+
+Onde estamos agora
+
+Já fechamos:
+Produto
+
+✅ Hexavante
+
+✅ HexaSchools
+Usuários
+
+✅ Visitante
+
+✅ Usuário
+
+✅ Instrutor
+
+✅ Moderador
+
+✅ Administrador
+Instituições
+
+✅ Diretor
+
+✅ Administrador
+
+✅ Coordenador
+
+✅ Professor
+
+✅ Aluno
+Cursos
+
+✅ Gratuitos
+
+✅ Pagos
+
+✅ Premium
+
+✅ Marketplace
+Monetização
+
+✅ Premium
+
+✅ Venda de Cursos
+
+✅ Split 85/15
+
+✅ HexaSchools SaaS
+Conteúdo
+
+✅ Módulos
+
+✅ Aulas
+
+✅ Exercícios
+
+✅ Quiz
+
+✅ Materiais PDF
+Gamificação
+
+✅ XP
+
+✅ Moedas
+
+✅ Loja
+Comunicação
+
+✅ Chat
+
+✅ Aula ao vivo
+Perfil
+
+✅ Público ou privado
+
+✅ Perfil de Instrutor
+Próximo Passo
+
+Agora estamos prontos para começar o DER Conceitual Oficial v1.
+
+Mas eu quero fazer isso direito, então na próxima etapa vamos modelar apenas o núcleo:
+
+User
+Role
+InstructorProfile
+UserXP
+UserWallet
+SubscriptionPlan
+UserSubscription
+
+e validar tudo antes de adicionar cursos, simulados, escolas e pagamentos.
+
+Isso evita um DER gigante e difícil de corrigir.
+
+A próxima pergunta será sobre algo muito importante para a tabela Role:
+Você quer que um usuário possa ter múltiplos papéis ao mesmo tempo?
+
+Exemplo:
+
+Nicolas
+
+→ Usuário
+→ Instrutor
+→ Moderador
+
+ou apenas um papel principal:
+
+Nicolas
+
+→ Instrutor
+
+Eu recomendo múltiplos papéis, porque um moderador pode também ser instrutor e usuário comum. Isso costuma resultar numa modelagem mais flexível.
+
+vamos de multiplos
+
+Perfeito. Então vamos de múltiplos papéis (RBAC). Essa é a abordagem mais profissional e usada em sistemas grandes.
+
+Exemplo:
+
+Nicolas
+
+✓ Usuário
+✓ Instrutor
+
+João
+
+✓ Usuário
+✓ Moderador
+
+Maria
+
+✓ Usuário
+✓ Instrutor
+✓ Moderador
+
+DER v1 — Núcleo de Usuários
+
+Nossa primeira modelagem fica assim:
+
+User
+ │
+ ├── UserRole
+ │       │
+ │       └── Role
+ │
+ ├── InstructorProfile
+ │
+ ├── UserXP
+ │
+ ├── UserWallet
+ │
+ └── UserSubscription
+         │
+         └── SubscriptionPlan
+
+Tabela User
+
+User
+
+id
+username
+full_name
+email
+password_hash
+provider
+provider_id
+avatar_url
+birth_date
+phone
+city
+state
+bio
+
+profile_visibility
+
+is_verified
+
+created_at
+updated_at
+last_login
+
+Tabela Role
+
+Role
+
+id
+name
+description
+
+Valores iniciais:
+
+USER
+INSTRUCTOR
+MODERATOR
+ADMIN
+
+SCHOOL_STUDENT
+SCHOOL_TEACHER
+SCHOOL_COORDINATOR
+SCHOOL_ADMIN
+SCHOOL_DIRECTOR
+
+Tabela UserRole
+
+Relacionamento N:N
+
+UserRole
+
+user_id
+role_id
+
+assigned_at
+assigned_by
+
+Tabela InstructorProfile
+
+InstructorProfile
+
+id
+
+user_id
+
+display_name
+
+professional_description
+
+approval_status
+
+approved_by
+
+approved_at
+
+total_courses
+
+total_students
+
+average_rating
+
+Tabela UserXP
+
+UserXP
+
+id
+
+user_id
+
+level
+
+current_xp
+
+total_xp
+
+Tabela UserWallet
+
+UserWallet
+
+id
+
+user_id
+
+coins
+
+Tabela SubscriptionPlan
+
+SubscriptionPlan
+
+id
+
+name
+
+price
+
+description
+
+features
+
+Planos iniciais:
+
+FREE
+PREMIUM
+
+Tabela UserSubscription
+
+UserSubscription
+
+id
+
+user_id
+
+plan_id
+
+start_date
+
+end_date
+
+status
+
+Decisão importante para o próximo bloco
+
+Agora vamos começar a modelar os Cursos.
+
+Preciso saber como você imagina a aprovação de instrutores.
+Fluxo A
+
+Usuário
+↓
+Solicita Instrutor
+↓
+Moderador Aprova
+↓
+Vira Instrutor
+↓
+Pode criar cursos
+
+Fluxo B
+
+Usuário
+↓
+Solicita Instrutor
+↓
+Já pode criar cursos
+
+Curso fica pendente
+
+Moderador aprova curso
+
+Fluxo C
+
+Usuário
+↓
+Cria curso
+
+Curso fica oculto
+
+Moderador aprova
+
+Eu recomendo o Fluxo A, porque evita spam e cursos de baixa qualidade desde o início.
+
+Qual dos três você prefere? Depois disso montamos o bloco Course, Module, Lesson, Quiz, Material e fechamos o DER dos cursos.
+
+Fluxo D 
+Usuario
+↓
+SoliciSolicita Instrutor
+↓
+Moderador Aprova
+↓
+Vira Instrutor
+↓
+Já pode criar cursos
+↓
+Curso fica pendente
+↓
+Moderador aprova curso
+
+Gostei bastante do Fluxo D. Ele resolve dois problemas ao mesmo tempo:
+
+    Nem qualquer usuário vira instrutor.
+
+    Nem todo curso criado por instrutores aprovados é publicado automaticamente.
+
+Fica um sistema com dupla moderação.
+Fluxo Oficial de Instrutores
+
+Usuário
+↓
+Solicita tornar-se Instrutor
+↓
+Moderador analisa solicitação
+↓
+Aprovado
+↓
+Perfil de Instrutor criado
+↓
+Instrutor cria Curso
+↓
+Curso fica Pendente
+↓
+Moderador analisa Curso
+↓
+Curso Aprovado
+↓
+Curso Publicado
+
+Novas Entidades
+InstructorApplication
+
+Solicitação para se tornar instrutor.
+
+InstructorApplication
+
+id
+
+user_id
+
+motivation
+
+experience
+
+portfolio_url
+
+status
+
+reviewed_by
+
+reviewed_at
+
+created_at
+
+CourseReview
+
+Análise do curso.
+
+CourseReview
+
+id
+
+course_id
+
+moderator_id
+
+status
+
+review_notes
+
+reviewed_at
+
+Status possíveis:
+
+PENDING
+
+APPROVED
+
+REJECTED
+
+REVISION_REQUIRED
+
+DER Cursos v1
+
+Começando a ficar assim:
+
+Category
+ │
+ └── Course
+        │
+        ├── CourseInstructor
+        │
+        ├── Module
+        │      │
+        │      ├── Lesson
+        │      ├── Material
+        │      ├── Exercise
+        │      └── Quiz
+        │
+        ├── CourseEnrollment
+        │
+        ├── CourseReview
+        │
+        └── Certificate
+
+Próxima decisão importante
+
+Vamos modelar os cursos pagos corretamente.
+
+Quando um instrutor cria um curso, ele pode escolher:
+A)
+
+Somente Gratuito
+B)
+
+Gratuito ou Pago
+C)
+
+Gratuito, Pago ou Premium
+
+Exemplo:
+
+Curso Gratuito
+
+Curso Pago (R$49,90)
+
+Curso Premium
+(apenas assinantes)
+
+Eu recomendaria C, porque você já possui assinatura Premium e marketplace. Isso permite três modelos de monetização sem alterar o banco depois.
+
+Depois dessa resposta começaremos a desenhar a tabela Course, que é provavelmente a entidade mais importante do projeto inteiro.
+Você atingiu o limite do Free para chats com anexos
+Faça upgrade agora ou aguarde até 18:51 para continuar usando arquivos, ou continue o chat agora sem arquivos.
+
+C
