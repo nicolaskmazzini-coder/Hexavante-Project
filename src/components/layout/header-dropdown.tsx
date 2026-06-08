@@ -26,13 +26,6 @@ export function HeaderDropdown({ session }: Props) {
         <div className="absolute left-0 top-full z-50 mt-2 w-52 overflow-hidden rounded-lg border border-white/10 bg-white/[0.04]/95 shadow-2xl shadow-black/40 backdrop-blur-xl">
           <div className="py-1">
             <Link
-              href="/schools"
-              className="block px-4 py-2.5 text-sm text-slate-300 hover:bg-sky-400/10 hover:text-white"
-              onClick={() => setIsOpen(false)}
-            >
-              HexaSchools
-            </Link>
-            <Link
               href="/ranking"
               className="block px-4 py-2.5 text-sm text-slate-300 hover:bg-sky-400/10 hover:text-white"
               onClick={() => setIsOpen(false)}

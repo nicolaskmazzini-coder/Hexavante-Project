@@ -42,15 +42,18 @@ model User {
   moderatedCourses       CourseModeration[]      @relation("ModeratorReviews")
   reviewedApplications   InstructorApplication[] @relation("ApplicationReviewer")
   xpTransactions         XpTransaction[]
-  schoolMemberships      SchoolUser[]
-  schoolClassTeachers    SchoolClassTeacher[]
-  schoolEnrollments      SchoolEnrollment[]
   certificates           Certificate[]
   instructedLiveRooms    LiveRoom[]
   liveRoomParticipations LiveRoomParticipant[]
   liveChatMessages       LiveChatMessage[]
 
   @@map("users")
+}
+
+enum CourseLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
 }
 
 enum CourseType {
@@ -101,6 +104,8 @@ model Course {
   description      String?         @db.Text
   thumbnailUrl     String?         @map("thumbnail_url")
   courseType       CourseType      @default(FREE) @map("course_type")
+  level            CourseLevel     @default(BEGINNER)
+  estimatedHours   Int?            @map("estimated_hours")
   progressionType  ProgressionType @default(FREE) @map("progression_type")
   status           CourseStatus    @default(PENDING_REVIEW)
   createdAt        DateTime        @default(now()) @map("created_at")
@@ -111,7 +116,6 @@ model Course {
   modules      Module[]
   enrollments  CourseEnrollment[]
   moderations  CourseModeration[]
-  schoolCourses SchoolCourse[]
   certificates Certificate[]
   liveRooms    LiveRoom[]
 
@@ -432,105 +436,6 @@ model XpTransaction {
   @@unique([userId, source, sourceId])
   @@index([userId])
   @@map("xp_transactions")
-}
-
-enum SchoolStatus {
-  ACTIVE
-  INACTIVE
-}
-
-enum InstitutionRole {
-  DIRECTOR
-  ADMIN
-  COORDINATOR
-  TEACHER
-  STUDENT
-}
-
-model School {
-  id        String       @id @default(cuid())
-  name      String
-  email     String
-  phone     String?
-  status    SchoolStatus @default(ACTIVE)
-  createdAt DateTime     @default(now()) @map("created_at")
-
-  members SchoolUser[]
-  courses SchoolCourse[]
-
-  @@map("schools")
-}
-
-model SchoolUser {
-  id              String          @id @default(cuid())
-  schoolId        String          @map("school_id")
-  userId          String          @map("user_id")
-  institutionRole InstitutionRole @map("institution_role")
-  joinedAt        DateTime        @default(now()) @map("joined_at")
-
-  school School @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([schoolId, userId])
-  @@index([schoolId])
-  @@map("school_users")
-}
-
-model SchoolCourse {
-  id          String   @id @default(cuid())
-  schoolId    String   @map("school_id")
-  courseId    String?  @map("course_id")
-  title       String
-  description String?  @db.Text
-  createdAt   DateTime @default(now()) @map("created_at")
-
-  school  School        @relation(fields: [schoolId], references: [id], onDelete: Cascade)
-  course  Course?       @relation(fields: [courseId], references: [id], onDelete: SetNull)
-  classes SchoolClass[]
-
-  @@index([schoolId])
-  @@map("school_courses")
-}
-
-model SchoolClass {
-  id             String   @id @default(cuid())
-  schoolCourseId String   @map("school_course_id")
-  name           String
-  semester       String?
-  createdAt      DateTime @default(now()) @map("created_at")
-
-  schoolCourse SchoolCourse         @relation(fields: [schoolCourseId], references: [id], onDelete: Cascade)
-  enrollments  SchoolEnrollment[]
-  teachers     SchoolClassTeacher[]
-
-  @@index([schoolCourseId])
-  @@map("school_classes")
-}
-
-model SchoolClassTeacher {
-  id      String @id @default(cuid())
-  classId String @map("class_id")
-  userId  String @map("user_id")
-
-  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([classId, userId])
-  @@map("school_class_teachers")
-}
-
-model SchoolEnrollment {
-  id         String   @id @default(cuid())
-  classId    String   @map("class_id")
-  userId     String   @map("user_id")
-  enrolledAt DateTime @default(now()) @map("enrolled_at")
-
-  schoolClass SchoolClass @relation(fields: [classId], references: [id], onDelete: Cascade)
-  user        User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@unique([classId, userId])
-  @@index([userId])
-  @@map("school_enrollments")
 }
 
 model Certificate {

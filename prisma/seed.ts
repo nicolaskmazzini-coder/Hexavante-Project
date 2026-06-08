@@ -78,6 +78,8 @@ async function main() {
         description:
           "Curso introdutório com conceitos de variáveis, condicionais, laços e resolução de problemas. Ideal para iniciantes em TI.",
         courseType: "FREE",
+        level: "BEGINNER",
+        estimatedHours: 12,
         progressionType: "PROGRESSIVE",
         status: "APPROVED",
         instructors: {
@@ -222,6 +224,7 @@ async function main() {
   }
 
   const moderatorRole = await prisma.role.findUnique({ where: { name: "MODERATOR" } });
+  const adminRole = await prisma.role.findUnique({ where: { name: "ADMIN" } });
 
   if (moderatorRole && userRole) {
     const modPassword = await bcrypt.hash("Moderador123!", 12);
@@ -243,30 +246,34 @@ async function main() {
     });
   }
 
+  if (adminRole && userRole) {
+    const adminPassword = await bcrypt.hash("Admin123!", 12);
+    await prisma.user.upsert({
+      where: { email: "admin@hexavante.com" },
+      update: {},
+      create: {
+        username: "admin_demo",
+        fullName: "Administrador Demo",
+        email: "admin@hexavante.com",
+        passwordHash: adminPassword,
+        birthDate: new Date("1988-01-01"),
+        roles: {
+          create: [{ roleId: userRole.id }, { roleId: adminRole.id }],
+        },
+        xp: { create: {} },
+        wallet: { create: {} },
+      },
+    });
+  }
+
   const demoCourse = await prisma.course.findUnique({
     where: { slug: "introducao-a-logica-de-programacao" },
   });
 
   if (userRole && demoCourse) {
-    const directorPassword = await bcrypt.hash("Diretor123!", 12);
     const alunoPassword = await bcrypt.hash("Aluno123!", 12);
 
-    const director = await prisma.user.upsert({
-      where: { email: "diretor@hexavante.com" },
-      update: {},
-      create: {
-        username: "diretor_demo",
-        fullName: "Diretor Demo",
-        email: "diretor@hexavante.com",
-        passwordHash: directorPassword,
-        birthDate: new Date("1985-03-10"),
-        roles: { create: [{ roleId: userRole.id }] },
-        xp: { create: {} },
-        wallet: { create: {} },
-      },
-    });
-
-    const aluno = await prisma.user.upsert({
+    await prisma.user.upsert({
       where: { email: "aluno@hexavante.com" },
       update: {},
       create: {
@@ -281,112 +288,23 @@ async function main() {
       },
     });
 
-    let school = await prisma.school.findFirst({
-      where: { email: "escola@hexavante.com" },
-    });
-
-    if (!school) {
-      school = await prisma.school.create({
-        data: {
-          name: "Escola Demo Hexavante",
-          email: "escola@hexavante.com",
-          phone: "(11) 99999-0000",
-        },
-      });
-    }
-
-    await prisma.schoolUser.upsert({
+    await prisma.courseEnrollment.upsert({
       where: {
-        schoolId_userId: { schoolId: school.id, userId: director.id },
-      },
-      update: {},
-      create: {
-        schoolId: school.id,
-        userId: director.id,
-        institutionRole: "DIRECTOR",
-      },
-    });
-
-    await prisma.schoolUser.upsert({
-      where: {
-        schoolId_userId: { schoolId: school.id, userId: instructor.id },
-      },
-      update: { institutionRole: "TEACHER" },
-      create: {
-        schoolId: school.id,
-        userId: instructor.id,
-        institutionRole: "TEACHER",
-      },
-    });
-
-    await prisma.schoolUser.upsert({
-      where: {
-        schoolId_userId: { schoolId: school.id, userId: aluno.id },
-      },
-      update: {},
-      create: {
-        schoolId: school.id,
-        userId: aluno.id,
-        institutionRole: "STUDENT",
-      },
-    });
-
-    let schoolCourse = await prisma.schoolCourse.findFirst({
-      where: { schoolId: school.id, title: "Lógica de Programação" },
-    });
-
-    if (!schoolCourse) {
-      schoolCourse = await prisma.schoolCourse.create({
-        data: {
-          schoolId: school.id,
+        userId_courseId: {
+          userId: (
+            await prisma.user.findUniqueOrThrow({ where: { email: "aluno@hexavante.com" } })
+          ).id,
           courseId: demoCourse.id,
-          title: "Lógica de Programação",
-          description: "Curso institucional vinculado ao curso da plataforma.",
         },
-      });
-    }
-
-    let schoolClass = await prisma.schoolClass.findFirst({
-      where: { schoolCourseId: schoolCourse.id, name: "Turma A - 2025.1" },
-    });
-
-    if (!schoolClass) {
-      schoolClass = await prisma.schoolClass.create({
-        data: {
-          schoolCourseId: schoolCourse.id,
-          name: "Turma A - 2025.1",
-          semester: "2025.1",
-        },
-      });
-    }
-
-    await prisma.schoolClassTeacher.upsert({
-      where: {
-        classId_userId: { classId: schoolClass.id, userId: instructor.id },
       },
       update: {},
-      create: { classId: schoolClass.id, userId: instructor.id },
-    });
-
-    const existingEnrollment = await prisma.schoolEnrollment.findUnique({
-      where: {
-        classId_userId: { classId: schoolClass.id, userId: aluno.id },
+      create: {
+        userId: (
+          await prisma.user.findUniqueOrThrow({ where: { email: "aluno@hexavante.com" } })
+        ).id,
+        courseId: demoCourse.id,
       },
     });
-
-    if (!existingEnrollment) {
-      await prisma.schoolEnrollment.create({
-        data: { classId: schoolClass.id, userId: aluno.id },
-      });
-
-      await prisma.courseEnrollment.upsert({
-        where: {
-          userId_courseId: { userId: aluno.id, courseId: demoCourse.id },
-        },
-        update: {},
-        create: { userId: aluno.id, courseId: demoCourse.id },
-      });
-    }
   }
 
   console.log("Seed concluído:");
@@ -394,9 +312,8 @@ async function main() {
   console.log("- Categorias:", categories.length);
   console.log("- Instrutor demo: instrutor@hexavante.com / Instrutor123!");
   console.log("- Moderador demo: moderador@hexavante.com / Moderador123!");
-  console.log("- Diretor demo: diretor@hexavante.com / Diretor123!");
+  console.log("- Admin demo: admin@hexavante.com / Admin123!");
   console.log("- Aluno demo: aluno@hexavante.com / Aluno123!");
-  console.log("- Escola demo: /schools (Escola Demo Hexavante)");
   console.log("- Simulado demo: /simulados/logica-programacao-basica");
 }
 

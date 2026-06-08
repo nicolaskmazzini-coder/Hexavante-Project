@@ -14,6 +14,12 @@ export type ActionResult = {
   error?: string;
 };
 
+function getSafeCallbackUrl(value: FormDataEntryValue | null): string {
+  const url = typeof value === "string" ? value : "/";
+  if (!url.startsWith("/") || url.startsWith("//")) return "/";
+  return url;
+}
+
 // Action de registro de novo usuário
 // Valida dados, aplica rate limiting, registra usuário e faz login automático
 export async function registerAction(
@@ -59,7 +65,7 @@ export async function registerAction(
     await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: "/",
+      redirectTo: getSafeCallbackUrl(formData.get("callbackUrl")),
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -91,7 +97,7 @@ export async function loginAction(
     await signIn("credentials", {
       email: formData.get("email"),
       password: formData.get("password"),
-      redirectTo: "/",
+      redirectTo: getSafeCallbackUrl(formData.get("callbackUrl")),
     });
   } catch (error) {
     if (error instanceof AuthError) {

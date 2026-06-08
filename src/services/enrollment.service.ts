@@ -37,6 +37,10 @@ export async function enrollInCourse(userId: string, courseId: string) {
     throw new Error("Curso não disponível para matrícula.");
   }
 
+  if (course.courseType !== "FREE") {
+    throw new Error("Cursos pagos ainda não estão disponíveis. Em breve.");
+  }
+
   // Verifica se já está matriculado
   const existing = await getEnrollment(userId, courseId);
   if (existing) return existing;

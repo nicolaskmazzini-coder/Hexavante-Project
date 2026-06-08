@@ -121,6 +121,14 @@ export async function submitAttempt(
     throw new Error("Este simulado já foi finalizado.");
   }
 
+  if (attempt.exam.timeLimit) {
+    const elapsedMs = Date.now() - attempt.startedAt.getTime();
+    const limitMs = attempt.exam.timeLimit * 60 * 1000;
+    if (elapsedMs > limitMs) {
+      throw new Error("Tempo esgotado para este simulado.");
+    }
+  }
+
   const questions = attempt.exam.questions;
   // Verifica se todas as questões foram respondidas
   if (Object.keys(answers).length !== questions.length) {

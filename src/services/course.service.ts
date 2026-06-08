@@ -51,6 +51,28 @@ export async function listCategories() {
   return prisma.category.findMany({ orderBy: { name: "asc" } });
 }
 
+// Função para obter curso aprovado pelo slug (páginas públicas)
+export async function getApprovedCourseBySlug(slug: string) {
+  return prisma.course.findFirst({
+    where: { slug, status: "APPROVED" },
+    include: {
+      category: true,
+      instructors: {
+        include: {
+          user: { select: { fullName: true, username: true } },
+        },
+      },
+      modules: {
+        orderBy: { orderNumber: "asc" },
+        include: {
+          lessons: { orderBy: { orderNumber: "asc" } },
+          materials: true,
+        },
+      },
+    },
+  });
+}
+
 // Função para obter curso pelo slug
 // Retorna curso com todos os dados incluindo módulos, aulas e materiais
 export async function getCourseBySlug(slug: string) {
@@ -130,7 +152,9 @@ export async function createCourse(userId: string, data: CourseInput) {
       shortDescription: data.shortDescription || null,
       description: data.description || null,
       thumbnailUrl: data.thumbnailUrl || null,
-      courseType: data.courseType,
+      courseType: "FREE",
+      level: data.level,
+      estimatedHours: data.estimatedHours ?? null,
       progressionType: data.progressionType,
       status: "PENDING_REVIEW", // Curso começa pendente de aprovação
       instructors: {
@@ -159,6 +183,18 @@ export async function updateCourse(
     throw new Error("Curso não encontrado ou sem permissão.");
   }
 
+  const contentFieldsChanged =
+    data.title !== undefined ||
+    data.categoryId !== undefined ||
+    data.shortDescription !== undefined ||
+    data.description !== undefined ||
+    data.thumbnailUrl !== undefined ||
+    data.level !== undefined ||
+    data.estimatedHours !== undefined ||
+    data.progressionType !== undefined;
+
+  const needsRemoderation = course.status === "APPROVED" && contentFieldsChanged;
+
   // Atualiza apenas os campos fornecidos
   return prisma.course.update({
     where: { id: courseId },
@@ -174,8 +210,12 @@ export async function updateCourse(
       ...(data.thumbnailUrl !== undefined
         ? { thumbnailUrl: data.thumbnailUrl || null }
         : {}),
-      ...(data.courseType ? { courseType: data.courseType } : {}),
+      ...(data.level ? { level: data.level } : {}),
+      ...(data.estimatedHours !== undefined
+        ? { estimatedHours: data.estimatedHours ?? null }
+        : {}),
       ...(data.progressionType ? { progressionType: data.progressionType } : {}),
+      ...(needsRemoderation ? { status: "PENDING_REVIEW" } : {}),
     },
   });
 }

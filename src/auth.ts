@@ -12,6 +12,7 @@ const googleEnabled =
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: "jwt" },
+  trustHost: true,
   pages: {
     signIn: "/login",
   },
@@ -32,7 +33,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           Google({
             clientId: process.env.AUTH_GOOGLE_ID!,
             clientSecret: process.env.AUTH_GOOGLE_SECRET!,
-            allowDangerousEmailAccountLinking: true,
           }),
         ]
       : []),
@@ -43,24 +43,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id;
         token.username = user.username;
         token.roles = user.roles;
-        token.image = (user as any).avatarUrl;
-      }
-
-      if (token.id) {
-        const roles = await prisma.userRole.findMany({
-          where: { userId: token.id as string },
-          include: { role: true },
-        });
-        token.roles = roles.map((r) => r.role.name);
-        
-        // Buscar avatarUrl atualizado
-        const userWithAvatar = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          select: { avatarUrl: true },
-        });
-        if (userWithAvatar) {
-          token.image = userWithAvatar.avatarUrl;
-        }
+        token.image = user.avatarUrl ?? user.image;
       }
 
       return token;

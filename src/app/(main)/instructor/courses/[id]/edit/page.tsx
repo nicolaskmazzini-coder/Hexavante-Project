@@ -72,6 +72,12 @@ export default async function EditCoursePage({ params }: Props) {
         </p>
       )}
 
+      {course.status === "APPROVED" && (
+        <p className="mt-4 rounded-xl border border-sky-900/50 bg-sky-900/10 p-4 text-sm text-sky-300">
+          Alterações nas informações do curso reenviam o conteúdo para análise do moderador.
+        </p>
+      )}
+
       <section className="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-6">
         <h2 className="font-semibold text-white">Informações do curso</h2>
         <InlineForm
@@ -99,14 +105,21 @@ export default async function EditCoursePage({ params }: Props) {
               required: false,
             },
             {
-              name: "courseType",
-              label: "Tipo",
-              defaultValue: course.courseType,
+              name: "level",
+              label: "Nível",
+              defaultValue: course.level,
               options: [
-                { value: "FREE", label: "Gratuito" },
-                { value: "PAID", label: "Pago" },
-                { value: "PREMIUM", label: "Premium" },
+                { value: "BEGINNER", label: "Iniciante" },
+                { value: "INTERMEDIATE", label: "Intermediário" },
+                { value: "ADVANCED", label: "Avançado" },
               ],
+            },
+            {
+              name: "estimatedHours",
+              label: "Carga horária (horas)",
+              type: "number",
+              defaultValue: course.estimatedHours ? String(course.estimatedHours) : "",
+              required: false,
             },
             {
               name: "progressionType",

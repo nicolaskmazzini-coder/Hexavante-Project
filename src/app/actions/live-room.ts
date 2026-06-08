@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { endLiveRoom, sendLiveChatMessage, startLiveRoom } from "@/services/live-room.service";
+import { sendChatMessageSchema } from "@/lib/validations/live-room";
 
 export type ActionResult = { success: boolean; error?: string };
 
@@ -60,7 +61,15 @@ export async function sendChatMessageAction(
   }
 
   try {
-    const created = await sendLiveChatMessage(roomId, session.user.id, message);
+    const parsed = sendChatMessageSchema.safeParse({ message });
+    if (!parsed.success) {
+      return {
+        success: false,
+        error: parsed.error.issues[0]?.message ?? "Mensagem inválida",
+      };
+    }
+
+    const created = await sendLiveChatMessage(roomId, session.user.id, parsed.data.message);
     return {
       success: true,
       message: {

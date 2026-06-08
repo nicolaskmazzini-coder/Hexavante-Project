@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { CourseCard } from "../courses/course-card";
 
-describe('CourseCard', () => {
+describe("CourseCard", () => {
   const mockProps = {
     slug: "test-course",
     title: "Test Course",
@@ -10,7 +10,8 @@ describe('CourseCard', () => {
     categoryName: "Programming",
     moduleCount: 5,
     enrollmentCount: 100,
-    courseType: "FREE",
+    level: "BEGINNER",
+    estimatedHours: 20,
   };
 
   it("deve renderizar o card do curso", () => {
@@ -21,14 +22,15 @@ describe('CourseCard', () => {
     expect(screen.getByText("Programming")).toBeInTheDocument();
     expect(screen.getByText("5 módulos")).toBeInTheDocument();
     expect(screen.getByText("100 alunos")).toBeInTheDocument();
-    expect(screen.getByText("Gratuito")).toBeInTheDocument();
+    expect(screen.getByText("Iniciante")).toBeInTheDocument();
+    expect(screen.getByText("20h")).toBeInTheDocument();
   });
 
-  it("deve exibir tipo do curso quando não for gratuito", () => {
-    const props = { ...mockProps, courseType: "PAID" };
+  it("deve exibir nível intermediário", () => {
+    const props = { ...mockProps, level: "INTERMEDIATE" };
     render(<CourseCard {...props} />);
 
-    expect(screen.getByText("Pago")).toBeInTheDocument();
+    expect(screen.getByText("Intermediário")).toBeInTheDocument();
   });
 
   it("deve ter link correto para o curso", () => {

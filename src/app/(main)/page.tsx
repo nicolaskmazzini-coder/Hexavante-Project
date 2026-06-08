@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { auth } from "@/auth";
-import { ArrowRight, Award, BookOpen, Building2, Radio, Target } from "lucide-react";
+import { ArrowRight, Award, BookOpen, Radio, Target } from "lucide-react";
 
 const highlights = [
   { label: "Cursos", value: "Aprendizado guiado", icon: BookOpen, tone: "text-sky-300 bg-sky-400/10" },
@@ -12,7 +12,6 @@ const shortcuts = [
   { href: "/courses", label: "Catálogo de cursos", icon: BookOpen },
   { href: "/simulados", label: "Simulados", icon: Target },
   { href: "/live-rooms", label: "Aulas ao vivo", icon: Radio },
-  { href: "/schools", label: "HexaSchools", icon: Building2 },
 ];
 
 export default async function HomePage() {

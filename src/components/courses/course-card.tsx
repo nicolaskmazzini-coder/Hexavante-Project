@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { BookOpen, Layers3, Users } from "lucide-react";
+import { BookOpen, Clock, Layers3, Users } from "lucide-react";
 
 type CourseCardProps = {
   slug: string;
@@ -8,19 +8,14 @@ type CourseCardProps = {
   categoryName: string;
   moduleCount: number;
   enrollmentCount: number;
-  courseType: string;
+  level: string;
+  estimatedHours?: number | null;
 };
 
-const courseTypeStyles: Record<string, string> = {
-  FREE: "bg-emerald-400/10 text-emerald-200 border-emerald-400/20",
-  PAID: "bg-amber-400/10 text-amber-200 border-amber-400/20",
-  PREMIUM: "bg-violet-400/10 text-violet-200 border-violet-400/20",
-};
-
-const courseTypeLabel: Record<string, string> = {
-  FREE: "Gratuito",
-  PAID: "Pago",
-  PREMIUM: "Premium",
+const levelLabel: Record<string, string> = {
+  BEGINNER: "Iniciante",
+  INTERMEDIATE: "Intermediário",
+  ADVANCED: "Avançado",
 };
 
 export function CourseCard({
@@ -30,7 +25,8 @@ export function CourseCard({
   categoryName,
   moduleCount,
   enrollmentCount,
-  courseType,
+  level,
+  estimatedHours,
 }: CourseCardProps) {
   return (
     <Link
@@ -45,8 +41,8 @@ export function CourseCard({
             <BookOpen className="h-3.5 w-3.5" />
             {categoryName}
           </span>
-          <span className={`rounded-full border px-2.5 py-1 text-xs font-semibold ${courseTypeStyles[courseType] ?? "border-white/10 bg-white/5 text-slate-300"}`}>
-            {courseTypeLabel[courseType] ?? courseType}
+          <span className="rounded-full border border-emerald-400/20 bg-emerald-400/10 px-2.5 py-1 text-xs font-semibold text-emerald-200">
+            {levelLabel[level] ?? level}
           </span>
         </div>
 
@@ -57,7 +53,7 @@ export function CourseCard({
           <p className="mt-2 line-clamp-2 text-sm leading-6 text-slate-400">{shortDescription}</p>
         )}
 
-        <div className="mt-5 flex items-center gap-4 border-t border-white/10 pt-4 text-xs font-medium text-slate-400">
+        <div className="mt-5 flex flex-wrap items-center gap-4 border-t border-white/10 pt-4 text-xs font-medium text-slate-400">
           <span className="flex items-center gap-1.5">
             <Layers3 className="h-4 w-4 text-teal-300" />
             {moduleCount} módulos
@@ -66,6 +62,12 @@ export function CourseCard({
             <Users className="h-4 w-4 text-sky-300" />
             {enrollmentCount} alunos
           </span>
+          {estimatedHours != null && estimatedHours > 0 && (
+            <span className="flex items-center gap-1.5">
+              <Clock className="h-4 w-4 text-amber-300" />
+              {estimatedHours}h
+            </span>
+          )}
         </div>
       </div>
     </Link>

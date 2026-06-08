@@ -53,17 +53,28 @@ export function NewCourseForm({ categories }: Props) {
           className="w-full rounded-lg border border-slate-300 px-3 py-2"
         />
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div>
-          <label className="mb-1 block text-sm font-medium">Tipo</label>
+          <label className="mb-1 block text-sm font-medium">Nível</label>
           <select
-            name="courseType"
+            name="level"
             className="w-full rounded-lg border border-slate-300 px-3 py-2"
           >
-            <option value="FREE">Gratuito</option>
-            <option value="PAID">Pago</option>
-            <option value="PREMIUM">Premium</option>
+            <option value="BEGINNER">Iniciante</option>
+            <option value="INTERMEDIATE">Intermediário</option>
+            <option value="ADVANCED">Avançado</option>
           </select>
+        </div>
+        <div>
+          <label className="mb-1 block text-sm font-medium">Carga horária (h)</label>
+          <input
+            name="estimatedHours"
+            type="number"
+            min={1}
+            max={500}
+            placeholder="Ex: 20"
+            className="w-full rounded-lg border border-slate-300 px-3 py-2"
+          />
         </div>
         <div>
           <label className="mb-1 block text-sm font-medium">Progressão</label>
@@ -76,6 +87,9 @@ export function NewCourseForm({ categories }: Props) {
           </select>
         </div>
       </div>
+      <p className="text-sm text-slate-500">
+        Todos os cursos são gratuitos por enquanto. Pagamentos serão habilitados em versão futura.
+      </p>
       {state.error && <p className="text-sm text-red-600">{state.error}</p>}
       <div className="flex gap-3">
         <button

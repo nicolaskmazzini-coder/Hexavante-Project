@@ -12,7 +12,9 @@ export const courseSchema = z.object({
     .string()
     .optional()
     .refine((v) => !v || v === "" || z.url().safeParse(v).success, "URL inválida"),
-  courseType: z.enum(["FREE", "PAID", "PREMIUM"]).default("FREE"),
+  courseType: z.literal("FREE").default("FREE"),
+  level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).default("BEGINNER"),
+  estimatedHours: z.coerce.number().int().min(1).max(500).optional(),
   progressionType: z.enum(["FREE", "PROGRESSIVE"]).default("FREE"),
 });
 

@@ -1,7 +1,7 @@
 // Importações necessárias para a página de detalhes do curso
 import { auth } from "@/auth"; // Função para obter sessão do usuário
 import { enrollAction } from "@/app/actions/enrollment"; // Action para matricular no curso
-import { getCourseBySlug } from "@/services/course.service"; // Serviço para obter curso
+import { getApprovedCourseBySlug } from "@/services/course.service"; // Serviço para obter curso aprovado
 import { getEnrollment } from "@/services/enrollment.service"; // Serviço para obter matrícula
 import { countTotalLessons } from "@/services/course.service"; // Função para contar aulas
 import Link from "next/link"; // Componente de link do Next.js
@@ -15,9 +15,9 @@ type Props = { params: Promise<{ slug: string }> };
 export default async function CourseDetailPage({ params }: Props) {
   const { slug } = await params; // Obtém slug do curso
   const session = await auth(); // Obtém sessão do usuário
-  const course = await getCourseBySlug(slug); // Busca curso pelo slug
+  const course = await getApprovedCourseBySlug(slug); // Busca curso aprovado pelo slug
 
-  if (!course || course.status !== "APPROVED") notFound(); // Retorna 404 se não existir ou não estiver aprovado
+  if (!course) notFound();
 
   const enrollment = session?.user?.id
     ? await getEnrollment(session.user.id, course.id) // Busca matrícula do usuário
@@ -36,7 +36,18 @@ export default async function CourseDetailPage({ params }: Props) {
       <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-400">
         <span>{course.modules.length} módulos</span>
         <span>{totalLessons} aulas</span>
-        <span>{course.courseType === "FREE" ? "Gratuito" : course.courseType}</span>
+        <span>Gratuito</span>
+        <span>
+          Nível:{" "}
+          {course.level === "BEGINNER"
+            ? "Iniciante"
+            : course.level === "INTERMEDIATE"
+              ? "Intermediário"
+              : "Avançado"}
+        </span>
+        {course.estimatedHours != null && course.estimatedHours > 0 && (
+          <span>{course.estimatedHours}h estimadas</span>
+        )}
         {course.instructors[0] && (
           <span>
             Instrutor: {course.instructors[0].user.fullName}

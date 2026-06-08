@@ -16,13 +16,6 @@ export function canModerate(roles: string[] | undefined): boolean {
   return hasRole(roles, "MODERATOR") || hasRole(roles, "ADMIN");
 }
 
-/** @deprecated use isInstructor */
-// Função depreciada para verificar se pode gerenciar cursos
-// Use isInstructor em vez disso
-export function canManageCourses(roles: string[] | undefined): boolean {
-  return isInstructor(roles) || canModerate(roles);
-}
-
 // Rótulos para status de cursos
 export const COURSE_STATUS_LABELS: Record<string, string> = {
   PENDING_REVIEW: "Aguardando análise",

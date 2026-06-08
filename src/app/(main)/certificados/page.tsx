@@ -1,10 +1,14 @@
 import { Award, CheckCircle2, FileBadge } from "lucide-react";
 import { getUserCertificatesAction } from "@/app/actions/certificate";
 import { auth } from "@/auth";
+import Link from "next/link";
+import { redirect } from "next/navigation";
 
 export default async function CertificatesPage() {
   const session = await auth();
-  const certificates = session?.user?.id ? await getUserCertificatesAction() : [];
+  if (!session?.user?.id) redirect("/login?callbackUrl=/certificados");
+
+  const certificates = await getUserCertificatesAction();
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-10">
@@ -17,6 +21,12 @@ export default async function CertificatesPage() {
         <p className="mt-2 text-sm leading-6 text-slate-300">
           Certificados dos cursos que você completou.
         </p>
+        <Link
+          href="/certificados/verificar"
+          className="mt-4 inline-block text-sm text-indigo-400 hover:underline"
+        >
+          Verificar um certificado por código →
+        </Link>
       </div>
 
       {certificates.length === 0 ? (
@@ -27,7 +37,7 @@ export default async function CertificatesPage() {
         </div>
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {certificates.map((cert: any) => (
+          {certificates.map((cert) => (
             <div
               key={cert.id}
               className="rounded-xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/20 transition hover:border-amber-400/30 hover:bg-white/[0.06]"

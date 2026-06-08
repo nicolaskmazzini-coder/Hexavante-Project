@@ -77,7 +77,8 @@ export default async function CoursesPage({ searchParams }: Props) {
               categoryName={course.category.name}
               moduleCount={course._count.modules}
               enrollmentCount={course._count.enrollments}
-              courseType={course.courseType}
+              level={course.level}
+              estimatedHours={course.estimatedHours}
             />
           ))}
         </div>

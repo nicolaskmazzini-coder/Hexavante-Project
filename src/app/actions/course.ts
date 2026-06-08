@@ -51,7 +51,9 @@ export async function createCourseAction(
     shortDescription: formData.get("shortDescription") || undefined,
     description: formData.get("description") || undefined,
     thumbnailUrl: formData.get("thumbnailUrl") || undefined,
-    courseType: formData.get("courseType") || "FREE",
+    courseType: "FREE",
+    level: formData.get("level") || "BEGINNER",
+    estimatedHours: formData.get("estimatedHours") || undefined,
     progressionType: formData.get("progressionType") || "FREE",
   });
 
@@ -78,7 +80,9 @@ export async function updateCourseAction(
       shortDescription: formData.get("shortDescription") || undefined,
       description: formData.get("description") || undefined,
       thumbnailUrl: formData.get("thumbnailUrl") || undefined,
-      courseType: formData.get("courseType") || "FREE",
+      courseType: "FREE",
+      level: formData.get("level") || "BEGINNER",
+      estimatedHours: formData.get("estimatedHours") || undefined,
       progressionType: formData.get("progressionType") || "FREE",
     });
 

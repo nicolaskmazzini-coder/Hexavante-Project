@@ -17,6 +17,7 @@ type AuthFormProps = {
   submitLabel: string;
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
   footer?: React.ReactNode;
+  callbackUrl?: string;
 };
 
 const initialState: ActionResult = { success: false };
@@ -28,6 +29,7 @@ export function AuthForm({
   submitLabel,
   action,
   footer,
+  callbackUrl = "/",
 }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
 
@@ -40,6 +42,7 @@ export function AuthForm({
       </div>
 
       <form action={formAction} className="space-y-4">
+        <input type="hidden" name="callbackUrl" value={callbackUrl} />
         {fields.map((field) => (
           <div key={field.name}>
             <label htmlFor={field.name} className="mb-1.5 block text-sm font-semibold text-slate-200">

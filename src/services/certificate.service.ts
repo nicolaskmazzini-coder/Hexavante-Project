@@ -106,6 +106,12 @@ export async function getUserCertificates(userId: string) {
   return prisma.certificate.findMany({
     where: { userId },
     include: {
+      user: {
+        select: {
+          fullName: true,
+          username: true,
+        },
+      },
       course: {
         select: {
           title: true,
@@ -117,6 +123,6 @@ export async function getUserCertificates(userId: string) {
         },
       },
     },
-    orderBy: { issuedAt: 'desc' }, // Ordena do mais recente para o mais antigo
+    orderBy: { issuedAt: "desc" },
   });
 }

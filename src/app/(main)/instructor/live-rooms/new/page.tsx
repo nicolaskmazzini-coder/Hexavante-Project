@@ -1,30 +1,40 @@
-// Importações necessárias para a página de criação de sala ao vivo
-import { auth } from "@/auth"; // Função para obter sessão do usuário
-import { isInstructor } from "@/lib/permissions"; // Função de verificação de permissão
-import { createLiveRoom } from "@/services/live-room.service"; // Serviço para criar sala ao vivo
-import { redirect } from "next/navigation"; // Função para redirecionar
-import { CreateLiveRoomForm } from "@/components/live/create-live-room-form"; // Componente de formulário
-import type { CreateLiveRoomInput } from "@/lib/validations/live-room"; // Tipo de entrada para validação
+import { auth } from "@/auth";
+import { isInstructor } from "@/lib/permissions";
+import { createLiveRoomSchema } from "@/lib/validations/live-room";
+import { createLiveRoom } from "@/services/live-room.service";
+import { CreateLiveRoomForm } from "@/components/live/create-live-room-form";
+import { redirect } from "next/navigation";
 
-// Página de criação de sala ao vivo
-// Permite instrutores criarem novas salas ao vivo, aplica tema azul e preto
 export default async function CreateLiveRoomPage() {
-  const session = await auth(); // Obtém sessão do usuário
-  if (!session?.user?.id) redirect("/login?callbackUrl=/instructor/live-rooms/new"); // Redireciona se não estiver logado
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login?callbackUrl=/instructor/live-rooms/new");
 
   if (!isInstructor(session.user.roles)) {
-    redirect("/instructor/courses"); // Redireciona se não for instrutor
+    redirect("/instructor/courses");
   }
 
-  // Função server action para criar sala ao vivo
-  async function createRoomAction(formData: CreateLiveRoomInput) {
+  async function createRoomAction(formData: unknown) {
     "use server";
     const session = await auth();
     if (!session?.user?.id) {
       throw new Error("Não autenticado");
     }
+    if (!isInstructor(session.user.roles)) {
+      throw new Error("Sem permissão.");
+    }
 
-    const room = await createLiveRoom(session.user.id, formData);
+    const input = formData as Record<string, unknown>;
+    const parsed = createLiveRoomSchema.safeParse({
+      ...input,
+      courseId: input.courseId || undefined,
+      videoUrl: input.videoUrl || undefined,
+      description: input.description || undefined,
+    });
+    if (!parsed.success) {
+      throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos");
+    }
+
+    const room = await createLiveRoom(session.user.id, parsed.data);
     redirect(`/live-rooms/${room.id}`);
   }
 

@@ -1,6 +1,8 @@
 # Hexavante
 
-Plataforma educacional multiplataforma para estudantes (ENEM, vestibular, TI) e instituições de ensino (HexaSchools).
+Plataforma educacional para estudantes (ENEM, vestibular, TI): cursos, simulados, aulas ao vivo, gamificação e certificados.
+
+> Gestão institucional (escolas e turmas) está no projeto separado **[HexaSchools](../hexaschools)**.
 
 ## Stack
 
@@ -30,7 +32,7 @@ hexavante/
     │   ├── (student)/     # Área do estudante
     │   ├── (instructor)/  # Área do instrutor
     │   ├── (admin)/       # Moderação e administração
-    │   ├── (schools)/     # HexaSchools (institucional)
+    │   ├── (main)/        # Páginas públicas e área logada
     │   └── api/           # Route Handlers
     ├── components/        # Componentes React
     │   └── ui/            # Componentes base (shadcn)
@@ -113,8 +115,8 @@ Se ainda falhar, feche o Prisma Studio (`db:studio`) e tente de novo.
 |-------|--------|-------|
 | Instrutor | `instrutor@hexavante.com` | `Instrutor123!` |
 | Moderador | `moderador@hexavante.com` | `Moderador123!` |
-| Diretor (HexaSchools) | `diretor@hexavante.com` | `Diretor123!` |
-| Aluno (HexaSchools) | `aluno@hexavante.com` | `Aluno123!` |
+| Admin | `admin@hexavante.com` | `Admin123!` |
+| Aluno | `aluno@hexavante.com` | `Aluno123!` |
 
 ### Rotas disponíveis
 
@@ -133,11 +135,7 @@ Se ainda falhar, feche o Prisma Studio (`db:studio`) e tente de novo.
 | `/moderacao/cursos` | Cursos pendentes de análise |
 | `/perfil` | Perfil com XP, nível e histórico |
 | `/ranking` | Ranking de estudantes por XP |
-| `/schools` | HexaSchools — instituições |
-| `/schools/new` | Criar instituição |
-| `/schools/[id]` | Painel da instituição |
-| `/schools/[id]/members` | Gerenciar membros |
-| `/schools/[id]/courses` | Cursos institucionais |
+| `/certificados` | Certificados emitidos |
 | `/register` | Cadastro |
 | `/login` | Login |
 
@@ -153,5 +151,5 @@ Se ainda falhar, feche o Prisma Studio (`db:studio`) e tente de novo.
 
 Nível sobe conforme XP acumulado (100 × nível atual para subir).
 
-- **Hexavante** — ambiente para estudantes (cursos, simulados, gamificação)
-- **HexaSchools** — ambiente SaaS para instituições de ensino
+- **Hexavante** — cursos, simulados, gamificação e certificados
+- **HexaSchools** — projeto separado em `../hexaschools` (gestão institucional)

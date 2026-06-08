@@ -2,7 +2,7 @@
   "name": "hexavante",
   "version": "0.1.0",
   "private": true,
-  "description": "Plataforma educacional Hexavante + HexaSchools",
+  "description": "Plataforma educacional Hexavante",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
