@@ -15,7 +15,10 @@ export const createLiveRoomSchema = z.object({
   scheduledAt: z.coerce.date({
     error: "Data e hora inválidas",
   }),
-  maxParticipants: z.coerce.number().int().min(1).max(1000).optional(),
+  maxParticipants: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce.number().int().min(1).max(1000).optional(),
+  ),
 });
 
 // Schema de validação para atualização de sala ao vivo
@@ -23,13 +26,20 @@ export const createLiveRoomSchema = z.object({
 export const updateLiveRoomSchema = z.object({
   title: z.string().min(3).max(200).optional(),
   description: z.string().optional(),
+  courseId: z.string().optional(),
   videoUrl: z
     .string()
     .optional()
     .refine((v) => !v || v === "" || z.url().safeParse(v).success, "URL inválida"),
   videoProvider: z.enum(["youtube", "vimeo", "other"]).optional(),
-  scheduledAt: z.coerce.date().optional(),
-  maxParticipants: z.coerce.number().int().min(1).max(1000).optional(),
+  scheduledAt: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce.date().optional(),
+  ),
+  maxParticipants: z.preprocess(
+    (val) => (val === "" || val === null || val === undefined ? undefined : val),
+    z.coerce.number().int().min(1).max(1000).optional(),
+  ),
   status: z.enum(["SCHEDULED", "LIVE", "ENDED", "CANCELLED"]).optional(),
 });
 

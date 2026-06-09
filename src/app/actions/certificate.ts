@@ -18,13 +18,14 @@ export async function issueCertificateAction(courseId: string) {
 
   try {
     await issueCertificate(session.user.id, courseId);
-    revalidatePath("/certificados");
-    redirect("/certificados");
   } catch (error) {
     throw new Error(
       error instanceof Error ? error.message : "Erro ao emitir certificado",
     );
   }
+
+  revalidatePath("/certificados");
+  redirect("/certificados");
 }
 
 export async function verifyCertificateByCode(code: string) {

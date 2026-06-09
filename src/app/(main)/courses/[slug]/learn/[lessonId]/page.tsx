@@ -1,48 +1,48 @@
-// Importações necessárias para a página de aula
-import { auth } from "@/auth"; // Função para obter sessão do usuário
-import { CompleteLessonButton } from "@/components/courses/complete-lesson-button"; // Componente de botão para concluir aula
-import { LessonSidebar } from "@/components/courses/lesson-sidebar"; // Componente de barra lateral de aulas
-import { VideoPlayer } from "@/components/courses/video-player"; // Componente de player de vídeo
-import { getLessonWithAccess } from "@/services/enrollment.service"; // Serviço para obter aula com verificação de acesso
-import Link from "next/link"; // Componente de link do Next.js
-import { notFound, redirect } from "next/navigation"; // Funções de navegação
+import { auth } from "@/auth";
+import { CertificateButton } from "@/components/courses/certificate-button";
+import { CompleteLessonButton } from "@/components/courses/complete-lesson-button";
+import { CourseProgressBar } from "@/components/courses/course-progress-bar";
+import { LessonSidebar } from "@/components/courses/lesson-sidebar";
+import { VideoPlayer } from "@/components/courses/video-player";
+import { AppLink } from "@/components/ui/app-link";
+import { LinkButton } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { getLessonWithAccess } from "@/services/enrollment.service";
+import { notFound, redirect } from "next/navigation";
 
-// Props da página de aula
 type Props = {
-  params: Promise<{ slug: string; lessonId: string }> };
+  params: Promise<{ slug: string; lessonId: string }>;
+};
 
-// Página de visualização de aula
-// Exibe vídeo, materiais e botão para concluir, aplica tema azul e preto
 export default async function LessonPage({ params }: Props) {
-  const { slug, lessonId } = await params; // Obtém slug do curso e ID da aula
-  const session = await auth(); // Obtém sessão do usuário
-  if (!session?.user?.id) redirect(`/login?callbackUrl=/courses/${slug}/learn/${lessonId}`); // Redireciona se não estiver logado
+  const { slug, lessonId } = await params;
+  const session = await auth();
+  if (!session?.user?.id) redirect(`/login?callbackUrl=/courses/${slug}/learn/${lessonId}`);
 
   let data;
   try {
-    data = await getLessonWithAccess(session.user.id, slug, lessonId); // Busca aula com verificação de acesso
+    data = await getLessonWithAccess(session.user.id, slug, lessonId);
   } catch (error) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-10">
         <p className="rounded-lg bg-amber-900/20 p-4 text-amber-400">
           {error instanceof Error ? error.message : "Acesso negado."}
         </p>
-        <Link href={`/courses/${slug}`} className="mt-4 inline-block text-sky-300" aria-label="Voltar ao curso">
+        <AppLink href={`/courses/${slug}`} className="mt-4 inline-block">
           Voltar ao curso
-        </Link>
+        </AppLink>
       </div>
     );
   }
 
-  if (!data) notFound(); // Retorna 404 se não encontrar aula
+  if (!data) notFound();
 
   const { course, enrollment, lesson, module, allLessons, progresses } = data;
   const completedIds = new Set(
-    progresses.filter((p) => p.completed).map((p) => p.lessonId), // Cria conjunto de IDs de aulas concluídas
+    progresses.filter((p) => p.completed).map((p) => p.lessonId),
   );
-  const isCompleted = completedIds.has(lesson.id); // Verifica se a aula atual está concluída
+  const isCompleted = completedIds.has(lesson.id);
 
-  // Mapeia aulas para formato da barra lateral
   const sidebarLessons = allLessons.map((l) => {
     const mod = course.modules.find((m) => m.id === l.moduleId)!;
     return {
@@ -55,21 +55,17 @@ export default async function LessonPage({ params }: Props) {
     };
   });
 
-  const nextLesson = allLessons[data.lessonIndex + 1]; // Obtém próxima aula
+  const nextLesson = allLessons[data.lessonIndex + 1];
 
   return (
     <div className="mx-auto grid max-w-6xl gap-6 px-4 py-8 lg:grid-cols-[280px_1fr]">
       <div>
-        <Link
-          href={`/courses/${slug}`}
-          className="mb-4 inline-block text-sm text-sky-300 hover:underline"
-          aria-label={`Voltar para ${course.title}`}
-        >
+        <AppLink href={`/courses/${slug}`} className="mb-4 inline-block text-sm">
           ← {course.title}
-        </Link>
-        <p className="mb-2 text-xs text-slate-400">
-          Progresso: {Math.round(enrollment.progress)}%
-        </p>
+        </AppLink>
+        <Card padding="sm" className="mb-4">
+          <CourseProgressBar progress={enrollment.progress} />
+        </Card>
         <LessonSidebar
           courseSlug={slug}
           lessons={sidebarLessons}
@@ -77,6 +73,9 @@ export default async function LessonPage({ params }: Props) {
           completedLessonIds={completedIds}
           progressionType={course.progressionType}
         />
+        <div className="mt-4">
+          <CertificateButton courseId={course.id} progress={enrollment.progress} />
+        </div>
       </div>
 
       <div>
@@ -95,7 +94,7 @@ export default async function LessonPage({ params }: Props) {
         )}
 
         {module && module.materials.length > 0 && (
-          <div className="mt-6 rounded-xl border border-white/10 bg-white/[0.04] p-4">
+          <Card padding="md" className="mt-6">
             <h3 className="font-semibold text-white">Materiais</h3>
             <ul className="mt-2 space-y-2">
               {module.materials.map((mat) => (
@@ -111,7 +110,7 @@ export default async function LessonPage({ params }: Props) {
                 </li>
               ))}
             </ul>
-          </div>
+          </Card>
         )}
 
         <div className="mt-6 flex flex-wrap items-center gap-3">
@@ -122,13 +121,14 @@ export default async function LessonPage({ params }: Props) {
             completed={isCompleted}
           />
           {nextLesson && isCompleted && (
-            <Link
+            <LinkButton
               href={`/courses/${slug}/learn/${nextLesson.id}`}
-              className="rounded-lg border border-white/10 px-4 py-2 text-sm font-medium hover:bg-white/10 text-slate-300"
+              variant="outline"
+              size="sm"
               aria-label="Próxima aula"
             >
               Próxima aula →
-            </Link>
+            </LinkButton>
           )}
         </div>
       </div>

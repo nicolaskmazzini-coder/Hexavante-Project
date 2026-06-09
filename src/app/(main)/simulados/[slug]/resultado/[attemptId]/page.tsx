@@ -6,6 +6,7 @@ import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/button";
 import { PageShell } from "@/components/ui/page-shell";
+import { EXAM_PASS_SCORE } from "@/lib/gamification";
 import { notFound, redirect } from "next/navigation";
 
 type Props = {
@@ -20,7 +21,7 @@ export default async function ExamResultPage({ params }: Props) {
   const attempt = await getAttemptResult(session.user.id, attemptId);
   if (!attempt || !attempt.finishedAt || attempt.exam.slug !== slug) notFound();
 
-  const passed = attempt.score >= 70;
+  const passed = attempt.score >= EXAM_PASS_SCORE;
 
   const [baseXp, passXp] = await Promise.all([
     getXpForSource(session.user.id, "EXAM", attemptId),
@@ -42,37 +43,50 @@ export default async function ExamResultPage({ params }: Props) {
           {attempt.correctAnswers} de {attempt.totalQuestions} questões corretas
         </p>
         {totalXpEarned > 0 && (
-          <p className="mt-3 text-sm font-medium text-sky-200">+{totalXpEarned} XP ganhos neste simulado</p>
+          <p className="mt-3 text-sm font-medium text-sky-200">
+            +{totalXpEarned} XP ganhos neste simulado
+          </p>
         )}
       </Alert>
 
       <div className="mt-8 space-y-4">
-        <h2 className="font-semibold text-white">Revisão das respostas</h2>
+        <h2 className="font-semibold text-white">Revisão com gabarito</h2>
         {attempt.answers
           .sort((a, b) => a.question.orderNumber - b.question.orderNumber)
-          .map((answer) => (
-            <Card
-              key={answer.id}
-              padding="md"
-              className={
-                answer.isCorrect
-                  ? "border-emerald-400/30 bg-emerald-400/5"
-                  : "border-red-400/30 bg-red-400/5"
-              }
-            >
-              <p className="font-medium text-white">
-                {answer.question.orderNumber}. {answer.question.statement}
-              </p>
-              <p className="mt-2 text-sm text-slate-300">Sua resposta: {answer.alternative.text}</p>
-              <p
-                className={`mt-1 text-sm font-medium ${
-                  answer.isCorrect ? "text-emerald-400" : "text-red-400"
-                }`}
+          .map((answer) => {
+            const correctAlternative = answer.question.alternatives.find((alt) => alt.isCorrect);
+
+            return (
+              <Card
+                key={answer.id}
+                padding="md"
+                className={
+                  answer.isCorrect
+                    ? "border-emerald-400/30 bg-emerald-400/5"
+                    : "border-red-400/30 bg-red-400/5"
+                }
               >
-                {answer.isCorrect ? "Correta" : "Incorreta"}
-              </p>
-            </Card>
-          ))}
+                <p className="font-medium text-white">
+                  {answer.question.orderNumber}. {answer.question.statement}
+                </p>
+                <p className="mt-2 text-sm text-slate-300">
+                  Sua resposta: {answer.alternative.text}
+                </p>
+                {!answer.isCorrect && correctAlternative && (
+                  <p className="mt-2 text-sm font-medium text-emerald-300">
+                    Gabarito: {correctAlternative.text}
+                  </p>
+                )}
+                <p
+                  className={`mt-1 text-sm font-medium ${
+                    answer.isCorrect ? "text-emerald-400" : "text-red-400"
+                  }`}
+                >
+                  {answer.isCorrect ? "Correta" : "Incorreta"}
+                </p>
+              </Card>
+            );
+          })}
       </div>
 
       <div className="mt-8 flex gap-3">

@@ -1,21 +1,86 @@
 // Importações necessárias para o serviço de simulados
-import { EXAM_PASS_SCORE } from "@/lib/gamification"; // Pontuação mínima para aprovação
-import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
+import type { Prisma } from "@prisma/client";
+import { EXAM_PASS_SCORE } from "@/lib/gamification";
+import { prisma } from "@/lib/prisma";
 import { awardXp, XP_REWARDS } from "@/services/xp.service"; // Serviço de XP
 
-// Função para listar simulados publicados
-// Retorna simulados publicados, opcionalmente filtrados por tipo
 export async function listPublishedExams(examType?: string) {
+  return searchPublishedExams({ examType, sort: "recent" });
+}
+
+export type ExamSearchParams = {
+  examType?: string;
+  q?: string;
+  sort?: "recent" | "popular";
+};
+
+export async function searchPublishedExams({
+  examType,
+  q,
+  sort = "recent",
+}: ExamSearchParams = {}) {
+  const query = q?.trim();
+  const type =
+    examType === "ENEM" || examType === "VESTIBULAR" || examType === "TECNOLOGIA"
+      ? examType
+      : undefined;
+
   return prisma.exam.findMany({
     where: {
       isPublished: true,
-      ...(examType ? { examType: examType as "ENEM" | "VESTIBULAR" | "TECNOLOGIA" } : {}), // Filtra por tipo se fornecido
+      ...(type ? { examType: type } : {}),
+      ...(query
+        ? {
+            OR: [
+              { title: { contains: query } },
+              { description: { contains: query } },
+            ],
+          }
+        : {}),
     },
     include: {
-      _count: { select: { questions: true, attempts: true } }, // Conta questões e tentativas
+      _count: { select: { questions: true, attempts: true } },
     },
-    orderBy: { createdAt: "desc" }, // Ordena do mais recente para o mais antigo
+    orderBy:
+      sort === "popular"
+        ? { attempts: { _count: "desc" } }
+        : { createdAt: "desc" },
   });
+}
+
+export async function getUserFinishedAttemptCounts(userId: string) {
+  const rows = await prisma.examAttempt.groupBy({
+    by: ["examId"],
+    where: { userId, finishedAt: { not: null } },
+    _count: { _all: true },
+  });
+
+  return Object.fromEntries(rows.map((row) => [row.examId, row._count._all]));
+}
+
+export async function getUserExamPerformance(userId: string, examId: string) {
+  const attempts = await prisma.examAttempt.findMany({
+    where: { userId, examId, finishedAt: { not: null } },
+    select: { id: true, score: true, finishedAt: true },
+    orderBy: { finishedAt: "desc" },
+  });
+
+  if (attempts.length === 0) {
+    return {
+      attemptCount: 0,
+      bestScore: 0,
+      averageScore: 0,
+      recentAttempts: [] as typeof attempts,
+    };
+  }
+
+  const scores = attempts.map((a) => a.score);
+  return {
+    attemptCount: attempts.length,
+    bestScore: Math.max(...scores),
+    averageScore: Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length),
+    recentAttempts: attempts.slice(0, 5),
+  };
 }
 
 // Função para obter simulado pelo slug
@@ -96,6 +161,7 @@ export async function submitAttempt(
   userId: string,
   attemptId: string,
   answers: Record<string, string>,
+  options?: { allowPartial?: boolean },
 ) {
   // Busca tentativa com simulado e questões
   const attempt = await prisma.examAttempt.findUnique({
@@ -130,8 +196,7 @@ export async function submitAttempt(
   }
 
   const questions = attempt.exam.questions;
-  // Verifica se todas as questões foram respondidas
-  if (Object.keys(answers).length !== questions.length) {
+  if (!options?.allowPartial && Object.keys(answers).length !== questions.length) {
     throw new Error("Responda todas as questões antes de enviar.");
   }
 
@@ -142,9 +207,15 @@ export async function submitAttempt(
     isCorrect: boolean;
   }[] = [];
 
-  // Corrige cada questão
   for (const question of questions) {
-    const selectedId = answers[question.id];
+    let selectedId = answers[question.id];
+    if (!selectedId && options?.allowPartial) {
+      const fallback =
+        question.alternatives.find((a) => !a.isCorrect) ?? question.alternatives[0];
+      if (!fallback) continue;
+      selectedId = fallback.id;
+    }
+
     const selected = question.alternatives.find((a) => a.id === selectedId);
 
     if (!selected) {
@@ -220,7 +291,11 @@ export async function getAttemptResult(userId: string, attemptId: string) {
       exam: true,
       answers: {
         include: {
-          question: true,
+          question: {
+            include: {
+              alternatives: { orderBy: { id: "asc" } },
+            },
+          },
           alternative: true,
         },
       },
@@ -231,11 +306,53 @@ export async function getAttemptResult(userId: string, attemptId: string) {
 // Função para listar tentativas do usuário
 // Retorna todas as tentativas finalizadas do usuário
 export async function listUserAttempts(userId: string) {
-  return prisma.examAttempt.findMany({
-    where: { userId, finishedAt: { not: null } }, // Apenas finalizadas
-    include: { exam: true },
+  return listUserAttemptsFiltered(userId, {});
+}
+
+export type AttemptHistoryParams = {
+  examType?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export async function listUserAttemptsFiltered(
+  userId: string,
+  { examType, page = 1, pageSize = 10 }: AttemptHistoryParams,
+) {
+  const type =
+    examType === "ENEM" || examType === "VESTIBULAR" || examType === "TECNOLOGIA"
+      ? examType
+      : undefined;
+
+  const where: Prisma.ExamAttemptWhereInput = {
+    userId,
+    finishedAt: { not: null },
+    ...(type ? { exam: { examType: type } } : {}),
+  };
+
+  const [attempts, total] = await Promise.all([
+    prisma.examAttempt.findMany({
+      where,
+      include: { exam: true },
+      orderBy: { finishedAt: "desc" },
+      skip: (page - 1) * pageSize,
+      take: pageSize,
+    }),
+    prisma.examAttempt.count({ where }),
+  ]);
+
+  return { attempts, total, page, pageSize, totalPages: Math.ceil(total / pageSize) };
+}
+
+export async function getUserExamEvolution(userId: string, limit = 10) {
+  const attempts = await prisma.examAttempt.findMany({
+    where: { userId, finishedAt: { not: null } },
+    select: { score: true, finishedAt: true, exam: { select: { title: true } } },
     orderBy: { finishedAt: "desc" },
+    take: limit,
   });
+
+  return attempts.reverse();
 }
 
 // Função para obter estatísticas do usuário

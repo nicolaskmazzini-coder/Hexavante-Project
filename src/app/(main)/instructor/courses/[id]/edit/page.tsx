@@ -1,37 +1,39 @@
-// Importações necessárias para a página de edição de curso
-import { auth } from "@/auth"; // Função para obter sessão do usuário
+import { auth } from "@/auth";
 import {
   addLessonAction,
   addMaterialAction,
   addModuleAction,
+  deleteLessonAction,
+  deleteMaterialAction,
+  deleteModuleAction,
   updateCourseAction,
-} from "@/app/actions/course"; // Actions para gerenciar curso
-import { resubmitCourseAction } from "@/app/actions/moderation"; // Action para reenviar curso para moderação
-import { InlineForm } from "@/components/courses/inline-form"; // Componente de formulário inline
-import { StatusBadge } from "@/components/ui/status-badge"; // Componente de badge de status
-import { COURSE_STATUS_LABELS, isInstructor } from "@/lib/permissions"; // Funções de permissão e labels
-import { getCourseById, listCategories } from "@/services/course.service"; // Serviços de curso
+  updateLessonAction,
+  updateModuleAction,
+} from "@/app/actions/course";
+import { resubmitCourseAction } from "@/app/actions/moderation";
+import { DeleteContentButton } from "@/components/courses/delete-content-button";
+import { InlineForm } from "@/components/courses/inline-form";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { COURSE_STATUS_LABELS, isInstructor } from "@/lib/permissions";
+import { getCourseById, listCategories } from "@/services/course.service";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import { notFound, redirect } from "next/navigation"; // Funções de navegação
+import { notFound, redirect } from "next/navigation";
 
-// Props da página de edição
 type Props = { params: Promise<{ id: string }> };
 
-// Página de edição de curso do instrutor
-// Permite editar informações, módulos, aulas e materiais, aplica tema azul e preto
 export default async function EditCoursePage({ params }: Props) {
-  const { id } = await params; // Obtém ID do curso
-  const session = await auth(); // Obtém sessão do usuário
-  if (!session?.user?.id) redirect(`/login?callbackUrl=/instructor/courses/${id}/edit`); // Redireciona se não estiver logado
-  if (!isInstructor(session.user.roles)) redirect("/instructor/courses"); // Redireciona se não for instrutor
+  const { id } = await params;
+  const session = await auth();
+  if (!session?.user?.id) redirect(`/login?callbackUrl=/instructor/courses/${id}/edit`);
+  if (!isInstructor(session.user.roles)) redirect("/instructor/courses");
 
-  const result = await getCourseById(id, session.user.id); // Busca curso com verificação de permissão
-  if (!result || !result.isInstructor) notFound(); // Retorna 404 se não for instrutor do curso
+  const result = await getCourseById(id, session.user.id);
+  if (!result || !result.isInstructor) notFound();
 
   const { course } = result;
-  const categories = await listCategories(); // Busca categorias disponíveis
-  const nextModuleOrder = course.modules.length + 1; // Calcula ordem do próximo módulo
+  const categories = await listCategories();
+  const nextModuleOrder = course.modules.length + 1;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
@@ -103,6 +105,13 @@ export default async function EditCoursePage({ params }: Props) {
               required: false,
             },
             {
+              name: "thumbnailUrl",
+              label: "URL da thumbnail",
+              defaultValue: course.thumbnailUrl ?? "",
+              required: false,
+              placeholder: "https://...",
+            },
+            {
               name: "level",
               label: "Nível",
               defaultValue: course.level,
@@ -137,23 +146,109 @@ export default async function EditCoursePage({ params }: Props) {
 
         {course.modules.map((mod) => (
           <div key={mod.id} className="mb-6 rounded-xl border border-white/10 bg-white/[0.04] p-6">
-            <h3 className="font-semibold text-white">
-              Módulo {mod.orderNumber}: {mod.title}
-            </h3>
-            {mod.description && (
-              <p className="mt-1 text-sm text-slate-400">{mod.description}</p>
-            )}
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h3 className="font-semibold text-white">
+                  Módulo {mod.orderNumber}: {mod.title}
+                </h3>
+                {mod.description && (
+                  <p className="mt-1 text-sm text-slate-400">{mod.description}</p>
+                )}
+              </div>
+              <DeleteContentButton
+                action={deleteModuleAction.bind(null, id, mod.id)}
+                label="Excluir módulo"
+                confirmMessage="Excluir este módulo e todo o conteúdo dentro dele?"
+              />
+            </div>
 
-            <ul className="mt-3 space-y-1 text-sm text-slate-400">
-              {mod.lessons.map((l) => (
-                <li key={l.id}>
-                  Aula {l.orderNumber}: {l.title}
-                  {l.videoUrl && <span className="text-slate-500"> (vídeo)</span>}
+            <div className="mt-4">
+              <InlineForm
+                title="Editar módulo"
+                submitLabel="Salvar módulo"
+                action={updateModuleAction.bind(null, id, mod.id)}
+                fields={[
+                  { name: "title", label: "Título", defaultValue: mod.title },
+                  {
+                    name: "orderNumber",
+                    label: "Ordem",
+                    type: "number",
+                    defaultValue: String(mod.orderNumber),
+                  },
+                  {
+                    name: "description",
+                    label: "Descrição",
+                    type: "textarea",
+                    defaultValue: mod.description ?? "",
+                    required: false,
+                  },
+                ]}
+              />
+            </div>
+
+            <ul className="mt-4 space-y-4">
+              {mod.lessons.map((lesson) => (
+                <li key={lesson.id} className="rounded-lg border border-white/5 bg-black/20 p-4">
+                  <div className="flex flex-wrap items-start justify-between gap-3">
+                    <p className="text-sm font-medium text-slate-200">
+                      Aula {lesson.orderNumber}: {lesson.title}
+                      {lesson.videoUrl && <span className="text-slate-500"> (vídeo)</span>}
+                    </p>
+                    <DeleteContentButton
+                      action={deleteLessonAction.bind(null, id, lesson.id)}
+                      label="Excluir aula"
+                      confirmMessage="Excluir esta aula?"
+                    />
+                  </div>
+                  <div className="mt-3">
+                    <InlineForm
+                      title="Editar aula"
+                      submitLabel="Salvar aula"
+                      action={updateLessonAction.bind(null, id, lesson.id)}
+                      fields={[
+                        { name: "title", label: "Título", defaultValue: lesson.title },
+                        {
+                          name: "orderNumber",
+                          label: "Ordem",
+                          type: "number",
+                          defaultValue: String(lesson.orderNumber),
+                        },
+                        {
+                          name: "videoUrl",
+                          label: "URL do vídeo",
+                          defaultValue: lesson.videoUrl ?? "",
+                          required: false,
+                        },
+                        {
+                          name: "videoProvider",
+                          label: "Provedor",
+                          defaultValue: lesson.videoProvider ?? "youtube",
+                          options: [
+                            { value: "youtube", label: "YouTube" },
+                            { value: "vimeo", label: "Vimeo" },
+                            { value: "other", label: "Outro" },
+                          ],
+                        },
+                        {
+                          name: "description",
+                          label: "Descrição",
+                          type: "textarea",
+                          defaultValue: lesson.description ?? "",
+                          required: false,
+                        },
+                      ]}
+                    />
+                  </div>
                 </li>
               ))}
-              {mod.materials.map((m) => (
-                <li key={m.id} className="text-sky-300">
-                  PDF: {m.title}
+              {mod.materials.map((material) => (
+                <li key={material.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/5 bg-black/20 p-4 text-sm text-sky-300">
+                  <span>PDF: {material.title}</span>
+                  <DeleteContentButton
+                    action={deleteMaterialAction.bind(null, id, material.id)}
+                    label="Excluir"
+                    confirmMessage="Excluir este material?"
+                  />
                 </li>
               ))}
             </ul>

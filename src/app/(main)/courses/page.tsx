@@ -1,22 +1,38 @@
-import Link from "next/link";
 import { BookOpen, Search } from "lucide-react";
 import { CourseCard } from "@/components/courses/course-card";
-import { Badge } from "@/components/ui/badge";
+import { CourseFilters } from "@/components/courses/course-filters";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
-import { listApprovedCourses, listCategories } from "@/services/course.service";
-import { cn } from "@/lib/cn";
+import { listCategories, searchApprovedCourses } from "@/services/course.service";
 
 type Props = {
-  searchParams: Promise<{ category?: string }>;
+  searchParams: Promise<{
+    category?: string;
+    level?: string;
+    q?: string;
+    sort?: string;
+  }>;
 };
 
 export default async function CoursesPage({ searchParams }: Props) {
-  const { category } = await searchParams;
+  const params = await searchParams;
+  const level =
+    params.level === "BEGINNER" ||
+    params.level === "INTERMEDIATE" ||
+    params.level === "ADVANCED"
+      ? params.level
+      : undefined;
+  const sort = params.sort === "popular" ? "popular" : "recent";
+
   const [courses, categories] = await Promise.all([
-    listApprovedCourses(category),
+    searchApprovedCourses({
+      categoryId: params.category,
+      level,
+      q: params.q,
+      sort,
+    }),
     listCategories(),
   ]);
 
@@ -34,32 +50,21 @@ export default async function CoursesPage({ searchParams }: Props) {
         }
       />
 
-      <div className="mb-6 flex flex-wrap gap-2">
-        <Link
-          href="/courses"
-          className={cn("hx-filter-pill", !category ? "hx-filter-pill-active" : "hx-filter-pill-inactive")}
-        >
-          Todos
-        </Link>
-        {categories.map((cat) => (
-          <Link
-            key={cat.id}
-            href={`/courses?category=${cat.id}`}
-            className={cn(
-              "hx-filter-pill",
-              category === cat.id ? "hx-filter-pill-active" : "hx-filter-pill-inactive",
-            )}
-          >
-            {cat.name}
-          </Link>
-        ))}
-      </div>
+      <CourseFilters
+        categories={categories}
+        current={{
+          category: params.category,
+          level: params.level,
+          q: params.q,
+          sort,
+        }}
+      />
 
       {courses.length === 0 ? (
         <EmptyState
           icon={Search}
-          title="Nenhum curso publicado ainda."
-          description="Novas trilhas aparecerão aqui quando forem aprovadas."
+          title="Nenhum curso encontrado."
+          description="Tente outros termos de busca ou remova alguns filtros."
         />
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
@@ -69,6 +74,7 @@ export default async function CoursesPage({ searchParams }: Props) {
               slug={course.slug}
               title={course.title}
               shortDescription={course.shortDescription}
+              thumbnailUrl={course.thumbnailUrl}
               categoryName={course.category.name}
               moduleCount={course._count.modules}
               enrollmentCount={course._count.enrollments}

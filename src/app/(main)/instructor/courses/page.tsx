@@ -1,4 +1,5 @@
 import { auth } from "@/auth";
+import { InstructorCourseCard } from "@/components/instructor/instructor-course-card";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { AppLink } from "@/components/ui/app-link";
 import { EmptyState } from "@/components/ui/empty-state";
@@ -8,12 +9,10 @@ import { PageShell } from "@/components/ui/page-shell";
 import { Alert } from "@/components/ui/alert";
 import {
   APPLICATION_STATUS_LABELS,
-  COURSE_STATUS_LABELS,
   isInstructor,
 } from "@/lib/permissions";
 import { getLatestInstructorApplication } from "@/services/moderation.service";
 import { listInstructorCourses } from "@/services/course.service";
-import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BookOpen, GraduationCap } from "lucide-react";
 
@@ -70,29 +69,21 @@ export default async function InstructorCoursesPage() {
           </AppLink>
         </EmptyState>
       ) : (
-        <div className="space-y-3">
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {courses.map((course) => (
-            <Link
+            <InstructorCourseCard
               key={course.id}
-              href={`/instructor/courses/${course.id}/edit`}
-              className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-sky-400/35 hover:bg-white/[0.06]"
-              aria-label={`Editar curso ${course.title}`}
-            >
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="font-semibold text-white">{course.title}</h3>
-                  <StatusBadge
-                    status={course.status}
-                    label={COURSE_STATUS_LABELS[course.status] ?? course.status}
-                  />
-                </div>
-                <p className="mt-1 text-sm text-slate-400">
-                  {course.category.name} · {course._count.modules} módulos ·{" "}
-                  {course._count.enrollments} alunos
-                </p>
-              </div>
-              <span className="text-sm text-sky-300">Editar →</span>
-            </Link>
+              id={course.id}
+              title={course.title}
+              slug={course.slug}
+              status={course.status}
+              thumbnailUrl={course.thumbnailUrl}
+              categoryName={course.category.name}
+              level={course.level}
+              estimatedHours={course.estimatedHours}
+              moduleCount={course._count.modules}
+              enrollmentCount={course._count.enrollments}
+            />
           ))}
         </div>
       )}

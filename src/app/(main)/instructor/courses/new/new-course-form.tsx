@@ -43,6 +43,18 @@ export function NewCourseForm({ categories }: Props) {
         <Label htmlFor="description">Descrição completa</Label>
         <Textarea id="description" name="description" rows={4} />
       </div>
+      <div>
+        <Label htmlFor="thumbnailUrl">URL da thumbnail</Label>
+        <Input
+          id="thumbnailUrl"
+          name="thumbnailUrl"
+          type="url"
+          placeholder="https://..."
+        />
+        <p className="mt-1 text-xs text-slate-500">
+          Imagem de capa exibida no catálogo e na página do curso.
+        </p>
+      </div>
       <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <Label htmlFor="level">Nível</Label>

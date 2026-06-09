@@ -70,3 +70,38 @@ export async function submitExamAction(
   revalidatePath("/ranking");
   redirect(`/simulados/${slug}/resultado/${parsed.data.attemptId}`);
 }
+
+export async function submitExamTimeoutAction(
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { success: false, error: "Faça login para continuar." };
+  }
+
+  const attemptId = formData.get("attemptId") as string;
+  const slug = formData.get("slug") as string;
+
+  const answers: Record<string, string> = {};
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("q_")) {
+      answers[key.replace("q_", "")] = value as string;
+    }
+  }
+
+  try {
+    await submitAttempt(session.user.id, attemptId, answers, { allowPartial: true });
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao enviar simulado",
+    };
+  }
+
+  revalidatePath("/simulados");
+  revalidatePath("/simulados/historico");
+  revalidatePath("/perfil");
+  revalidatePath("/ranking");
+  redirect(`/simulados/${slug}/resultado/${attemptId}`);
+}

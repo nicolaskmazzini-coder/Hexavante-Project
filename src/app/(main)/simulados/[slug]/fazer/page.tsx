@@ -1,32 +1,28 @@
-// Importações necessárias para a página de fazer simulado
-import { auth } from "@/auth"; // Função para obter sessão do usuário
-import { ExamForm } from "@/components/exams/exam-form"; // Componente de formulário de simulado
-import { getExamForTaking } from "@/services/exam.service"; // Serviço para obter simulado
-import { prisma } from "@/lib/prisma"; // Cliente Prisma
-import Link from "next/link"; // Componente de link do Next.js
-import { notFound, redirect } from "next/navigation"; // Funções de navegação
+import { auth } from "@/auth";
+import { ExamForm } from "@/components/exams/exam-form";
+import { AppLink } from "@/components/ui/app-link";
+import { PageShell } from "@/components/ui/page-shell";
+import { getExamForTaking } from "@/services/exam.service";
+import { prisma } from "@/lib/prisma";
+import { notFound, redirect } from "next/navigation";
 
-// Props da página de fazer simulado
 type Props = {
   params: Promise<{ slug: string }>;
   searchParams: Promise<{ attempt?: string }>;
 };
 
-// Página para responder simulado
-// Exibe formulário com questões, aplica tema azul e preto
 export default async function TakeExamPage({ params, searchParams }: Props) {
-  const { slug } = await params; // Obtém slug do simulado
-  const { attempt: attemptId } = await searchParams; // Obtém ID da tentativa
-  const session = await auth(); // Obtém sessão do usuário
+  const { slug } = await params;
+  const { attempt: attemptId } = await searchParams;
+  const session = await auth();
 
-  if (!session?.user?.id) redirect(`/login?callbackUrl=/simulados/${slug}`); // Redireciona se não estiver logado
+  if (!session?.user?.id) redirect(`/login?callbackUrl=/simulados/${slug}`);
 
-  const exam = await getExamForTaking(slug); // Busca simulado para responder
-  if (!exam || exam.questions.length === 0) notFound(); // Retorna 404 se não existir ou não tiver questões
+  const exam = await getExamForTaking(slug);
+  if (!exam || exam.questions.length === 0) notFound();
 
-  if (!attemptId) redirect(`/simulados/${slug}`); // Redireciona se não tiver ID de tentativa
+  if (!attemptId) redirect(`/simulados/${slug}`);
 
-  // Busca tentativa ativa do usuário
   const attempt = await prisma.examAttempt.findFirst({
     where: {
       id: attemptId,
@@ -36,16 +32,16 @@ export default async function TakeExamPage({ params, searchParams }: Props) {
     },
   });
 
-  if (!attempt) redirect(`/simulados/${slug}`); // Redireciona se tentativa não existir
+  if (!attempt) redirect(`/simulados/${slug}`);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-10">
-      <Link href={`/simulados/${slug}`} className="text-sm text-sky-300 hover:underline" aria-label="Voltar para detalhes do simulado">
-        ← Voltar
-      </Link>
-      <h1 className="mt-4 text-2xl font-bold text-white">{exam.title}</h1>
-      <p className="mt-1 text-sm text-slate-300">
-        Responda todas as questões e clique em finalizar.
+    <PageShell size="md">
+      <AppLink href={`/simulados/${slug}`} muted className="mb-4 inline-flex items-center gap-1">
+        ← Voltar ao simulado
+      </AppLink>
+      <h1 className="hx-page-title">{exam.title}</h1>
+      <p className="mt-2 text-sm text-slate-400">
+        Responda todas as questões. Use os números acima para navegar entre elas.
       </p>
 
       <div className="mt-8">
@@ -54,8 +50,10 @@ export default async function TakeExamPage({ params, searchParams }: Props) {
           attemptId={attempt.id}
           title={exam.title}
           questions={exam.questions}
+          startedAt={attempt.startedAt.toISOString()}
+          timeLimitMinutes={exam.timeLimit}
         />
       </div>
-    </div>
+    </PageShell>
   );
 }

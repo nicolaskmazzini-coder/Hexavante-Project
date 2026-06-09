@@ -1,11 +1,14 @@
 import { BookOpen, Clock, Layers3, Users } from "lucide-react";
+import { CourseThumbnail } from "@/components/courses/course-thumbnail";
 import { Badge } from "@/components/ui/badge";
 import { CardFooter, CardHeader, CardTitle, InteractiveCard } from "@/components/ui/card";
+import { COURSE_LEVEL_LABELS } from "@/lib/course-labels";
 
 type CourseCardProps = {
   slug: string;
   title: string;
   shortDescription?: string | null;
+  thumbnailUrl?: string | null;
   categoryName: string;
   moduleCount: number;
   enrollmentCount: number;
@@ -13,16 +16,11 @@ type CourseCardProps = {
   estimatedHours?: number | null;
 };
 
-const levelLabel: Record<string, string> = {
-  BEGINNER: "Iniciante",
-  INTERMEDIATE: "Intermediário",
-  ADVANCED: "Avançado",
-};
-
 export function CourseCard({
   slug,
   title,
   shortDescription,
+  thumbnailUrl,
   categoryName,
   moduleCount,
   enrollmentCount,
@@ -33,14 +31,20 @@ export function CourseCard({
     <InteractiveCard
       href={`/courses/${slug}`}
       ariaLabel={`Ver curso: ${title}. Categoria: ${categoryName}. ${moduleCount} módulos, ${enrollmentCount} alunos matriculados.`}
+      className="overflow-hidden"
     >
+      <CourseThumbnail
+        url={thumbnailUrl}
+        title={title}
+        className="h-40 w-full transition group-hover:opacity-95"
+      />
       <div className="p-5">
         <CardHeader>
           <Badge variant="sky">
             <BookOpen className="h-3.5 w-3.5" />
             {categoryName}
           </Badge>
-          <Badge variant="emerald">{levelLabel[level] ?? level}</Badge>
+          <Badge variant="emerald">{COURSE_LEVEL_LABELS[level] ?? level}</Badge>
         </CardHeader>
 
         <CardTitle className="transition-colors group-hover:text-sky-200">{title}</CardTitle>

@@ -46,6 +46,15 @@ export function HeaderDropdown({ session }: Props) {
             >
               {isInstructor(session.user?.roles) ? "Meus cursos" : "Instrutor"}
             </Link>
+            {isInstructor(session.user?.roles) && (
+              <Link
+                href="/instructor/live-rooms"
+                className="block px-4 py-2.5 text-sm text-slate-300 hover:bg-sky-400/10 hover:text-white"
+                onClick={() => setIsOpen(false)}
+              >
+                Minhas salas
+              </Link>
+            )}
             {canModerate(session.user?.roles) && (
               <Link
                 href="/moderacao"

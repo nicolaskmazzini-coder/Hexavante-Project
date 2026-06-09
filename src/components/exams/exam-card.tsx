@@ -10,6 +10,7 @@ type ExamCardProps = {
   examType: string;
   questionCount: number;
   timeLimit?: number | null;
+  userAttemptCount?: number;
 };
 
 const examBadgeVariant: Record<string, "blue" | "violet" | "teal"> = {
@@ -25,6 +26,7 @@ export function ExamCard({
   examType,
   questionCount,
   timeLimit,
+  userAttemptCount,
 }: ExamCardProps) {
   return (
     <InteractiveCard
@@ -55,6 +57,9 @@ export function ExamCard({
               <Clock3 className="h-4 w-4 text-sky-300" />
               {timeLimit} min
             </span>
+          )}
+          {userAttemptCount != null && userAttemptCount > 0 && (
+            <span>{userAttemptCount} tentativa{userAttemptCount > 1 ? "s" : ""}</span>
           )}
         </CardFooter>
       </div>

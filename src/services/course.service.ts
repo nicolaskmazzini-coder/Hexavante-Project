@@ -27,10 +27,38 @@ async function uniqueSlug(title: string): Promise<string> {
 // Função para listar cursos aprovados
 // Retorna cursos com status APPROVED, opcionalmente filtrados por categoria
 export async function listApprovedCourses(categoryId?: string) {
+  return searchApprovedCourses({ categoryId });
+}
+
+export type CourseSearchParams = {
+  categoryId?: string;
+  level?: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  q?: string;
+  sort?: "recent" | "popular";
+};
+
+export async function searchApprovedCourses({
+  categoryId,
+  level,
+  q,
+  sort = "recent",
+}: CourseSearchParams = {}) {
+  const query = q?.trim();
+
   return prisma.course.findMany({
     where: {
       status: "APPROVED",
-      ...(categoryId ? { categoryId } : {}), // Filtra por categoria se fornecido
+      ...(categoryId ? { categoryId } : {}),
+      ...(level ? { level } : {}),
+      ...(query
+        ? {
+            OR: [
+              { title: { contains: query } },
+              { shortDescription: { contains: query } },
+              { description: { contains: query } },
+            ],
+          }
+        : {}),
     },
     include: {
       category: true,
@@ -39,9 +67,12 @@ export async function listApprovedCourses(categoryId?: string) {
           user: { select: { fullName: true, username: true } },
         },
       },
-      _count: { select: { modules: true, enrollments: true } }, // Conta módulos e matrículas
+      _count: { select: { modules: true, enrollments: true } },
     },
-    orderBy: { createdAt: "desc" }, // Ordena do mais recente para o mais antigo
+    orderBy:
+      sort === "popular"
+        ? { enrollments: { _count: "desc" } }
+        : { createdAt: "desc" },
   });
 }
 
@@ -311,4 +342,97 @@ export function countTotalLessons(
   modules: { lessons: unknown[] }[],
 ): number {
   return modules.reduce((acc, m) => acc + m.lessons.length, 0);
+}
+
+async function assertModuleInstructor(moduleId: string, userId: string) {
+  const courseModule = await prisma.module.findUnique({
+    where: { id: moduleId },
+    include: { course: { include: { instructors: true } } },
+  });
+
+  if (!courseModule || !courseModule.course.instructors.some((i) => i.userId === userId)) {
+    throw new Error("Sem permissão para editar este módulo.");
+  }
+
+  return courseModule;
+}
+
+async function assertLessonInstructor(lessonId: string, userId: string) {
+  const lesson = await prisma.lesson.findUnique({
+    where: { id: lessonId },
+    include: {
+      module: { include: { course: { include: { instructors: true } } } },
+    },
+  });
+
+  if (!lesson || !lesson.module.course.instructors.some((i) => i.userId === userId)) {
+    throw new Error("Sem permissão para editar esta aula.");
+  }
+
+  return lesson;
+}
+
+export async function updateModule(
+  moduleId: string,
+  userId: string,
+  data: Partial<ModuleInput>,
+) {
+  await assertModuleInstructor(moduleId, userId);
+
+  return prisma.module.update({
+    where: { id: moduleId },
+    data: {
+      ...(data.title !== undefined ? { title: data.title } : {}),
+      ...(data.description !== undefined ? { description: data.description || null } : {}),
+      ...(data.orderNumber !== undefined ? { orderNumber: data.orderNumber } : {}),
+    },
+  });
+}
+
+export async function deleteModule(moduleId: string, userId: string) {
+  const courseModule = await assertModuleInstructor(moduleId, userId);
+  await prisma.module.delete({ where: { id: moduleId } });
+  return courseModule.courseId;
+}
+
+export async function updateLesson(
+  lessonId: string,
+  userId: string,
+  data: Partial<LessonInput>,
+) {
+  await assertLessonInstructor(lessonId, userId);
+
+  return prisma.lesson.update({
+    where: { id: lessonId },
+    data: {
+      ...(data.title !== undefined ? { title: data.title } : {}),
+      ...(data.description !== undefined ? { description: data.description || null } : {}),
+      ...(data.videoUrl !== undefined ? { videoUrl: data.videoUrl || null } : {}),
+      ...(data.videoProvider !== undefined ? { videoProvider: data.videoProvider || null } : {}),
+      ...(data.duration !== undefined ? { duration: data.duration ?? null } : {}),
+      ...(data.orderNumber !== undefined ? { orderNumber: data.orderNumber } : {}),
+    },
+  });
+}
+
+export async function deleteLesson(lessonId: string, userId: string) {
+  const lesson = await assertLessonInstructor(lessonId, userId);
+  await prisma.lesson.delete({ where: { id: lessonId } });
+  return lesson.module.courseId;
+}
+
+export async function deleteMaterial(materialId: string, userId: string) {
+  const material = await prisma.material.findUnique({
+    where: { id: materialId },
+    include: {
+      module: { include: { course: { include: { instructors: true } } } },
+    },
+  });
+
+  if (!material || !material.module.course.instructors.some((i) => i.userId === userId)) {
+    throw new Error("Sem permissão para excluir este material.");
+  }
+
+  await prisma.material.delete({ where: { id: materialId } });
+  return material.module.courseId;
 }

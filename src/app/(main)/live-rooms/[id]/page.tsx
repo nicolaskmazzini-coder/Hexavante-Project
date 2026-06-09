@@ -5,6 +5,7 @@ import {
   BookOpen,
   CalendarClock,
   CircleAlert,
+  Pencil,
   PlayCircle,
   Radio,
   Square,
@@ -14,7 +15,9 @@ import {
 import { auth } from "@/auth";
 import { endLiveRoomAction, startLiveRoomAction } from "@/app/actions/live-room";
 import { LiveChatWrapper } from "@/components/live/live-chat-wrapper";
+import { LiveRoomCountdown } from "@/components/live/live-room-countdown";
 import { LinkButton, Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 import { getVideoEmbedUrl } from "@/lib/video";
 import { LIVE_ROOM_STATUS_LABELS } from "@/lib/validations/live-room";
 import { getLiveChatMessages, getLiveRoom, joinLiveRoom } from "@/services/live-room.service";
@@ -26,13 +29,13 @@ export default async function LiveRoomPage({
 }) {
   const session = await auth();
   const { id } = await params;
-  if (!session?.user?.id) redirect("/login?callbackUrl=/live-rooms/" + id);
+  if (!session?.user?.id) redirect(`/login?callbackUrl=/live-rooms/${id}`);
 
   const room = await getLiveRoom(id);
   if (!room) {
     return (
       <div className="mx-auto max-w-4xl px-4 py-10">
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-8">
+        <Card padding="lg">
           <CircleAlert className="h-8 w-8 text-amber-200" />
           <h1 className="mt-4 text-3xl font-black text-white">Sala não encontrada</h1>
           <p className="mt-3 text-slate-300">Esta sala ao vivo não existe ou foi removida.</p>
@@ -40,13 +43,13 @@ export default async function LiveRoomPage({
             <ArrowLeft className="h-4 w-4" />
             Voltar para salas ao vivo
           </LinkButton>
-        </div>
+        </Card>
       </div>
     );
   }
 
   const isParticipant = room.participants.some(
-    (p: any) => p.userId === session.user.id && !p.leftAt,
+    (p) => p.userId === session.user.id && !p.leftAt,
   );
 
   if (!isParticipant && room.status === "LIVE") {
@@ -55,7 +58,7 @@ export default async function LiveRoomPage({
     } catch (error) {
       return (
         <div className="mx-auto max-w-4xl px-4 py-10">
-          <div className="rounded-xl border border-red-400/20 bg-red-500/10 p-8">
+          <Card padding="lg" className="border-red-400/20 bg-red-500/10">
             <CircleAlert className="h-8 w-8 text-red-200" />
             <h1 className="mt-4 text-3xl font-black text-white">Não foi possível entrar</h1>
             <p className="mt-3 text-red-100">
@@ -65,7 +68,7 @@ export default async function LiveRoomPage({
               <ArrowLeft className="h-4 w-4" />
               Voltar para salas ao vivo
             </LinkButton>
-          </div>
+          </Card>
         </div>
       );
     }
@@ -77,8 +80,10 @@ export default async function LiveRoomPage({
     : null;
 
   const isLive = room.status === "LIVE";
+  const isScheduled = room.status === "SCHEDULED";
+  const isEnded = room.status === "ENDED" || room.status === "CANCELLED";
   const isInstructor = room.instructorId === session.user.id;
-  const activeParticipants = room.participants.filter((p: any) => !p.leftAt);
+  const activeParticipants = room.participants.filter((p) => !p.leftAt);
   const scheduledAt = new Date(room.scheduledAt);
 
   return (
@@ -98,7 +103,7 @@ export default async function LiveRoomPage({
               className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-semibold ${
                 isLive
                   ? "border-red-400/20 bg-red-500/10 text-red-200"
-                  : room.status === "SCHEDULED"
+                  : isScheduled
                     ? "border-sky-400/20 bg-sky-400/10 text-sky-200"
                     : "border-white/10 bg-white/[0.05] text-slate-300"
               }`}
@@ -106,6 +111,12 @@ export default async function LiveRoomPage({
               {isLive ? <Radio className="h-3.5 w-3.5" /> : <CalendarClock className="h-3.5 w-3.5" />}
               {LIVE_ROOM_STATUS_LABELS[room.status] || room.status}
             </span>
+            {isScheduled && (
+              <LiveRoomCountdown
+                scheduledAt={room.scheduledAt.toISOString()}
+                status={room.status}
+              />
+            )}
           </div>
           <p className="mt-2 text-sm text-slate-400">
             {room.instructor.fullName || room.instructor.username}
@@ -115,26 +126,22 @@ export default async function LiveRoomPage({
 
         {isInstructor && (
           <div className="flex flex-wrap gap-3">
-            {room.status === "SCHEDULED" && (
-              <form
-                action={async () => {
-                  "use server";
-                  await startLiveRoomAction(id);
-                }}
-              >
-                <Button type="submit">
-                  <PlayCircle className="h-4 w-4" />
-                  Iniciar transmissão
-                </Button>
-              </form>
+            {isScheduled && (
+              <>
+                <LinkButton href={`/instructor/live-rooms/${id}/edit`} variant="outline" size="sm">
+                  <Pencil className="h-4 w-4" />
+                  Editar sala
+                </LinkButton>
+                <form action={startLiveRoomAction.bind(null, id)}>
+                  <Button type="submit">
+                    <PlayCircle className="h-4 w-4" />
+                    Iniciar transmissão
+                  </Button>
+                </form>
+              </>
             )}
-            {room.status === "LIVE" && (
-              <form
-                action={async () => {
-                  "use server";
-                  await endLiveRoomAction(id);
-                }}
-              >
+            {isLive && (
+              <form action={endLiveRoomAction.bind(null, id)}>
                 <Button type="submit" variant="danger">
                   <Square className="h-4 w-4" />
                   Encerrar transmissão
@@ -145,11 +152,35 @@ export default async function LiveRoomPage({
         )}
       </div>
 
+      {isScheduled && (
+        <Card padding="md" className="mb-6 border-sky-400/20 bg-sky-400/5">
+          <p className="text-sm text-sky-100">
+            Esta aula está agendada para{" "}
+            <strong>
+              {scheduledAt.toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short" })}
+            </strong>
+            . O chat será liberado quando o instrutor iniciar a transmissão.
+          </p>
+        </Card>
+      )}
+
+      {isEnded && (
+        <Card padding="md" className="mb-6">
+          <p className="text-sm text-slate-300">
+            Esta transmissão foi encerrada
+            {room.endedAt
+              ? ` em ${new Date(room.endedAt).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" })}`
+              : ""}
+            .
+          </p>
+        </Card>
+      )}
+
       <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
         <div className="space-y-4">
           <div className="overflow-hidden rounded-xl border border-white/10 bg-black shadow-2xl shadow-black/30">
             <div className="aspect-video">
-              {embedUrl ? (
+              {embedUrl && (isLive || isEnded) ? (
                 <iframe
                   src={embedUrl}
                   className="h-full w-full"
@@ -161,12 +192,21 @@ export default async function LiveRoomPage({
                 <div className="flex h-full flex-col items-center justify-center bg-slate-950 px-6 text-center">
                   <Video className="h-12 w-12 text-slate-600" />
                   <p className="mt-4 text-lg font-bold text-white">
-                    {isLive ? "Vídeo não configurado" : room.status === "SCHEDULED" ? "Aula agendada" : "Aula encerrada"}
+                    {isLive
+                      ? "Vídeo não configurado"
+                      : isScheduled
+                        ? "Aguardando início"
+                        : "Aula encerrada"}
                   </p>
                   <p className="mt-2 max-w-md text-sm leading-6 text-slate-400">
-                    {isLive
-                      ? "Adicione uma URL do YouTube ou Vimeo para exibir a transmissão nesta área."
-                      : scheduledAt.toLocaleString("pt-BR", { dateStyle: "full", timeStyle: "short" })}
+                    {isScheduled
+                      ? scheduledAt.toLocaleString("pt-BR", {
+                          dateStyle: "full",
+                          timeStyle: "short",
+                        })
+                      : isLive
+                        ? "Adicione uma URL do YouTube ou Vimeo para exibir a transmissão."
+                        : "O vídeo não está mais disponível nesta sala."}
                   </p>
                 </div>
               )}
@@ -174,7 +214,7 @@ export default async function LiveRoomPage({
           </div>
 
           <div className="grid gap-4 md:grid-cols-3">
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+            <Card padding="sm">
               <div className="flex items-center gap-2 text-slate-400">
                 <CalendarClock className="h-4 w-4 text-sky-300" />
                 <span className="text-xs font-semibold uppercase">Horário</span>
@@ -183,8 +223,8 @@ export default async function LiveRoomPage({
                 {scheduledAt.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" })} às{" "}
                 {scheduledAt.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}
               </p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+            </Card>
+            <Card padding="sm">
               <div className="flex items-center gap-2 text-slate-400">
                 <Users className="h-4 w-4 text-teal-300" />
                 <span className="text-xs font-semibold uppercase">Participantes</span>
@@ -193,8 +233,8 @@ export default async function LiveRoomPage({
                 {activeParticipants.length}
                 {room.maxParticipants ? ` / ${room.maxParticipants}` : ""} online
               </p>
-            </div>
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
+            </Card>
+            <Card padding="sm">
               <div className="flex items-center gap-2 text-slate-400">
                 <BookOpen className="h-4 w-4 text-amber-300" />
                 <span className="text-xs font-semibold uppercase">Curso</span>
@@ -202,16 +242,14 @@ export default async function LiveRoomPage({
               <p className="mt-2 truncate text-sm font-semibold text-white">
                 {room.course?.title ?? "Sala independente"}
               </p>
-            </div>
+            </Card>
           </div>
 
-          {(room.description || isInstructor) && (
-            <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5">
+          {room.description && (
+            <Card padding="md">
               <h2 className="font-bold text-white">Sobre esta aula</h2>
-              <p className="mt-2 text-sm leading-6 text-slate-300">
-                {room.description ?? "Sem descrição adicionada."}
-              </p>
-            </div>
+              <p className="mt-2 text-sm leading-6 text-slate-300">{room.description}</p>
+            </Card>
           )}
         </div>
 
@@ -219,7 +257,7 @@ export default async function LiveRoomPage({
           <LiveChatWrapper
             roomId={id}
             currentUserId={session.user.id}
-            initialMessages={messages.map((msg: any) => ({
+            initialMessages={messages.map((msg) => ({
               id: msg.id,
               userId: msg.userId,
               username: msg.user.username,

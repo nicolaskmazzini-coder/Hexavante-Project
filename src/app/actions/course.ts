@@ -13,7 +13,12 @@ import {
   addMaterial,
   addModule,
   createCourse,
+  deleteLesson,
+  deleteMaterial,
+  deleteModule,
   updateCourse,
+  updateLesson,
+  updateModule,
 } from "@/services/course.service";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -190,4 +195,83 @@ export async function addMaterialAction(
       error: error instanceof Error ? error.message : "Erro ao adicionar material",
     };
   }
+}
+
+export async function updateModuleAction(
+  courseId: string,
+  moduleId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const user = await requireInstructor();
+    const parsed = moduleSchema.safeParse({
+      title: formData.get("title"),
+      description: formData.get("description") || undefined,
+      orderNumber: formData.get("orderNumber"),
+    });
+
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
+    }
+
+    await updateModule(moduleId, user.id, parsed.data);
+    revalidatePath(`/instructor/courses/${courseId}/edit`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao atualizar módulo",
+    };
+  }
+}
+
+export async function deleteModuleAction(courseId: string, moduleId: string) {
+  const user = await requireInstructor();
+  await deleteModule(moduleId, user.id);
+  revalidatePath(`/instructor/courses/${courseId}/edit`);
+}
+
+export async function updateLessonAction(
+  courseId: string,
+  lessonId: string,
+  _prev: ActionResult,
+  formData: FormData,
+): Promise<ActionResult> {
+  try {
+    const user = await requireInstructor();
+    const parsed = lessonSchema.safeParse({
+      title: formData.get("title"),
+      description: formData.get("description") || undefined,
+      videoUrl: formData.get("videoUrl") || undefined,
+      videoProvider: formData.get("videoProvider") || "youtube",
+      duration: formData.get("duration") || undefined,
+      orderNumber: formData.get("orderNumber"),
+    });
+
+    if (!parsed.success) {
+      return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
+    }
+
+    await updateLesson(lessonId, user.id, parsed.data);
+    revalidatePath(`/instructor/courses/${courseId}/edit`);
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao atualizar aula",
+    };
+  }
+}
+
+export async function deleteLessonAction(courseId: string, lessonId: string) {
+  const user = await requireInstructor();
+  await deleteLesson(lessonId, user.id);
+  revalidatePath(`/instructor/courses/${courseId}/edit`);
+}
+
+export async function deleteMaterialAction(courseId: string, materialId: string) {
+  const user = await requireInstructor();
+  await deleteMaterial(materialId, user.id);
+  revalidatePath(`/instructor/courses/${courseId}/edit`);
 }

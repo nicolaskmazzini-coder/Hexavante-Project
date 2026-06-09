@@ -16,12 +16,19 @@ export async function listInstructorLiveRooms(instructorId: string) {
   });
 }
 
-// Função para listar salas ao vivo disponíveis
-// Retorna salas ao vivo ou agendadas
-export async function listAvailableLiveRooms() {
+export type LiveRoomListFilter = "scheduled" | "live" | "ended" | "all";
+
+const FILTER_STATUS: Record<LiveRoomListFilter, ("SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED")[]> = {
+  scheduled: ["SCHEDULED"],
+  live: ["LIVE"],
+  ended: ["ENDED"],
+  all: ["SCHEDULED", "LIVE", "ENDED"],
+};
+
+export async function listAvailableLiveRooms(filter: LiveRoomListFilter = "all") {
   return prisma.liveRoom.findMany({
     where: {
-      status: { in: ["SCHEDULED", "LIVE"] },
+      status: { in: FILTER_STATUS[filter] },
     },
     include: {
       course: { select: { id: true, title: true, slug: true } },
@@ -29,6 +36,17 @@ export async function listAvailableLiveRooms() {
       _count: { select: { participants: true } },
     },
     orderBy: { scheduledAt: "asc" },
+  });
+}
+
+export async function listInstructorApprovedCourses(instructorId: string) {
+  return prisma.course.findMany({
+    where: {
+      status: "APPROVED",
+      instructors: { some: { userId: instructorId } },
+    },
+    select: { id: true, title: true, slug: true },
+    orderBy: { title: "asc" },
   });
 }
 
@@ -63,13 +81,16 @@ export async function createLiveRoom(
     maxParticipants?: number;
   },
 ) {
-  // Se courseId foi fornecido, verificar se o curso existe
   if (data.courseId) {
-    const course = await prisma.course.findUnique({
-      where: { id: data.courseId },
+    const course = await prisma.course.findFirst({
+      where: {
+        id: data.courseId,
+        status: "APPROVED",
+        instructors: { some: { userId: instructorId } },
+      },
     });
     if (!course) {
-      throw new Error("Curso não encontrado");
+      throw new Error("Curso não encontrado ou sem permissão.");
     }
   }
 
@@ -99,6 +120,7 @@ export async function updateLiveRoom(
   data: {
     title?: string;
     description?: string;
+    courseId?: string | null;
     videoUrl?: string;
     videoProvider?: string;
     scheduledAt?: Date;
@@ -106,7 +128,6 @@ export async function updateLiveRoom(
     status?: LiveRoomStatus;
   },
 ) {
-  // Verifica se sala pertence ao instrutor
   const room = await prisma.liveRoom.findFirst({
     where: { id: roomId, instructorId },
   });
@@ -114,13 +135,55 @@ export async function updateLiveRoom(
     throw new Error("Sala não encontrada ou você não é o instrutor.");
   }
 
+  if (room.status !== "SCHEDULED") {
+    throw new Error("Só é possível editar salas agendadas.");
+  }
+
+  if (data.courseId) {
+    const course = await prisma.course.findFirst({
+      where: {
+        id: data.courseId,
+        status: "APPROVED",
+        instructors: { some: { userId: instructorId } },
+      },
+    });
+    if (!course) {
+      throw new Error("Curso não encontrado ou sem permissão.");
+    }
+  }
+
   return prisma.liveRoom.update({
     where: { id: roomId },
-    data,
+    data: {
+      ...(data.title !== undefined ? { title: data.title } : {}),
+      ...(data.description !== undefined ? { description: data.description || null } : {}),
+      ...(data.courseId !== undefined ? { courseId: data.courseId || null } : {}),
+      ...(data.videoUrl !== undefined ? { videoUrl: data.videoUrl || null } : {}),
+      ...(data.videoProvider !== undefined ? { videoProvider: data.videoProvider || null } : {}),
+      ...(data.scheduledAt !== undefined ? { scheduledAt: data.scheduledAt } : {}),
+      ...(data.maxParticipants !== undefined
+        ? { maxParticipants: data.maxParticipants ?? null }
+        : {}),
+      ...(data.status !== undefined ? { status: data.status } : {}),
+    },
     include: {
       course: { select: { id: true, title: true, slug: true } },
       instructor: { select: { id: true, username: true, fullName: true } },
     },
+  });
+}
+
+export async function cancelLiveRoom(roomId: string, instructorId: string) {
+  const room = await prisma.liveRoom.findFirst({
+    where: { id: roomId, instructorId, status: "SCHEDULED" },
+  });
+  if (!room) {
+    throw new Error("Só é possível cancelar salas agendadas.");
+  }
+
+  return prisma.liveRoom.update({
+    where: { id: roomId },
+    data: { status: "CANCELLED" },
   });
 }
 
@@ -227,6 +290,20 @@ export async function getLiveChatMessages(roomId: string, limit = 50) {
     },
     orderBy: { createdAt: "asc" },
     take: limit,
+  });
+}
+
+export async function getLiveChatMessagesSince(roomId: string, since?: Date) {
+  return prisma.liveChatMessage.findMany({
+    where: {
+      roomId,
+      ...(since ? { createdAt: { gt: since } } : {}),
+    },
+    include: {
+      user: { select: { id: true, username: true, fullName: true } },
+    },
+    orderBy: { createdAt: "asc" },
+    take: 100,
   });
 }
 

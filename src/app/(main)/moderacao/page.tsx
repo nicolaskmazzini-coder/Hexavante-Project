@@ -23,7 +23,7 @@ export default async function ModerationDashboardPage() {
         description="Aprove instrutores e cursos da plataforma."
       />
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-3">
         <Link
           href="/moderacao/instrutores"
           className="hx-stat transition hover:border-sky-400/35 hover:bg-white/[0.06]"
@@ -41,6 +41,15 @@ export default async function ModerationDashboardPage() {
           <p className="text-3xl font-bold text-sky-300">{counts.pendingCourses}</p>
           <p className="mt-1 font-medium text-white">Cursos pendentes</p>
           <p className="mt-1 text-sm text-slate-400">Aguardando publicação</p>
+        </Link>
+        <Link
+          href="/moderacao/simulados"
+          className="hx-stat transition hover:border-sky-400/35 hover:bg-white/[0.06]"
+          aria-label="Gerenciar simulados"
+        >
+          <p className="text-3xl font-bold text-teal-300">→</p>
+          <p className="mt-1 font-medium text-white">Simulados</p>
+          <p className="mt-1 text-sm text-slate-400">Criar e publicar provas</p>
         </Link>
       </div>
     </PageShell>

@@ -1,13 +1,20 @@
 import { auth } from "@/auth";
 import { enrollAction } from "@/app/actions/enrollment";
-import { getApprovedCourseBySlug } from "@/services/course.service";
+import { CertificateButton } from "@/components/courses/certificate-button";
+import { CourseProgressBar } from "@/components/courses/course-progress-bar";
+import { CourseThumbnail } from "@/components/courses/course-thumbnail";
+import {
+  countTotalLessons,
+  getApprovedCourseBySlug,
+} from "@/services/course.service";
 import { getEnrollment } from "@/services/enrollment.service";
-import { countTotalLessons } from "@/services/course.service";
 import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
+import { COURSE_LEVEL_LABELS } from "@/lib/course-labels";
 import { notFound } from "next/navigation";
+import { BookOpen, Clock, Layers3, Users } from "lucide-react";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -26,33 +33,54 @@ export default async function CourseDetailPage({ params }: Props) {
 
   return (
     <PageShell size="md">
-      <Badge variant="sky" className="mb-2">
-        {course.category.name}
-      </Badge>
-      <h1 className="hx-page-title">{course.title}</h1>
-      {course.shortDescription && (
-        <p className="mt-3 text-lg text-slate-300">{course.shortDescription}</p>
-      )}
+      <div className="overflow-hidden rounded-2xl border border-white/10">
+        <CourseThumbnail
+          url={course.thumbnailUrl}
+          title={course.title}
+          className="h-52 w-full sm:h-64"
+        />
+        <div className="border-t border-white/10 bg-white/[0.03] p-6">
+          <div className="flex flex-wrap gap-2">
+            <Badge variant="sky">
+              <BookOpen className="h-3.5 w-3.5" />
+              {course.category.name}
+            </Badge>
+            <Badge variant="emerald">{COURSE_LEVEL_LABELS[course.level] ?? course.level}</Badge>
+            <Badge>Gratuito</Badge>
+          </div>
+          <h1 className="hx-page-title mt-3">{course.title}</h1>
+          {course.shortDescription && (
+            <p className="mt-3 text-lg text-slate-300">{course.shortDescription}</p>
+          )}
+        </div>
+      </div>
 
-      <div className="mt-4 flex flex-wrap gap-3 text-sm text-slate-400">
-        <span>{course.modules.length} módulos</span>
-        <span>{totalLessons} aulas</span>
-        <span>Gratuito</span>
-        <span>
-          Nível:{" "}
-          {course.level === "BEGINNER"
-            ? "Iniciante"
-            : course.level === "INTERMEDIATE"
-              ? "Intermediário"
-              : "Avançado"}
+      <div className="mt-6 flex flex-wrap gap-4 text-sm text-slate-400">
+        <span className="flex items-center gap-1.5">
+          <Layers3 className="h-4 w-4 text-teal-300" />
+          {course.modules.length} módulos
+        </span>
+        <span className="flex items-center gap-1.5">
+          <BookOpen className="h-4 w-4 text-sky-300" />
+          {totalLessons} aulas
         </span>
         {course.estimatedHours != null && course.estimatedHours > 0 && (
-          <span>{course.estimatedHours}h estimadas</span>
+          <span className="flex items-center gap-1.5">
+            <Clock className="h-4 w-4 text-amber-300" />
+            {course.estimatedHours}h estimadas
+          </span>
         )}
-        {course.instructors[0] && (
-          <span>Instrutor: {course.instructors[0].user.fullName}</span>
-        )}
+        <span className="flex items-center gap-1.5">
+          <Users className="h-4 w-4 text-sky-300" />
+          {course.instructors[0]?.user.fullName ?? "Instrutor Hexavante"}
+        </span>
       </div>
+
+      {enrollment && (
+        <Card padding="md" className="mt-6">
+          <CourseProgressBar progress={enrollment.progress} />
+        </Card>
+      )}
 
       {course.description && (
         <Card padding="lg" className="mt-8">
@@ -86,16 +114,14 @@ export default async function CourseDetailPage({ params }: Props) {
         </ul>
       </Card>
 
-      <div className="mt-8">
+      <div className="mt-8 flex flex-wrap items-center gap-4">
         {enrollment ? (
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="text-sm text-slate-400">
-              Progresso: <strong className="text-white">{Math.round(enrollment.progress)}%</strong>
-            </div>
+          <>
             <LinkButton href={`/courses/${slug}/learn`} aria-label="Continuar estudando">
               Continuar estudando
             </LinkButton>
-          </div>
+            <CertificateButton courseId={course.id} progress={enrollment.progress} />
+          </>
         ) : session?.user ? (
           <form action={enrollAction.bind(null, course.id, slug)}>
             <Button type="submit">Matricular-se no curso</Button>

@@ -1,9 +1,12 @@
 import { auth } from "@/auth";
-import { isInstructor } from "@/lib/permissions";
-import { createLiveRoomSchema } from "@/lib/validations/live-room";
-import { createLiveRoom } from "@/services/live-room.service";
 import { CreateLiveRoomForm } from "@/components/live/create-live-room-form";
+import { AppLink } from "@/components/ui/app-link";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageShell } from "@/components/ui/page-shell";
+import { isInstructor } from "@/lib/permissions";
+import { listInstructorApprovedCourses } from "@/services/live-room.service";
 import { redirect } from "next/navigation";
+import { Radio } from "lucide-react";
 
 export default async function CreateLiveRoomPage() {
   const session = await auth();
@@ -13,43 +16,22 @@ export default async function CreateLiveRoomPage() {
     redirect("/instructor/courses");
   }
 
-  async function createRoomAction(formData: unknown) {
-    "use server";
-    const session = await auth();
-    if (!session?.user?.id) {
-      throw new Error("Não autenticado");
-    }
-    if (!isInstructor(session.user.roles)) {
-      throw new Error("Sem permissão.");
-    }
-
-    const input = formData as Record<string, unknown>;
-    const parsed = createLiveRoomSchema.safeParse({
-      ...input,
-      courseId: input.courseId || undefined,
-      videoUrl: input.videoUrl || undefined,
-      description: input.description || undefined,
-    });
-    if (!parsed.success) {
-      throw new Error(parsed.error.issues[0]?.message ?? "Dados inválidos");
-    }
-
-    const room = await createLiveRoom(session.user.id, parsed.data);
-    redirect(`/live-rooms/${room.id}`);
-  }
+  const courses = await listInstructorApprovedCourses(session.user.id);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-10">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-white">Nova sala ao vivo</h1>
-        <p className="mt-2 text-slate-300">
-          Crie uma sala ao vivo para ensinar seus alunos em tempo real.
-        </p>
-      </div>
+    <PageShell size="md">
+      <AppLink href="/instructor/live-rooms" muted className="mb-4 inline-flex items-center gap-1">
+        ← Minhas salas
+      </AppLink>
 
-      <div className="rounded-xl border border-white/10 bg-white/[0.04] p-6">
-        <CreateLiveRoomForm onSubmit={createRoomAction} />
-      </div>
-    </div>
+      <PageHeader
+        badge="Instrutor"
+        icon={Radio}
+        title="Nova sala ao vivo"
+        description="Crie uma sala ao vivo para ensinar seus alunos em tempo real."
+      />
+
+      <CreateLiveRoomForm courses={courses} />
+    </PageShell>
   );
 }
