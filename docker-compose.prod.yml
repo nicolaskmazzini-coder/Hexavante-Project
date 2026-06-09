@@ -1,0 +1,45 @@
+services:
+  mariadb:
+    image: mariadb:11
+    container_name: hexavante-db
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MARIADB_DATABASE: hexavante
+      MARIADB_USER: hexavante
+      MARIADB_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - hexavante_data:/var/lib/mysql
+    networks:
+      - hexavante_net
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  app:
+    build: .
+    container_name: hexavante-app
+    restart: unless-stopped
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: mysql://hexavante:${DB_PASSWORD}@mariadb:3306/hexavante
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL}
+      AUTH_GOOGLE_ID: ${AUTH_GOOGLE_ID:-}
+      AUTH_GOOGLE_SECRET: ${AUTH_GOOGLE_SECRET:-}
+      AUTH_GITHUB_ID: ${AUTH_GITHUB_ID:-}
+      AUTH_GITHUB_SECRET: ${AUTH_GITHUB_SECRET:-}
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - hexavante_net
+
+volumes:
+  hexavante_data:
+
+networks:
+  hexavante_net:

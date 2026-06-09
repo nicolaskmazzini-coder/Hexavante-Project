@@ -1,0 +1,14 @@
+node_modules
+.next
+.git
+.env
+.env.*
+!.env.production.example
+npm-debug.log*
+Dockerfile
+docker-compose*.yml
+deploy
+docs
+*.md
+.vscode
+coverage
