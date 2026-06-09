@@ -1,9 +1,13 @@
 import { auth } from "@/auth";
 import { CourseModerationForm } from "@/components/moderation/course-moderation-form";
+import { AppLink } from "@/components/ui/app-link";
+import { Card } from "@/components/ui/card";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageShell } from "@/components/ui/page-shell";
 import { canModerate } from "@/lib/permissions";
 import { getCourseForModeration } from "@/services/moderation.service";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { Shield } from "lucide-react";
 
 type Props = { params: Promise<{ id: string }> };
 
@@ -17,32 +21,34 @@ export default async function ModerateCourseDetailPage({ params }: Props) {
   if (!course || course.status !== "PENDING_REVIEW") notFound();
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <Link href="/moderacao/cursos" className="text-sm text-indigo-600 hover:underline">
+    <PageShell size="md">
+      <AppLink href="/moderacao/cursos" muted className="mb-4 inline-flex items-center gap-1">
         ← Cursos pendentes
-      </Link>
+      </AppLink>
 
-      <h1 className="mt-4 text-2xl font-bold text-slate-900">{course.title}</h1>
-      <p className="mt-1 text-sm text-slate-500">
-        {course.category.name} · Instrutor: {course.instructors[0]?.user.fullName}
-      </p>
+      <PageHeader
+        badge="Moderação"
+        icon={Shield}
+        title={course.title}
+        description={`${course.category.name} · Instrutor: ${course.instructors[0]?.user.fullName}`}
+      />
 
-      {course.shortDescription && (
-        <p className="mt-4 text-slate-600">{course.shortDescription}</p>
-      )}
+      {course.shortDescription && <p className="text-slate-300">{course.shortDescription}</p>}
       {course.description && (
-        <div className="mt-4 rounded-lg bg-slate-50 p-4 text-sm text-slate-700 whitespace-pre-wrap">
+        <Card padding="md" className="mt-4 whitespace-pre-wrap text-sm text-slate-300">
           {course.description}
-        </div>
+        </Card>
       )}
 
       <div className="mt-6">
-        <h2 className="font-semibold text-slate-900">Conteúdo ({course.modules.length} módulos)</h2>
+        <h2 className="font-semibold text-white">Conteúdo ({course.modules.length} módulos)</h2>
         <ul className="mt-3 space-y-3">
           {course.modules.map((mod) => (
-            <li key={mod.id} className="rounded-lg border border-slate-200 p-3 text-sm">
-              <p className="font-medium">{mod.orderNumber}. {mod.title}</p>
-              <ul className="mt-1 pl-4 text-slate-600">
+            <Card key={mod.id} padding="sm" className="text-sm">
+              <p className="font-medium text-white">
+                {mod.orderNumber}. {mod.title}
+              </p>
+              <ul className="mt-1 pl-4 text-slate-400">
                 {mod.lessons.map((l) => (
                   <li key={l.id}>Aula: {l.title}</li>
                 ))}
@@ -50,7 +56,7 @@ export default async function ModerateCourseDetailPage({ params }: Props) {
                   <li key={m.id}>Material: {m.title}</li>
                 ))}
               </ul>
-            </li>
+            </Card>
           ))}
         </ul>
       </div>
@@ -58,6 +64,6 @@ export default async function ModerateCourseDetailPage({ params }: Props) {
       <div className="mt-8">
         <CourseModerationForm courseId={course.id} />
       </div>
-    </div>
+    </PageShell>
   );
 }

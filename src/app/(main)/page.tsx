@@ -1,6 +1,12 @@
-import Link from "next/link";
 import { auth } from "@/auth";
 import { ArrowRight, Award, BookOpen, Radio, Target } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Card } from "@/components/ui/card";
+import { LinkButton } from "@/components/ui/button";
+import { PageShell } from "@/components/ui/page-shell";
+import { StudentDashboard } from "@/components/home/student-dashboard";
+import { getStudentDashboard } from "@/services/student.service";
+import Link from "next/link";
 
 const highlights = [
   { label: "Cursos", value: "Aprendizado guiado", icon: BookOpen, tone: "text-sky-300 bg-sky-400/10" },
@@ -16,16 +22,17 @@ const shortcuts = [
 
 export default async function HomePage() {
   const session = await auth();
+  const dashboard = session?.user?.id ? await getStudentDashboard(session.user.id) : null;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10 sm:py-14">
+    <PageShell>
       <section className="grid gap-8 lg:grid-cols-[1.15fr_0.85fr] lg:items-center">
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-xs font-semibold text-sky-200">
-            Plataforma educacional Hexavante
-          </div>
+          <Badge variant="sky">Plataforma educacional Hexavante</Badge>
           <h1 className="mt-5 max-w-3xl text-4xl font-black tracking-tight text-white sm:text-5xl">
-            Aprenda, pratique e acompanhe seu progresso em um só lugar.
+            {session?.user
+              ? `Bem-vindo de volta, ${session.user.name?.split(" ")[0] ?? session.user.username}!`
+              : "Aprenda, pratique e acompanhe seu progresso em um só lugar."}
           </h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-slate-300 sm:text-lg">
             Cursos, simulados, aulas ao vivo e gamificação para estudantes do ensino técnico,
@@ -33,62 +40,57 @@ export default async function HomePage() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <Link
-              href="/courses"
-              className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:bg-[#1d4ed8] hover:-translate-y-0.5"
-              aria-label="Explorar cursos disponíveis na plataforma"
-            >
+            <LinkButton href="/courses" size="lg" aria-label="Explorar cursos disponíveis na plataforma">
               Explorar cursos
               <ArrowRight className="h-4 w-4" />
-            </Link>
+            </LinkButton>
             {session?.user ? (
-              <Link
-                href="/perfil"
-                className="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-sky-400/40 hover:bg-sky-400/10"
-                aria-label="Abrir perfil"
-              >
+              <LinkButton href="/perfil" variant="outline" size="lg" aria-label="Abrir perfil">
                 Meu progresso
-              </Link>
+              </LinkButton>
             ) : (
-              <Link
-                href="/register"
-                className="inline-flex min-h-11 items-center rounded-lg border border-white/10 bg-white/[0.04] px-5 py-2.5 text-sm font-semibold text-slate-100 transition hover:border-sky-400/40 hover:bg-sky-400/10"
-                aria-label="Criar nova conta na plataforma"
-              >
+              <LinkButton href="/register" variant="outline" size="lg" aria-label="Criar nova conta na plataforma">
                 Criar conta
-              </Link>
+              </LinkButton>
             )}
           </div>
         </div>
 
-        <div className="rounded-xl border border-white/10 bg-white/[0.04] p-5 shadow-2xl shadow-black/30 backdrop-blur">
-          <div className="flex items-center justify-between border-b border-white/10 pb-4">
-            <div>
-              <p className="text-sm font-semibold text-white">Painel do estudante</p>
-              <p className="mt-1 text-xs text-slate-400">Visão rápida da jornada</p>
+        {dashboard && session?.user ? (
+          <StudentDashboard
+            data={dashboard}
+            userName={session.user.name ?? session.user.username ?? "Estudante"}
+          />
+        ) : (
+          <Card padding="md" className="shadow-2xl shadow-black/30 backdrop-blur">
+            <div className="flex items-center justify-between border-b border-white/10 pb-4">
+              <div>
+                <p className="text-sm font-semibold text-white">Comece agora</p>
+                <p className="mt-1 text-xs text-slate-400">Tudo em uma plataforma</p>
+              </div>
+              <Badge variant="teal">Gratuito</Badge>
             </div>
-            <span className="rounded-full bg-teal-400/10 px-3 py-1 text-xs font-semibold text-teal-200">
-              Ativo
-            </span>
-          </div>
-
-          <div className="mt-5 grid gap-3">
-            {highlights.map((item) => {
-              const Icon = item.icon;
-              return (
-                <div key={item.label} className="flex items-center gap-3 rounded-lg border border-white/8 bg-white/[0.04]/70 p-4">
-                  <span className={`grid h-10 w-10 place-items-center rounded-lg ${item.tone}`}>
-                    <Icon className="h-5 w-5" />
-                  </span>
-                  <div>
-                    <p className="text-sm font-semibold text-white">{item.label}</p>
-                    <p className="text-xs text-slate-400">{item.value}</p>
+            <div className="mt-5 grid gap-3">
+              {highlights.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <div
+                    key={item.label}
+                    className="flex items-center gap-3 rounded-lg border border-white/8 bg-white/[0.04] p-4"
+                  >
+                    <span className={`grid h-10 w-10 place-items-center rounded-lg ${item.tone}`}>
+                      <Icon className="h-5 w-5" />
+                    </span>
+                    <div>
+                      <p className="text-sm font-semibold text-white">{item.label}</p>
+                      <p className="text-xs text-slate-400">{item.value}</p>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
+                );
+              })}
+            </div>
+          </Card>
+        )}
       </section>
 
       <section className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -109,6 +111,6 @@ export default async function HomePage() {
           );
         })}
       </section>
-    </div>
+    </PageShell>
   );
 }

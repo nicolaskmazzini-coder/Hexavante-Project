@@ -1,28 +1,32 @@
-// Importações necessárias para a página de moderação
-import { auth } from "@/auth"; // Função para obter sessão do usuário
-import { canModerate } from "@/lib/permissions"; // Função para verificar permissão de moderador
-import { getModerationCounts } from "@/services/moderation.service"; // Serviço para obter contagens de moderação
-import Link from "next/link"; // Componente de link do Next.js
-import { redirect } from "next/navigation"; // Função para redirecionar
+import { auth } from "@/auth";
+import { canModerate } from "@/lib/permissions";
+import { getModerationCounts } from "@/services/moderation.service";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageShell } from "@/components/ui/page-shell";
+import { Shield } from "lucide-react";
 
-// Página de dashboard de moderação
-// Exibe contagens de solicitações pendentes, aplica tema azul e preto
 export default async function ModerationDashboardPage() {
-  const session = await auth(); // Obtém sessão do usuário
-  if (!session?.user?.id) redirect("/login?callbackUrl=/moderacao"); // Redireciona se não estiver logado
-  if (!canModerate(session.user.roles)) redirect("/"); // Redireciona se não for moderador
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login?callbackUrl=/moderacao");
+  if (!canModerate(session.user.roles)) redirect("/");
 
-  const counts = await getModerationCounts(); // Busca contagens de pendências
+  const counts = await getModerationCounts();
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <h1 className="text-3xl font-bold text-white">Moderação</h1>
-      <p className="mt-2 text-slate-300">Aprove instrutores e cursos da plataforma.</p>
+    <PageShell size="md">
+      <PageHeader
+        badge="Administração"
+        icon={Shield}
+        title="Moderação"
+        description="Aprove instrutores e cursos da plataforma."
+      />
 
-      <div className="mt-8 grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <Link
           href="/moderacao/instrutores"
-          className="rounded-xl border border-white/10 bg-white/[0.04] p-6 hover:border-sky-400/35"
+          className="hx-stat transition hover:border-sky-400/35 hover:bg-white/[0.06]"
           aria-label="Ver solicitações de instrutor"
         >
           <p className="text-3xl font-bold text-sky-300">{counts.pendingApplications}</p>
@@ -31,7 +35,7 @@ export default async function ModerationDashboardPage() {
         </Link>
         <Link
           href="/moderacao/cursos"
-          className="rounded-xl border border-white/10 bg-white/[0.04] p-6 hover:border-sky-400/35"
+          className="hx-stat transition hover:border-sky-400/35 hover:bg-white/[0.06]"
           aria-label="Ver cursos pendentes"
         >
           <p className="text-3xl font-bold text-sky-300">{counts.pendingCourses}</p>
@@ -39,6 +43,6 @@ export default async function ModerationDashboardPage() {
           <p className="mt-1 text-sm text-slate-400">Aguardando publicação</p>
         </Link>
       </div>
-    </div>
+    </PageShell>
   );
 }

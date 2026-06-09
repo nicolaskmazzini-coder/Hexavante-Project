@@ -2,6 +2,7 @@
 
 import { useActionState } from "react";
 import { submitExamAction, type ActionResult } from "@/app/actions/exam";
+import { Button } from "@/components/ui/button";
 
 type Question = {
   id: string;
@@ -59,13 +60,9 @@ export function ExamForm({ slug, attemptId, title, questions }: ExamFormProps) {
         <p className="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">{state.error}</p>
       )}
 
-      <button
-        type="submit"
-        disabled={pending}
-        className="w-full rounded-lg bg-[#2563eb] px-4 py-3 font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:bg-[#1d4ed8] disabled:opacity-60 sm:w-auto"
-      >
+      <Button type="submit" disabled={pending} className="w-full sm:w-auto">
         {pending ? "Corrigindo..." : `Finalizar ${title}`}
-      </button>
+      </Button>
     </form>
   );
 }

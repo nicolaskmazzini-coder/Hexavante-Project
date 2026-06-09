@@ -11,7 +11,8 @@ import { InlineForm } from "@/components/courses/inline-form"; // Componente de 
 import { StatusBadge } from "@/components/ui/status-badge"; // Componente de badge de status
 import { COURSE_STATUS_LABELS, isInstructor } from "@/lib/permissions"; // Funções de permissão e labels
 import { getCourseById, listCategories } from "@/services/course.service"; // Serviços de curso
-import Link from "next/link"; // Componente de link do Next.js
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 import { notFound, redirect } from "next/navigation"; // Funções de navegação
 
 // Props da página de edição
@@ -56,12 +57,9 @@ export default async function EditCoursePage({ params }: Props) {
             Ajuste o conteúdo e reenvie para nova análise do moderador.
           </p>
           <form action={resubmitCourseAction.bind(null, id)} className="mt-3">
-            <button
-              type="submit"
-              className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm text-white hover:bg-[#1d4ed8]"
-            >
+            <Button type="submit" size="sm">
               Reenviar para análise
-            </button>
+            </Button>
           </form>
         </div>
       )}

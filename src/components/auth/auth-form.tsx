@@ -1,7 +1,13 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
+import type { z } from "zod";
 import type { ActionResult } from "@/app/actions/auth";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { cn } from "@/lib/cn";
 
 type Field = {
   name: string;
@@ -18,6 +24,7 @@ type AuthFormProps = {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
   footer?: React.ReactNode;
   callbackUrl?: string;
+  validationSchema?: z.ZodType<Record<string, unknown>>;
 };
 
 const initialState: ActionResult = { success: false };
@@ -30,50 +37,82 @@ export function AuthForm({
   action,
   footer,
   callbackUrl = "/",
+  validationSchema,
 }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
+  const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+
+  const fieldErrors = { ...clientErrors, ...state.fieldErrors };
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+
+    if (validationSchema) {
+      const raw = Object.fromEntries(
+        fields.map((field) => [field.name, formData.get(field.name)]),
+      );
+      const parsed = validationSchema.safeParse(raw);
+      if (!parsed.success) {
+        const errors: Record<string, string> = {};
+        for (const issue of parsed.error.issues) {
+          const key = String(issue.path[0] ?? "");
+          if (key && !errors[key]) errors[key] = issue.message;
+        }
+        setClientErrors(errors);
+        return;
+      }
+    }
+
+    setClientErrors({});
+    formAction(formData);
+  };
 
   return (
-    <div className="w-full max-w-md rounded-xl border border-white/10 bg-white/[0.045] p-8 shadow-2xl shadow-black/30 backdrop-blur">
+    <Card className="w-full max-w-md p-8 shadow-2xl shadow-black/30 backdrop-blur">
       <div className="mb-7">
         <p className="text-xs font-semibold uppercase tracking-wide text-sky-300">Hexavante</p>
         <h1 className="mt-2 text-2xl font-black tracking-tight text-white">{title}</h1>
         <p className="mt-2 text-sm leading-6 text-slate-400">{subtitle}</p>
       </div>
 
-      <form action={formAction} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4">
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
         {fields.map((field) => (
           <div key={field.name}>
-            <label htmlFor={field.name} className="mb-1.5 block text-sm font-semibold text-slate-200">
-              {field.label}
-            </label>
-            <input
+            <Label htmlFor={field.name}>{field.label}</Label>
+            <Input
               id={field.name}
               name={field.name}
               type={field.type ?? "text"}
               required={field.required ?? true}
-              className="h-11 w-full rounded-lg border border-white/10 bg-slate-950/55/70 px-3 py-2 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/60 focus:ring-2 focus:ring-sky-400/15"
+              aria-invalid={Boolean(fieldErrors[field.name])}
+              className={cn(fieldErrors[field.name] && "border-red-400/50 focus-visible:border-red-400/60")}
             />
+            {fieldErrors[field.name] && (
+              <p className="mt-1 text-xs text-red-300">{fieldErrors[field.name]}</p>
+            )}
           </div>
         ))}
 
-        {state.error && (
+        {state.error && !Object.keys(fieldErrors).length && (
           <p className="rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
             {state.error}
           </p>
         )}
 
-        <button
-          type="submit"
-          disabled={pending}
-          className="mt-2 inline-flex min-h-11 w-full items-center justify-center rounded-lg bg-[#2563eb] px-4 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:-translate-y-0.5 hover:bg-[#1d4ed8] disabled:translate-y-0 disabled:opacity-60"
-        >
+        {state.error && Object.keys(fieldErrors).length > 0 && (
+          <p className="rounded-lg border border-amber-400/20 bg-amber-400/10 px-3 py-2 text-sm text-amber-100">
+            {state.error}
+          </p>
+        )}
+
+        <Button type="submit" disabled={pending} className="mt-2 w-full" size="lg">
           {pending ? "Aguarde..." : submitLabel}
-        </button>
+        </Button>
       </form>
 
       {footer && <div className="mt-6 text-center text-sm text-slate-400">{footer}</div>}
-    </div>
+    </Card>
   );
 }

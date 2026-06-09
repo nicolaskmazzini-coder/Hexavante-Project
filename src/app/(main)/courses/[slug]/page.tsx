@@ -1,34 +1,35 @@
-// Importações necessárias para a página de detalhes do curso
-import { auth } from "@/auth"; // Função para obter sessão do usuário
-import { enrollAction } from "@/app/actions/enrollment"; // Action para matricular no curso
-import { getApprovedCourseBySlug } from "@/services/course.service"; // Serviço para obter curso aprovado
-import { getEnrollment } from "@/services/enrollment.service"; // Serviço para obter matrícula
-import { countTotalLessons } from "@/services/course.service"; // Função para contar aulas
-import Link from "next/link"; // Componente de link do Next.js
-import { notFound } from "next/navigation"; // Função para página não encontrada
+import { auth } from "@/auth";
+import { enrollAction } from "@/app/actions/enrollment";
+import { getApprovedCourseBySlug } from "@/services/course.service";
+import { getEnrollment } from "@/services/enrollment.service";
+import { countTotalLessons } from "@/services/course.service";
+import { Badge } from "@/components/ui/badge";
+import { Button, LinkButton } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { PageShell } from "@/components/ui/page-shell";
+import { notFound } from "next/navigation";
 
-// Props da página de detalhes
 type Props = { params: Promise<{ slug: string }> };
 
-// Página de detalhes do curso
-// Exibe informações do curso e permite matrícula, aplica tema azul e preto
 export default async function CourseDetailPage({ params }: Props) {
-  const { slug } = await params; // Obtém slug do curso
-  const session = await auth(); // Obtém sessão do usuário
-  const course = await getApprovedCourseBySlug(slug); // Busca curso aprovado pelo slug
+  const { slug } = await params;
+  const session = await auth();
+  const course = await getApprovedCourseBySlug(slug);
 
   if (!course) notFound();
 
   const enrollment = session?.user?.id
-    ? await getEnrollment(session.user.id, course.id) // Busca matrícula do usuário
+    ? await getEnrollment(session.user.id, course.id)
     : null;
 
-  const totalLessons = countTotalLessons(course.modules); // Conta total de aulas
+  const totalLessons = countTotalLessons(course.modules);
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-10">
-      <div className="mb-2 text-sm text-sky-300">{course.category.name}</div>
-      <h1 className="text-3xl font-bold text-white">{course.title}</h1>
+    <PageShell size="md">
+      <Badge variant="sky" className="mb-2">
+        {course.category.name}
+      </Badge>
+      <h1 className="hx-page-title">{course.title}</h1>
       {course.shortDescription && (
         <p className="mt-3 text-lg text-slate-300">{course.shortDescription}</p>
       )}
@@ -49,25 +50,23 @@ export default async function CourseDetailPage({ params }: Props) {
           <span>{course.estimatedHours}h estimadas</span>
         )}
         {course.instructors[0] && (
-          <span>
-            Instrutor: {course.instructors[0].user.fullName}
-          </span>
+          <span>Instrutor: {course.instructors[0].user.fullName}</span>
         )}
       </div>
 
       {course.description && (
-        <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-6">
+        <Card padding="lg" className="mt-8">
           <h2 className="font-semibold text-white">Sobre o curso</h2>
           <p className="mt-2 whitespace-pre-wrap text-slate-300">{course.description}</p>
-        </div>
+        </Card>
       )}
 
-      <div className="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-6">
+      <Card padding="lg" className="mt-8">
         <h2 className="font-semibold text-white">Conteúdo</h2>
         <ul className="mt-4 space-y-4">
           {course.modules.map((mod) => (
             <li key={mod.id}>
-              <p className="font-medium text-gray-200">
+              <p className="font-medium text-slate-200">
                 {mod.orderNumber}. {mod.title}
               </p>
               <ul className="mt-2 space-y-1 pl-4 text-sm text-slate-400">
@@ -85,7 +84,7 @@ export default async function CourseDetailPage({ params }: Props) {
             </li>
           ))}
         </ul>
-      </div>
+      </Card>
 
       <div className="mt-8">
         {enrollment ? (
@@ -93,33 +92,23 @@ export default async function CourseDetailPage({ params }: Props) {
             <div className="text-sm text-slate-400">
               Progresso: <strong className="text-white">{Math.round(enrollment.progress)}%</strong>
             </div>
-            <Link
-              href={`/courses/${slug}/learn`}
-              className="rounded-lg bg-[#2563eb] px-5 py-2.5 font-medium text-white hover:bg-[#1d4ed8]"
-              aria-label="Continuar estudando"
-            >
+            <LinkButton href={`/courses/${slug}/learn`} aria-label="Continuar estudando">
               Continuar estudando
-            </Link>
+            </LinkButton>
           </div>
         ) : session?.user ? (
           <form action={enrollAction.bind(null, course.id, slug)}>
-            <button
-              type="submit"
-              className="rounded-lg bg-[#2563eb] px-5 py-2.5 font-medium text-white hover:bg-[#1d4ed8]"
-            >
-              Matricular-se no curso
-            </button>
+            <Button type="submit">Matricular-se no curso</Button>
           </form>
         ) : (
-          <Link
+          <LinkButton
             href={`/login?callbackUrl=/courses/${slug}`}
-            className="inline-block rounded-lg bg-[#2563eb] px-5 py-2.5 font-medium text-white hover:bg-[#1d4ed8]"
             aria-label="Entrar para se matricular"
           >
             Entrar para se matricular
-          </Link>
+          </LinkButton>
         )}
       </div>
-    </div>
+    </PageShell>
   );
 }

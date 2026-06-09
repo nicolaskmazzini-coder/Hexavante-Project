@@ -1,16 +1,15 @@
 import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
+import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
-import { PrismaAdapter } from "@auth/prisma-adapter";
-import { prisma } from "@/lib/prisma";
+import { authAdapter } from "@/lib/auth-adapter";
+import { oauthProviders } from "@/lib/oauth";
 import { loginSchema } from "@/lib/validations/auth";
-import { validateCredentials } from "@/services/auth.service";
-
-const googleEnabled =
-  Boolean(process.env.AUTH_GOOGLE_ID) && Boolean(process.env.AUTH_GOOGLE_SECRET);
+import { prisma } from "@/lib/prisma";
+import { ensureUserProvisioned, validateCredentials } from "@/services/auth.service";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: authAdapter,
   session: { strategy: "jwt" },
   trustHost: true,
   pages: {
@@ -28,7 +27,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         return validateCredentials(parsed.data);
       },
     }),
-    ...(googleEnabled
+    ...(oauthProviders.google
       ? [
           Google({
             clientId: process.env.AUTH_GOOGLE_ID!,
@@ -36,14 +35,50 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           }),
         ]
       : []),
+    ...(oauthProviders.github
+      ? [
+          GitHub({
+            clientId: process.env.AUTH_GITHUB_ID!,
+            clientSecret: process.env.AUTH_GITHUB_SECRET!,
+            authorization: { params: { scope: "read:user user:email" } },
+          }),
+        ]
+      : []),
   ],
   callbacks: {
+    async signIn({ user, account }) {
+      if (!user.id) return false;
+
+      if (account?.provider && account.provider !== "credentials") {
+        await ensureUserProvisioned(user.id);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: {
+            lastLogin: new Date(),
+            provider: account.provider,
+            providerId: account.providerAccountId,
+            ...(user.image ? { avatarUrl: user.image } : {}),
+          },
+        });
+      }
+
+      return true;
+    },
     async jwt({ token, user }) {
-      if (user) {
-        token.id = user.id;
-        token.username = user.username;
-        token.roles = user.roles;
-        token.image = user.avatarUrl ?? user.image;
+      const userId = user?.id ?? token.id;
+
+      if (userId) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: userId as string },
+          include: { roles: { include: { role: true } } },
+        });
+
+        if (dbUser) {
+          token.id = dbUser.id;
+          token.username = dbUser.username;
+          token.roles = dbUser.roles.map((r) => r.role.name);
+          token.image = dbUser.avatarUrl ?? user?.image ?? token.image;
+        }
       }
 
       return token;

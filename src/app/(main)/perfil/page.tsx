@@ -4,39 +4,45 @@ import { Award, BarChart3, History, Sparkles, Trophy, UserRound } from "lucide-r
 import { updateProfilePhotoAction } from "@/app/actions/profile";
 import { auth } from "@/auth";
 import { XpProgressBar } from "@/components/gamification/xp-progress-bar";
+import { MyJourney } from "@/components/profile/my-journey";
+import { ProfileEditForm } from "@/components/profile/profile-edit-form";
 import { ProfilePhotoUpload } from "@/components/profile/profile-photo-upload";
+import { PageShell } from "@/components/ui/page-shell";
+import { getUserProfile, listUserEnrollments } from "@/services/student.service";
 import { getUserRank, getUserXpProfile, getXpHistory } from "@/services/xp.service";
 
 export default async function PerfilPage() {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/perfil");
 
-  const [profile, history, rank] = await Promise.all([
+  const [profile, userProfile, enrollments, history, rank] = await Promise.all([
     getUserXpProfile(session.user.id),
+    getUserProfile(session.user.id),
+    listUserEnrollments(session.user.id),
     getXpHistory(session.user.id),
     getUserRank(session.user.id),
   ]);
 
-  if (!profile) {
+  if (!profile || !userProfile) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-10">
+      <PageShell size="md">
         <div className="rounded-xl border border-white/10 bg-white/[0.04] p-8 text-slate-400">
-          Perfil de XP não encontrado.
+          Perfil não encontrado.
         </div>
-      </div>
+      </PageShell>
     );
   }
 
   const xpRemaining = Math.max(profile.xpToNextLevel - profile.currentXp, 0);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
+    <PageShell>
       <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/25">
         <div className="h-28 bg-gradient-to-r from-sky-500/25 via-blue-500/20 to-teal-400/20" />
         <div className="grid gap-6 p-6 lg:grid-cols-[220px_minmax(0,1fr)]">
           <div className="-mt-20 flex justify-center lg:justify-start">
             <ProfilePhotoUpload
-              currentAvatar={session.user.image || undefined}
+              currentAvatar={session.user.image || userProfile.avatarUrl || undefined}
               onUpload={async (file) => {
                 "use server";
                 return updateProfilePhotoAction(file);
@@ -52,9 +58,12 @@ export default async function PerfilPage() {
                   Perfil do estudante
                 </div>
                 <h1 className="mt-3 text-3xl font-black tracking-tight text-white">
-                  {session.user.name || session.user.username}
+                  {userProfile.fullName}
                 </h1>
-                <p className="mt-1 text-slate-400">@{session.user.username}</p>
+                <p className="mt-1 text-slate-400">@{userProfile.username}</p>
+                {userProfile.bio && (
+                  <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">{userProfile.bio}</p>
+                )}
               </div>
               <Link
                 href="/ranking"
@@ -88,9 +97,7 @@ export default async function PerfilPage() {
                   <BarChart3 className="h-4 w-4 text-amber-300" />
                   <span className="text-xs font-semibold uppercase">Ranking</span>
                 </div>
-                <p className="mt-2 text-3xl font-black text-white">
-                  {rank ? `#${rank}` : "-"}
-                </p>
+                <p className="mt-2 text-3xl font-black text-white">{rank ? `#${rank}` : "-"}</p>
               </div>
             </div>
           </div>
@@ -98,33 +105,28 @@ export default async function PerfilPage() {
       </section>
 
       <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <ProfileEditForm profile={userProfile} />
+
         <section className="rounded-xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/20">
-          <div className="flex items-start justify-between gap-4">
-            <div>
-              <h2 className="text-lg font-bold text-white">Progresso do nível</h2>
-              <p className="mt-1 text-sm text-slate-400">
-                Faltam {xpRemaining.toLocaleString("pt-BR")} XP para o próximo nível.
-              </p>
-            </div>
-            <span className="rounded-full bg-sky-400/10 px-3 py-1 text-xs font-semibold text-sky-200">
-              {profile.progressPercent}%
-            </span>
-          </div>
+          <h2 className="text-lg font-bold text-white">Progresso do nível</h2>
+          <p className="mt-1 text-sm text-slate-400">
+            Faltam {xpRemaining.toLocaleString("pt-BR")} XP para o próximo nível.
+          </p>
           <div className="mt-5">
             <XpProgressBar {...profile} />
           </div>
-        </section>
-
-        <section className="rounded-xl border border-white/10 bg-white/[0.04] p-6 shadow-xl shadow-black/20">
-          <h2 className="text-lg font-bold text-white">Resumo</h2>
-          <div className="mt-4 space-y-3 text-sm">
-            <div className="flex justify-between border-b border-white/10 pb-3 text-slate-300">
+          <div className="mt-6 space-y-3 border-t border-white/10 pt-4 text-sm">
+            <div className="flex justify-between text-slate-300">
               <span>XP no nível</span>
-              <span className="font-semibold text-white">{profile.currentXp.toLocaleString("pt-BR")}</span>
+              <span className="font-semibold text-white">
+                {profile.currentXp.toLocaleString("pt-BR")}
+              </span>
             </div>
-            <div className="flex justify-between border-b border-white/10 pb-3 text-slate-300">
+            <div className="flex justify-between text-slate-300">
               <span>Meta do nível</span>
-              <span className="font-semibold text-white">{profile.xpToNextLevel.toLocaleString("pt-BR")}</span>
+              <span className="font-semibold text-white">
+                {profile.xpToNextLevel.toLocaleString("pt-BR")}
+              </span>
             </div>
             <div className="flex justify-between text-slate-300">
               <span>Eventos de XP</span>
@@ -132,6 +134,10 @@ export default async function PerfilPage() {
             </div>
           </div>
         </section>
+      </div>
+
+      <div className="mt-8">
+        <MyJourney enrollments={enrollments} />
       </div>
 
       <section className="mt-8">
@@ -149,7 +155,10 @@ export default async function PerfilPage() {
         ) : (
           <ul className="mt-4 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20">
             {history.map((entry) => (
-              <li key={entry.id} className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-4 last:border-b-0">
+              <li
+                key={entry.id}
+                className="flex items-center justify-between gap-4 border-b border-white/10 px-4 py-4 last:border-b-0"
+              >
                 <div className="min-w-0">
                   <p className="truncate text-sm font-semibold text-white">
                     {entry.description ?? entry.source}
@@ -172,6 +181,6 @@ export default async function PerfilPage() {
           </ul>
         )}
       </section>
-    </div>
+    </PageShell>
   );
 }

@@ -14,7 +14,7 @@ import {
 import { auth } from "@/auth";
 import { endLiveRoomAction, startLiveRoomAction } from "@/app/actions/live-room";
 import { LiveChatWrapper } from "@/components/live/live-chat-wrapper";
-import { Button } from "@/components/ui/button";
+import { LinkButton, Button } from "@/components/ui/button";
 import { getVideoEmbedUrl } from "@/lib/video";
 import { LIVE_ROOM_STATUS_LABELS } from "@/lib/validations/live-room";
 import { getLiveChatMessages, getLiveRoom, joinLiveRoom } from "@/services/live-room.service";
@@ -36,13 +36,10 @@ export default async function LiveRoomPage({
           <CircleAlert className="h-8 w-8 text-amber-200" />
           <h1 className="mt-4 text-3xl font-black text-white">Sala não encontrada</h1>
           <p className="mt-3 text-slate-300">Esta sala ao vivo não existe ou foi removida.</p>
-          <Link
-            href="/live-rooms"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-5 py-2.5 font-semibold text-white transition hover:bg-[#1d4ed8]"
-          >
+          <LinkButton href="/live-rooms" className="mt-6">
             <ArrowLeft className="h-4 w-4" />
             Voltar para salas ao vivo
-          </Link>
+          </LinkButton>
         </div>
       </div>
     );
@@ -64,13 +61,10 @@ export default async function LiveRoomPage({
             <p className="mt-3 text-red-100">
               {error instanceof Error ? error.message : "Erro desconhecido"}
             </p>
-            <Link
-              href="/live-rooms"
-              className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#2563eb] px-5 py-2.5 font-semibold text-white transition hover:bg-[#1d4ed8]"
-            >
+            <LinkButton href="/live-rooms" className="mt-6">
               <ArrowLeft className="h-4 w-4" />
               Voltar para salas ao vivo
-            </Link>
+            </LinkButton>
           </div>
         </div>
       );

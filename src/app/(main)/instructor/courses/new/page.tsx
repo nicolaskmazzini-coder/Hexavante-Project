@@ -1,19 +1,25 @@
 import { listCategories } from "@/services/course.service";
 import { NewCourseForm } from "./new-course-form";
-import Link from "next/link";
+import { AppLink } from "@/components/ui/app-link";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageShell } from "@/components/ui/page-shell";
+import { BookPlus } from "lucide-react";
 
 export default async function NewCoursePage() {
   const categories = await listCategories();
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <Link href="/instructor/courses" className="text-sm text-indigo-600 hover:underline">
+    <PageShell>
+      <AppLink href="/instructor/courses" muted className="mb-4 inline-flex items-center gap-1">
         ← Meus cursos
-      </Link>
-      <h1 className="mt-4 text-3xl font-bold text-slate-900">Novo curso</h1>
-      <div className="mt-8">
-        <NewCourseForm categories={categories} />
-      </div>
-    </div>
+      </AppLink>
+      <PageHeader
+        badge="Instrutor"
+        icon={BookPlus}
+        title="Novo curso"
+        description="Preencha as informações básicas. O curso ficará pendente até aprovação."
+      />
+      <NewCourseForm categories={categories} />
+    </PageShell>
   );
 }

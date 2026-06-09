@@ -117,6 +117,37 @@ export async function validateCredentials(data: LoginInput) {
     name: user.fullName,
     email: user.email,
     username: user.username,
+    avatarUrl: user.avatarUrl,
     roles: user.roles.map((r) => r.role.name),
   };
+}
+
+export async function ensureUserProvisioned(userId: string) {
+  const userRole = await prisma.role.findUnique({ where: { name: "USER" } });
+  if (!userRole) return;
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      roles: true,
+      xp: true,
+      wallet: true,
+    },
+  });
+
+  if (!user) return;
+
+  if (user.roles.length === 0) {
+    await prisma.userRole.create({
+      data: { userId, roleId: userRole.id },
+    });
+  }
+
+  if (!user.xp) {
+    await prisma.userXP.create({ data: { userId } });
+  }
+
+  if (!user.wallet) {
+    await prisma.userWallet.create({ data: { userId } });
+  }
 }

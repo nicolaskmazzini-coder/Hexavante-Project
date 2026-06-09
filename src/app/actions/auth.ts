@@ -2,7 +2,8 @@
 
 // Importações necessárias para autenticação
 import { headers } from "next/headers"; // Para obter IP do usuário
-import { registerSchema } from "@/lib/validations/auth"; // Schema de validação
+import { registerSchema, loginSchema } from "@/lib/validations/auth"; // Schema de validação
+import type { ZodError } from "zod";
 import { registerUser } from "@/services/auth.service"; // Serviço de registro
 import { signIn } from "@/auth"; // Função de login do NextAuth
 import { AuthError } from "next-auth"; // Tipo de erro do NextAuth
@@ -12,7 +13,17 @@ import { rateLimitAuthAction } from "@/lib/rate-limit"; // Rate limiting
 export type ActionResult = {
   success: boolean;
   error?: string;
+  fieldErrors?: Record<string, string>;
 };
+
+function mapZodErrors(error: ZodError) {
+  const fieldErrors: Record<string, string> = {};
+  for (const issue of error.issues) {
+    const key = String(issue.path[0] ?? "");
+    if (key && !fieldErrors[key]) fieldErrors[key] = issue.message;
+  }
+  return fieldErrors;
+}
 
 function getSafeCallbackUrl(value: FormDataEntryValue | null): string {
   const url = typeof value === "string" ? value : "/";
@@ -47,7 +58,11 @@ export async function registerAction(
   // Valida dados com Zod
   const parsed = registerSchema.safeParse(raw);
   if (!parsed.success) {
-    return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
+    return {
+      success: false,
+      error: "Corrija os campos destacados.",
+      fieldErrors: mapZodErrors(parsed.error),
+    };
   }
 
   // Tenta registrar usuário
@@ -93,10 +108,22 @@ export async function loginAction(
   }
 
   // Tenta fazer login
+  const email = formData.get("email");
+  const password = formData.get("password");
+
+  const parsed = loginSchema.safeParse({ email, password });
+  if (!parsed.success) {
+    return {
+      success: false,
+      error: "Corrija os campos destacados.",
+      fieldErrors: mapZodErrors(parsed.error),
+    };
+  }
+
   try {
     await signIn("credentials", {
-      email: formData.get("email"),
-      password: formData.get("password"),
+      email: parsed.data.email,
+      password: parsed.data.password,
       redirectTo: getSafeCallbackUrl(formData.get("callbackUrl")),
     });
   } catch (error) {

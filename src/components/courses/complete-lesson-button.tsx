@@ -78,7 +78,7 @@ export function CompleteLessonButton({
           }
         });
       }}
-      className="inline-flex min-h-11 items-center gap-2 rounded-lg bg-[#2563eb] px-5 py-2.5 text-sm font-semibold text-white shadow-lg shadow-blue-950/30 transition hover:-translate-y-0.5 hover:bg-[#1d4ed8] disabled:translate-y-0 disabled:cursor-not-allowed disabled:opacity-60"
+      className="hx-btn-primary min-h-11 gap-2 disabled:translate-y-0 disabled:cursor-not-allowed"
     >
       {pending ? (
         <>

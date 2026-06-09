@@ -1,84 +1,81 @@
-// Importações necessárias para a página de cursos do instrutor
-import { auth } from "@/auth"; // Função para obter sessão do usuário
-import { StatusBadge } from "@/components/ui/status-badge"; // Componente de badge de status
+import { auth } from "@/auth";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { AppLink } from "@/components/ui/app-link";
+import { EmptyState } from "@/components/ui/empty-state";
+import { LinkButton } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
+import { PageShell } from "@/components/ui/page-shell";
+import { Alert } from "@/components/ui/alert";
 import {
   APPLICATION_STATUS_LABELS,
   COURSE_STATUS_LABELS,
   isInstructor,
-} from "@/lib/permissions"; // Funções de permissão e labels
-import { getLatestInstructorApplication } from "@/services/moderation.service"; // Serviço para obter aplicação de instrutor
-import { listInstructorCourses } from "@/services/course.service"; // Serviço para listar cursos do instrutor
-import Link from "next/link"; // Componente de link do Next.js
-import { redirect } from "next/navigation"; // Função para redirecionar
+} from "@/lib/permissions";
+import { getLatestInstructorApplication } from "@/services/moderation.service";
+import { listInstructorCourses } from "@/services/course.service";
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { BookOpen, GraduationCap } from "lucide-react";
 
-// Página de cursos do instrutor
-// Exibe cursos criados pelo instrutor ou solicitação para se tornar instrutor, aplica tema azul e preto
 export default async function InstructorCoursesPage() {
-  const session = await auth(); // Obtém sessão do usuário
-  if (!session?.user?.id) redirect("/login?callbackUrl=/instructor/courses"); // Redireciona se não estiver logado
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login?callbackUrl=/instructor/courses");
 
   if (!isInstructor(session.user.roles)) {
-    const application = await getLatestInstructorApplication(session.user.id); // Busca aplicação de instrutor
+    const application = await getLatestInstructorApplication(session.user.id);
 
     return (
-      <div className="mx-auto max-w-4xl px-4 py-10">
-        <h1 className="text-2xl font-bold text-white">Área do instrutor</h1>
-        <p className="mt-4 text-slate-300">
-          Para criar cursos na Hexavante, você precisa ser aprovado como instrutor.
-        </p>
+      <PageShell size="md">
+        <PageHeader
+          badge="Instrutor"
+          icon={GraduationCap}
+          title="Área do instrutor"
+          description="Para criar cursos na Hexavante, você precisa ser aprovado como instrutor."
+        />
 
         {application?.status === "PENDING" ? (
-          <div className="mt-6 rounded-xl border border-amber-900/50 bg-amber-900/10 p-4">
+          <Alert variant="warning">
             <StatusBadge status="PENDING" label={APPLICATION_STATUS_LABELS.PENDING} />
-            <p className="mt-2 text-sm text-slate-300">Solicitação em análise pelo moderador.</p>
-          </div>
+            <p className="mt-2">Solicitação em análise pelo moderador.</p>
+          </Alert>
         ) : (
-          <Link
-            href="/instructor/apply"
-            className="mt-6 inline-block rounded-lg bg-[#2563eb] px-5 py-2.5 font-medium text-white hover:bg-[#1d4ed8]"
-            aria-label="Solicitar perfil de instrutor"
-          >
+          <LinkButton href="/instructor/apply" aria-label="Solicitar perfil de instrutor">
             Solicitar perfil de instrutor
-          </Link>
+          </LinkButton>
         )}
-      </div>
+      </PageShell>
     );
   }
 
-  const courses = await listInstructorCourses(session.user.id); // Busca cursos do instrutor
+  const courses = await listInstructorCourses(session.user.id);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-10">
-      <div className="mb-8 flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-white">Meus cursos</h1>
-          <p className="mt-2 text-slate-300">
-            Cursos novos ficam pendentes até aprovação de um moderador.
-          </p>
-        </div>
-        <Link
-          href="/instructor/courses/new"
-          className="rounded-lg bg-[#2563eb] px-4 py-2 text-sm font-medium text-white hover:bg-[#1d4ed8]"
-          aria-label="Criar novo curso"
-        >
-          Novo curso
-        </Link>
-      </div>
+    <PageShell>
+      <PageHeader
+        badge="Instrutor"
+        icon={BookOpen}
+        title="Meus cursos"
+        description="Cursos novos ficam pendentes até aprovação de um moderador."
+        action={
+          <LinkButton href="/instructor/courses/new" size="sm" aria-label="Criar novo curso">
+            Novo curso
+          </LinkButton>
+        }
+      />
 
       {courses.length === 0 ? (
-        <div className="rounded-xl border border-dashed border-[#334155] p-10 text-center">
-          <p className="text-slate-400">Você ainda não criou nenhum curso.</p>
-          <Link href="/instructor/courses/new" className="mt-4 inline-block text-sky-300 hover:underline" aria-label="Criar primeiro curso">
+        <EmptyState icon={BookOpen} title="Você ainda não criou nenhum curso.">
+          <AppLink href="/instructor/courses/new" className="mt-4 inline-block">
             Criar primeiro curso
-          </Link>
-        </div>
+          </AppLink>
+        </EmptyState>
       ) : (
         <div className="space-y-3">
           {courses.map((course) => (
             <Link
               key={course.id}
               href={`/instructor/courses/${course.id}/edit`}
-              className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-4 hover:border-sky-400/35"
+              className="flex items-center justify-between rounded-xl border border-white/10 bg-white/[0.04] p-4 transition hover:border-sky-400/35 hover:bg-white/[0.06]"
               aria-label={`Editar curso ${course.title}`}
             >
               <div>
@@ -99,6 +96,6 @@ export default async function InstructorCoursesPage() {
           ))}
         </div>
       )}
-    </div>
+    </PageShell>
   );
 }

@@ -101,7 +101,7 @@ export function LiveChat({
                   <div
                     className={`max-w-[86%] rounded-2xl px-3 py-2 shadow-sm ${
                       isOwnMessage
-                        ? "rounded-br-sm bg-[#2563eb] text-white"
+                        ? "rounded-br-sm bg-primary text-white"
                         : "rounded-bl-sm border border-white/10 bg-slate-950/55 text-slate-200"
                     }`}
                   >

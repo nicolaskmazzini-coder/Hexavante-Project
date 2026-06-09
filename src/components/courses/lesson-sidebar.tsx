@@ -77,7 +77,7 @@ export function LessonSidebar({
               href={`/courses/${courseSlug}/learn/${lesson.id}`}
               className={`block rounded-lg px-3 py-2 text-sm transition ${
                 isCurrent
-                  ? "bg-[#2563eb] text-white shadow-lg shadow-blue-950/20"
+                  ? "bg-primary text-white shadow-lg shadow-blue-950/20"
                   : completed
                     ? "text-emerald-300 hover:bg-emerald-400/10"
                     : "text-slate-300 hover:bg-white/[0.06]"

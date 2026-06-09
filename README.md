@@ -84,6 +84,16 @@ npm run db:seed         # cria papéis (USER, INSTRUCTOR...)
 npm run dev             # http://localhost:3000
 ```
 
+Deploy em produção com domínio: [docs/deploy-producao.md](docs/deploy-producao.md)
+
+Se aparecer erro `The column courses.level does not exist`, o banco está desatualizado em relação ao schema. Rode:
+
+```bash
+npm run db:sync
+```
+
+Isso adiciona as colunas `level` e `estimated_hours` sem apagar dados.
+
 ### Erro `EPERM` no `prisma generate` (Windows)
 
 Esse erro acontece quando o **servidor dev está rodando** — o Node trava o arquivo `query_engine-windows.dll.node`.
