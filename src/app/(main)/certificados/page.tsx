@@ -1,4 +1,5 @@
 import { Award, CheckCircle2, FileBadge } from "lucide-react";
+import { CertificateDownloadButton } from "@/components/certificates/certificate-download-button";
 import { getUserCertificatesAction } from "@/app/actions/certificate";
 import { auth } from "@/auth";
 import { AppLink } from "@/components/ui/app-link";
@@ -62,8 +63,10 @@ export default async function CertificatesPage() {
                 </div>
               </div>
 
+              <CertificateDownloadButton certificateId={cert.id} code={cert.code} />
+
               {cert.verifiedAt && (
-                <div className="mt-4">
+                <div className="mt-3">
                   <Badge variant="emerald" className="w-full justify-center py-2">
                     <CheckCircle2 className="h-4 w-4" />
                     Verificado em {new Date(cert.verifiedAt).toLocaleDateString("pt-BR")}

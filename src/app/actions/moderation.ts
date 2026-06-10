@@ -69,11 +69,25 @@ export async function approveInstructorAction(applicationId: string) {
   revalidatePath("/moderacao/instrutores");
 }
 
-export async function rejectInstructorAction(applicationId: string) {
-  const moderator = await requireModerator();
-  await reviewInstructorApplication(applicationId, moderator.id, false);
-  revalidatePath("/moderacao");
-  revalidatePath("/moderacao/instrutores");
+export async function rejectInstructorAction(
+  applicationId: string,
+  reviewNotes: string,
+): Promise<ActionResult> {
+  try {
+    const moderator = await requireModerator();
+    if (!reviewNotes.trim() || reviewNotes.trim().length < 5) {
+      return { success: false, error: "Informe o motivo da rejeição (mín. 5 caracteres)." };
+    }
+    await reviewInstructorApplication(applicationId, moderator.id, false, reviewNotes.trim());
+    revalidatePath("/moderacao");
+    revalidatePath("/moderacao/instrutores");
+    return { success: true };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao rejeitar solicitação",
+    };
+  }
 }
 
 export async function moderateCourseAction(

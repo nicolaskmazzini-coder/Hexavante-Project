@@ -1,24 +1,25 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Camera, UserRound } from "lucide-react";
+import { updateProfilePhotoAction } from "@/app/actions/profile";
 import { Button } from "@/components/ui/button";
-
-type UploadResult = { success: boolean; error?: string; avatarUrl?: string };
+import { resizeImageFile } from "@/lib/resize-image";
 
 type Props = {
   currentAvatar?: string;
-  onUpload: (file: File) => Promise<UploadResult | void>;
 };
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
-export function ProfilePhotoUpload({ currentAvatar, onUpload }: Props) {
+export function ProfilePhotoUpload({ currentAvatar }: Props) {
   const [preview, setPreview] = useState<string | null>(currentAvatar || null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const router = useRouter();
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -26,7 +27,11 @@ export function ProfilePhotoUpload({ currentAvatar, onUpload }: Props) {
 
     setError(null);
 
-    if (!ALLOWED_TYPES.includes(file.type)) {
+    const isAllowedType =
+      ALLOWED_TYPES.includes(file.type) ||
+      /\.(jpe?g|png|gif|webp)$/i.test(file.name);
+
+    if (!isAllowedType) {
       setError("Use uma imagem PNG, JPG, GIF ou WebP.");
       return;
     }
@@ -43,13 +48,21 @@ export function ProfilePhotoUpload({ currentAvatar, onUpload }: Props) {
 
     setUploading(true);
     try {
-      const result = await onUpload(file);
-      if (result && !result.success) {
+      const resized = await resizeImageFile(file);
+      const formData = new FormData();
+      formData.append("file", resized);
+
+      const result = await updateProfilePhotoAction(formData);
+      if (!result.success) {
         setError(result.error || "Erro ao fazer upload da foto.");
         setPreview(previousPreview);
-      } else if (result?.avatarUrl) {
+        return;
+      }
+
+      if (result.avatarUrl) {
         setPreview(result.avatarUrl);
       }
+      router.refresh();
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Erro ao fazer upload da foto.");
       setPreview(previousPreview);

@@ -1,9 +1,7 @@
 // Importações necessárias para a página de moderação de instrutores
 import { auth } from "@/auth"; // Função para obter sessão do usuário
-import {
-  approveInstructorAction,
-  rejectInstructorAction,
-} from "@/app/actions/moderation"; // Actions para aprovar/rejeitar instrutores
+import { approveInstructorAction } from "@/app/actions/moderation"; // Actions para aprovar/rejeitar instrutores
+import { RejectInstructorForm } from "@/components/moderation/reject-instructor-form";
 import { canModerate } from "@/lib/permissions"; // Função para verificar permissão de moderador
 import { listPendingInstructorApplications } from "@/services/moderation.service"; // Serviço para listar solicitações pendentes
 import Link from "next/link"; // Componente de link do Next.js
@@ -54,7 +52,7 @@ export default async function ModerateInstructorsPage() {
                     </a>
                   )}
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col items-end gap-2">
                   <form action={approveInstructorAction.bind(null, app.id)}>
                     <button
                       type="submit"
@@ -63,14 +61,7 @@ export default async function ModerateInstructorsPage() {
                       Aprovar
                     </button>
                   </form>
-                  <form action={rejectInstructorAction.bind(null, app.id)}>
-                    <button
-                      type="submit"
-                      className="rounded-lg border border-red-900/50 px-3 py-1.5 text-sm text-red-400 hover:bg-red-900/10"
-                    >
-                      Rejeitar
-                    </button>
-                  </form>
+                  <RejectInstructorForm applicationId={app.id} />
                 </div>
               </div>
             </li>

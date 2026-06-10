@@ -2,6 +2,7 @@
 import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
 import { generateCertificateCode } from "@/lib/certificate"; // Função para gerar código de certificado
 import { logger } from "@/lib/logger"; // Sistema de logging
+import { createNotification } from "@/services/notification.service";
 
 // Função para emitir certificado
 // Verifica se o usuário concluiu o curso e emite um certificado se ainda não existir
@@ -56,6 +57,15 @@ export async function issueCertificate(userId: string, courseId: string) {
   });
 
   logger.info('Certificado emitido', { certificateId: certificate.id, userId, courseId });
+
+  await createNotification({
+    userId,
+    type: "CERTIFICATE_ISSUED",
+    title: "Certificado emitido",
+    message: `Seu certificado do curso "${certificate.course.title}" está disponível.`,
+    link: "/certificados",
+  });
+
   return certificate;
 }
 

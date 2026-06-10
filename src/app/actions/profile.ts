@@ -16,6 +16,23 @@ export type ProfileActionResult = {
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
 const ALLOWED_IMAGE_TYPES = new Set(["image/jpeg", "image/png", "image/gif", "image/webp"]);
 
+function resolveImageMimeType(file: File): string | null {
+  if (file.type && ALLOWED_IMAGE_TYPES.has(file.type)) {
+    return file.type;
+  }
+
+  const extension = file.name.split(".").pop()?.toLowerCase();
+  const byExtension: Record<string, string> = {
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    png: "image/png",
+    gif: "image/gif",
+    webp: "image/webp",
+  };
+
+  return extension ? (byExtension[extension] ?? null) : null;
+}
+
 function mapZodErrors(error: ZodError) {
   const fieldErrors: Record<string, string> = {};
   for (const issue of error.issues) {
@@ -70,17 +87,21 @@ export async function updateProfileAction(
   return { success: true };
 }
 
-export async function updateProfilePhotoAction(file: File): Promise<ProfileActionResult> {
+export async function updateProfilePhotoAction(
+  formData: FormData,
+): Promise<ProfileActionResult> {
   const session = await auth();
   if (!session?.user?.id) {
     return { success: false, error: "Faça login para continuar." };
   }
 
-  if (!file || file.size === 0) {
+  const file = formData.get("file");
+  if (!(file instanceof File) || file.size === 0) {
     return { success: false, error: "Selecione uma imagem válida." };
   }
 
-  if (!ALLOWED_IMAGE_TYPES.has(file.type)) {
+  const mimeType = resolveImageMimeType(file);
+  if (!mimeType) {
     return { success: false, error: "Use uma imagem PNG, JPG, GIF ou WebP." };
   }
 
@@ -91,7 +112,7 @@ export async function updateProfilePhotoAction(file: File): Promise<ProfileActio
   try {
     const bytes = await file.arrayBuffer();
     const base64 = Buffer.from(bytes).toString("base64");
-    const avatarUrl = `data:${file.type};base64,${base64}`;
+    const avatarUrl = `data:${mimeType};base64,${base64}`;
 
     await prisma.user.update({
       where: { id: session.user.id },
@@ -99,6 +120,7 @@ export async function updateProfilePhotoAction(file: File): Promise<ProfileActio
     });
 
     revalidatePath("/perfil");
+    revalidatePath("/");
     return { success: true, avatarUrl };
   } catch (error) {
     const message = error instanceof Error ? error.message : "";
@@ -110,8 +132,8 @@ export async function updateProfilePhotoAction(file: File): Promise<ProfileActio
     return {
       success: false,
       error: isColumnTooSmall
-        ? "O banco ainda precisa ser atualizado para aceitar fotos. Rode npm run db:sync ou npx prisma db push."
-        : "Erro ao atualizar foto de perfil.",
+        ? "O banco precisa aceitar fotos maiores. Rode: npm run db:avatar"
+        : message || "Erro ao atualizar foto de perfil.",
     };
   }
 }

@@ -10,6 +10,8 @@ export type ActionResult = {
   error?: string;
   totalXpEarned?: number;
   xpMessages?: string[];
+  leveledUp?: boolean;
+  newLevel?: number;
 };
 
 export async function enrollAction(courseId: string, courseSlug: string) {
@@ -45,10 +47,14 @@ export async function completeLessonAction(
       return `+${award.amount} XP: ${award.description}${levelMsg}`;
     });
 
+    const levelUpAward = result.xpAwards.find((award) => award.leveledUp);
+
     return {
       success: true,
       totalXpEarned: result.totalXpEarned,
       xpMessages,
+      leveledUp: Boolean(levelUpAward),
+      newLevel: levelUpAward?.newLevel,
     };
   } catch (error) {
     return {

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveChat, type ChatMessage } from "./live-chat";
 import { sendChatMessageAction } from "@/app/actions/live-room";
+import { useToast } from "@/components/ui/toast";
 
 type Props = {
   roomId: string;
@@ -17,6 +18,7 @@ export function LiveChatWrapper({ roomId, currentUserId, initialMessages, disabl
   const [isSending, setIsSending] = useState(false);
   const [messages, setMessages] = useState(initialMessages);
   const messagesRef = useRef(messages);
+  const { toast } = useToast();
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -77,10 +79,10 @@ export function LiveChatWrapper({ roomId, currentUserId, initialMessages, disabl
       if (result.success && result.message) {
         setMessages((current) => [...current, result.message!]);
       } else {
-        alert(result.error || "Erro ao enviar mensagem");
+        toast(result.error || "Erro ao enviar mensagem", "error");
       }
     } catch {
-      alert("Erro ao enviar mensagem");
+      toast("Erro ao enviar mensagem", "error");
     } finally {
       setIsSending(false);
     }

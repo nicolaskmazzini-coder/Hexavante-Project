@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { auth, signOut } from "@/auth";
+import { HeaderWalletBadge } from "@/components/gamification/header-wallet-badge";
 import { HeaderXpBadge } from "@/components/gamification/header-xp-badge";
+import { NotificationBell } from "@/components/notifications/notification-bell";
 import { HeaderDropdown } from "./header-dropdown";
 import { Hexagon, Radio } from "lucide-react";
 
@@ -42,7 +44,9 @@ export async function Header() {
         <nav className="flex items-center gap-2 text-sm">
           {session?.user ? (
             <>
+              <HeaderWalletBadge userId={session.user.id} />
               <HeaderXpBadge userId={session.user.id} />
+              <NotificationBell />
               <Link href="/perfil" className="hx-nav-link hidden sm:inline">
                 @{session.user.username}
               </Link>

@@ -4,6 +4,7 @@ import type {
   CourseModerationInput,
   InstructorApplicationInput,
 } from "@/lib/validations/moderation"; // Tipos de entrada para validação
+import { createNotification } from "@/services/notification.service";
 
 // Função para obter última aplicação de instrutor do usuário
 // Retorna a aplicação mais recente do usuário
@@ -69,6 +70,7 @@ export async function reviewInstructorApplication(
   applicationId: string,
   moderatorId: string,
   approve: boolean,
+  reviewNotes?: string,
 ) {
   // Busca aplicação
   const application = await prisma.instructorApplication.findUnique({
@@ -93,6 +95,7 @@ export async function reviewInstructorApplication(
           status: "APPROVED",
           reviewedById: moderatorId,
           reviewedAt: new Date(),
+          reviewNotes: reviewNotes || null,
         },
       }),
       prisma.userRole.upsert({
@@ -107,6 +110,14 @@ export async function reviewInstructorApplication(
         update: {},
       }),
     ]);
+
+    await createNotification({
+      userId: application.userId,
+      type: "INSTRUCTOR_APPROVED",
+      title: "Solicitação aprovada",
+      message: "Sua solicitação para ser instrutor foi aprovada. Bem-vindo!",
+      link: "/instructor/courses",
+    });
   } else {
     // Rejeita aplicação
     await prisma.instructorApplication.update({
@@ -115,7 +126,18 @@ export async function reviewInstructorApplication(
         status: "REJECTED",
         reviewedById: moderatorId,
         reviewedAt: new Date(),
+        reviewNotes: reviewNotes || null,
       },
+    });
+
+    await createNotification({
+      userId: application.userId,
+      type: "INSTRUCTOR_REJECTED",
+      title: "Solicitação não aprovada",
+      message: reviewNotes
+        ? `Sua solicitação foi analisada. Motivo: ${reviewNotes}`
+        : "Sua solicitação para ser instrutor não foi aprovada desta vez.",
+      link: "/instructor/apply",
     });
   }
 }
@@ -178,6 +200,11 @@ export async function moderateCourse(
     throw new Error("Curso não encontrado ou não está pendente de análise.");
   }
 
+  const instructors = await prisma.courseInstructor.findMany({
+    where: { courseId: data.courseId },
+    select: { userId: true },
+  });
+
   // Cria moderação e atualiza status do curso em transação
   await prisma.$transaction([
     prisma.courseModeration.create({
@@ -193,6 +220,29 @@ export async function moderateCourse(
       data: { status: data.status },
     }),
   ]);
+
+  const notificationType =
+    data.status === "APPROVED" ? "COURSE_APPROVED" : "COURSE_REJECTED";
+  const title =
+    data.status === "APPROVED"
+      ? "Curso aprovado"
+      : data.status === "REVISION_REQUIRED"
+        ? "Curso devolvido para revisão"
+        : "Curso rejeitado";
+
+  for (const instructor of instructors) {
+    await createNotification({
+      userId: instructor.userId,
+      type: notificationType,
+      title,
+      message:
+        data.reviewNotes ??
+        (data.status === "APPROVED"
+          ? `Seu curso "${course.title}" foi publicado na plataforma.`
+          : `Seu curso "${course.title}" precisa de ajustes.`),
+      link: `/instructor/courses/${data.courseId}/edit`,
+    });
+  }
 }
 
 // Função para submeter curso para revisão
@@ -226,6 +276,53 @@ export async function getModerationCounts() {
     prisma.course.count({ where: { status: "PENDING_REVIEW" } }),
   ]);
   return { pendingApplications, pendingCourses };
+}
+
+export async function listModerationHistory(limit = 15) {
+  const [courseDecisions, instructorDecisions] = await Promise.all([
+    prisma.courseModeration.findMany({
+      orderBy: { reviewedAt: "desc" },
+      take: limit,
+      include: {
+        course: { select: { id: true, title: true } },
+        moderator: { select: { fullName: true } },
+      },
+    }),
+    prisma.instructorApplication.findMany({
+      where: { status: { in: ["APPROVED", "REJECTED"] } },
+      orderBy: { reviewedAt: "desc" },
+      take: limit,
+      include: {
+        user: { select: { fullName: true, username: true } },
+        reviewedBy: { select: { fullName: true } },
+      },
+    }),
+  ]);
+
+  const items = [
+    ...courseDecisions.map((item) => ({
+      id: item.id,
+      type: "course" as const,
+      title: item.course.title,
+      status: item.status,
+      notes: item.reviewNotes,
+      moderatorName: item.moderator.fullName,
+      reviewedAt: item.reviewedAt,
+    })),
+    ...instructorDecisions.map((item) => ({
+      id: item.id,
+      type: "instructor" as const,
+      title: item.user.fullName,
+      status: item.status,
+      notes: item.reviewNotes,
+      moderatorName: item.reviewedBy?.fullName ?? "Moderador",
+      reviewedAt: item.reviewedAt ?? item.createdAt,
+    })),
+  ];
+
+  return items
+    .sort((a, b) => b.reviewedAt.getTime() - a.reviewedAt.getTime())
+    .slice(0, limit);
 }
 
 // Função para verificar se usuário tem papel de instrutor

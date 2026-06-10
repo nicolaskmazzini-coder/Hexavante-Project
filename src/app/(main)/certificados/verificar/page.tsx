@@ -75,6 +75,11 @@ export default async function VerifyCertificatePage({ searchParams }: Props) {
             <p>
               <span className="opacity-70">Código:</span> {certificate.code}
             </p>
+            <p className="pt-2">
+              <AppLink href={`/certificados/verificar/${certificate.code}`}>
+                Link público de verificação →
+              </AppLink>
+            </p>
           </div>
           <div className="mt-4 flex items-center gap-2 text-xs opacity-90">
             <Award className="h-4 w-4" />

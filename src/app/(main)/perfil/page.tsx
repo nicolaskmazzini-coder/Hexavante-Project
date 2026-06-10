@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Award, BarChart3, History, Sparkles, Trophy, UserRound } from "lucide-react";
-import { updateProfilePhotoAction } from "@/app/actions/profile";
 import { auth } from "@/auth";
+import { LevelUpCelebration } from "@/components/gamification/level-up-celebration";
 import { XpProgressBar } from "@/components/gamification/xp-progress-bar";
 import { MyJourney } from "@/components/profile/my-journey";
 import { ProfileEditForm } from "@/components/profile/profile-edit-form";
@@ -11,9 +11,16 @@ import { PageShell } from "@/components/ui/page-shell";
 import { getUserProfile, listUserEnrollments } from "@/services/student.service";
 import { getUserRank, getUserXpProfile, getXpHistory } from "@/services/xp.service";
 
-export default async function PerfilPage() {
+type Props = {
+  searchParams: Promise<{ levelUp?: string }>;
+};
+
+export default async function PerfilPage({ searchParams }: Props) {
   const session = await auth();
   if (!session?.user?.id) redirect("/login?callbackUrl=/perfil");
+
+  const { levelUp } = await searchParams;
+  const celebrateLevel = levelUp ? Number(levelUp) : undefined;
 
   const [profile, userProfile, enrollments, history, rank] = await Promise.all([
     getUserXpProfile(session.user.id),
@@ -37,16 +44,16 @@ export default async function PerfilPage() {
 
   return (
     <PageShell>
+      <LevelUpCelebration
+        level={celebrateLevel && !Number.isNaN(celebrateLevel) ? celebrateLevel : undefined}
+        showAnimation={Boolean(celebrateLevel && !Number.isNaN(celebrateLevel))}
+      />
       <section className="overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-2xl shadow-black/25">
         <div className="h-28 bg-gradient-to-r from-sky-500/25 via-blue-500/20 to-teal-400/20" />
         <div className="grid gap-6 p-6 lg:grid-cols-[220px_minmax(0,1fr)]">
           <div className="-mt-20 flex justify-center lg:justify-start">
             <ProfilePhotoUpload
               currentAvatar={session.user.image || userProfile.avatarUrl || undefined}
-              onUpload={async (file) => {
-                "use server";
-                return updateProfilePhotoAction(file);
-              }}
             />
           </div>
 
