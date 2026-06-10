@@ -1,13 +1,14 @@
 "use client";
 
-import { useActionState, useState } from "react";
-import type { z } from "zod";
+import { useActionState, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import type { ActionResult } from "@/app/actions/auth";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/cn";
+import { loginSchema, registerSchema } from "@/lib/validations/auth";
 
 type Field = {
   name: string;
@@ -24,8 +25,13 @@ type AuthFormProps = {
   action: (prev: ActionResult, formData: FormData) => Promise<ActionResult>;
   footer?: React.ReactNode;
   callbackUrl?: string;
-  validationSchema?: z.ZodType<Record<string, unknown>>;
+  formKind: "login" | "register";
 };
+
+const validationSchemas = {
+  login: loginSchema,
+  register: registerSchema,
+} as const;
 
 const initialState: ActionResult = { success: false };
 
@@ -37,35 +43,41 @@ export function AuthForm({
   action,
   footer,
   callbackUrl = "/",
-  validationSchema,
+  formKind,
 }: AuthFormProps) {
   const [state, formAction, pending] = useActionState(action, initialState);
   const [clientErrors, setClientErrors] = useState<Record<string, string>>({});
+  const router = useRouter();
 
   const fieldErrors = { ...clientErrors, ...state.fieldErrors };
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const formData = new FormData(event.currentTarget);
+  useEffect(() => {
+    if (state.success && state.redirectTo) {
+      router.push(state.redirectTo);
+      router.refresh();
+    }
+  }, [state.success, state.redirectTo, router]);
 
-    if (validationSchema) {
-      const raw = Object.fromEntries(
-        fields.map((field) => [field.name, formData.get(field.name)]),
-      );
-      const parsed = validationSchema.safeParse(raw);
-      if (!parsed.success) {
-        const errors: Record<string, string> = {};
-        for (const issue of parsed.error.issues) {
-          const key = String(issue.path[0] ?? "");
-          if (key && !errors[key]) errors[key] = issue.message;
-        }
-        setClientErrors(errors);
-        return;
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    const formData = new FormData(event.currentTarget);
+    const validationSchema = validationSchemas[formKind];
+    const raw = Object.fromEntries(
+      fields.map((field) => [field.name, formData.get(field.name)]),
+    );
+    const parsed = validationSchema.safeParse(raw);
+
+    if (!parsed.success) {
+      event.preventDefault();
+      const errors: Record<string, string> = {};
+      for (const issue of parsed.error.issues) {
+        const key = String(issue.path[0] ?? "");
+        if (key && !errors[key]) errors[key] = issue.message;
       }
+      setClientErrors(errors);
+      return;
     }
 
     setClientErrors({});
-    formAction(formData);
   };
 
   return (
@@ -76,7 +88,7 @@ export function AuthForm({
         <p className="mt-2 text-sm leading-6 text-slate-400">{subtitle}</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form action={formAction} onSubmit={handleSubmit} className="space-y-4">
         <input type="hidden" name="callbackUrl" value={callbackUrl} />
         {fields.map((field) => (
           <div key={field.name}>

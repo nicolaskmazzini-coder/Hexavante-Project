@@ -2,7 +2,6 @@ import { AppLink } from "@/components/ui/app-link";
 import { AuthForm } from "@/components/auth/auth-form";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { registerAction } from "@/app/actions/auth";
-import { registerSchema } from "@/lib/validations/auth";
 import { oauthProviders } from "@/lib/oauth";
 
 type Props = {
@@ -26,7 +25,7 @@ export default async function RegisterPage({ searchParams }: Props) {
         submitLabel="Cadastrar"
         action={registerAction}
         callbackUrl={safeCallback}
-        validationSchema={registerSchema}
+        formKind="register"
         fields={[
           { name: "username", label: "Nome de usuário" },
           { name: "fullName", label: "Nome completo" },

@@ -2,7 +2,6 @@ import { AppLink } from "@/components/ui/app-link";
 import { AuthForm } from "@/components/auth/auth-form";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { loginAction } from "@/app/actions/auth";
-import { loginSchema } from "@/lib/validations/auth";
 import { oauthErrorMessages, oauthProviders } from "@/lib/oauth";
 
 type Props = {
@@ -34,7 +33,7 @@ export default async function LoginPage({ searchParams }: Props) {
         submitLabel="Entrar"
         action={loginAction}
         callbackUrl={safeCallback}
-        validationSchema={loginSchema}
+        formKind="login"
         fields={[
           { name: "email", label: "E-mail", type: "email" },
           { name: "password", label: "Senha", type: "password" },

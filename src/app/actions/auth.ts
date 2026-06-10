@@ -14,6 +14,7 @@ export type ActionResult = {
   success: boolean;
   error?: string;
   fieldErrors?: Record<string, string>;
+  redirectTo?: string;
 };
 
 function mapZodErrors(error: ZodError) {
@@ -75,21 +76,30 @@ export async function registerAction(
     };
   }
 
-  // Faz login automático após registro
+  const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
+
+  let signInResult;
   try {
-    await signIn("credentials", {
+    signInResult = await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: getSafeCallbackUrl(formData.get("callbackUrl")),
+      redirect: false,
     });
   } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: "Cadastro ok, mas falha ao entrar. Tente o login." };
     }
-    throw error;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao entrar após cadastro.",
+    };
   }
 
-  return { success: true };
+  if (!signInResult?.ok) {
+    return { success: false, error: "Cadastro ok, mas falha ao entrar. Tente o login." };
+  }
+
+  return { success: true, redirectTo: callbackUrl };
 }
 
 // Action de login de usuário
@@ -120,18 +130,28 @@ export async function loginAction(
     };
   }
 
+  const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
+
+  let signInResult;
   try {
-    await signIn("credentials", {
+    signInResult = await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
-      redirectTo: getSafeCallbackUrl(formData.get("callbackUrl")),
+      redirect: false,
     });
   } catch (error) {
     if (error instanceof AuthError) {
       return { success: false, error: "E-mail ou senha incorretos." };
     }
-    throw error;
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao entrar. Tente novamente.",
+    };
   }
 
-  return { success: true };
+  if (!signInResult?.ok) {
+    return { success: false, error: "E-mail ou senha incorretos." };
+  }
+
+  return { success: true, redirectTo: callbackUrl };
 }
