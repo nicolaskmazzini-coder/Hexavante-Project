@@ -14,6 +14,6 @@ export const oauthErrorMessages: Record<string, string> = {
     "Este e-mail já possui conta com senha. Entre com e-mail e senha para continuar.",
   OAuthSignin: "Não foi possível iniciar o login social. Tente novamente.",
   OAuthCallback: "Falha ao concluir o login social. Verifique as credenciais OAuth.",
-  AccessDenied: "Acesso negado. Você cancelou ou não autorizou o login.",
+  AccessDenied: "Não foi possível concluir o login social. Tente novamente ou use e-mail e senha.",
   Configuration: "Login social não configurado corretamente no servidor.",
 };

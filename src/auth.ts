@@ -32,6 +32,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           Google({
             clientId: process.env.AUTH_GOOGLE_ID!,
             clientSecret: process.env.AUTH_GOOGLE_SECRET!,
+            allowDangerousEmailAccountLinking: true,
           }),
         ]
       : []),
@@ -40,45 +41,66 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           GitHub({
             clientId: process.env.AUTH_GITHUB_ID!,
             clientSecret: process.env.AUTH_GITHUB_SECRET!,
+            allowDangerousEmailAccountLinking: true,
             authorization: { params: { scope: "read:user user:email" } },
           }),
         ]
       : []),
   ],
+  events: {
+    async signIn({ user, account }) {
+      if (!account?.provider || account.provider === "credentials" || !user.id) return;
+
+      const dbUser = await prisma.user.findUnique({ where: { id: user.id } });
+      if (!dbUser) return;
+
+      await ensureUserProvisioned(dbUser.id);
+      await prisma.user.update({
+        where: { id: dbUser.id },
+        data: {
+          lastLogin: new Date(),
+          provider: account.provider,
+          providerId: account.providerAccountId,
+          ...(user.image ? { avatarUrl: user.image } : {}),
+        },
+      });
+    },
+  },
   callbacks: {
     async signIn({ user, account }) {
-      if (!user.id) return false;
-
+      // OAuth: Auth.js chama signIn ANTES de criar o usuário no primeiro login.
       if (account?.provider && account.provider !== "credentials") {
-        await ensureUserProvisioned(user.id);
-        await prisma.user.update({
-          where: { id: user.id },
-          data: {
-            lastLogin: new Date(),
-            provider: account.provider,
-            providerId: account.providerAccountId,
-            ...(user.image ? { avatarUrl: user.image } : {}),
-          },
-        });
+        return Boolean(user.email);
       }
 
       return true;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user, account }) {
       const userId = user?.id ?? token.id;
+      const email = user?.email ?? token.email;
 
-      if (userId) {
-        const dbUser = await prisma.user.findUnique({
+      let dbUser =
+        userId &&
+        (await prisma.user.findUnique({
           where: { id: userId as string },
           include: { roles: { include: { role: true } } },
-        });
+        }));
 
-        if (dbUser) {
-          token.id = dbUser.id;
-          token.username = dbUser.username;
-          token.roles = dbUser.roles.map((r) => r.role.name);
-          token.image = dbUser.avatarUrl ?? user?.image ?? token.image;
-        }
+      if (!dbUser && email) {
+        dbUser = await prisma.user.findUnique({
+          where: { email: email as string },
+          include: { roles: { include: { role: true } } },
+        });
+      }
+
+      if (dbUser) {
+        token.id = dbUser.id;
+        token.email = dbUser.email;
+        token.username = dbUser.username;
+        token.roles = dbUser.roles.map((r) => r.role.name);
+        token.image = dbUser.avatarUrl ?? user?.image ?? token.image;
+      } else if (account?.provider && account.provider !== "credentials") {
+        return token;
       }
 
       return token;

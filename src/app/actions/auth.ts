@@ -78,12 +78,12 @@ export async function registerAction(
 
   const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
 
-  let signInResult;
   try {
-    signInResult = await signIn("credentials", {
+    await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
       redirect: false,
+      redirectTo: callbackUrl,
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -93,10 +93,6 @@ export async function registerAction(
       success: false,
       error: error instanceof Error ? error.message : "Erro ao entrar após cadastro.",
     };
-  }
-
-  if (!signInResult?.ok) {
-    return { success: false, error: "Cadastro ok, mas falha ao entrar. Tente o login." };
   }
 
   return { success: true, redirectTo: callbackUrl };
@@ -132,12 +128,12 @@ export async function loginAction(
 
   const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
 
-  let signInResult;
   try {
-    signInResult = await signIn("credentials", {
+    await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
       redirect: false,
+      redirectTo: callbackUrl,
     });
   } catch (error) {
     if (error instanceof AuthError) {
@@ -147,10 +143,6 @@ export async function loginAction(
       success: false,
       error: error instanceof Error ? error.message : "Erro ao entrar. Tente novamente.",
     };
-  }
-
-  if (!signInResult?.ok) {
-    return { success: false, error: "E-mail ou senha incorretos." };
   }
 
   return { success: true, redirectTo: callbackUrl };
