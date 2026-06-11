@@ -1,4 +1,5 @@
 // Importações necessárias para o serviço de matrícula
+import { isPrismaUniqueViolation } from "@/lib/prisma-errors";
 import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
 import { countTotalLessons } from "@/services/course.service"; // Função para contar aulas
 import { awardXp, type XpAward, XP_REWARDS } from "@/services/xp.service"; // Serviço de XP
@@ -45,10 +46,17 @@ export async function enrollInCourse(userId: string, courseId: string) {
   const existing = await getEnrollment(userId, courseId);
   if (existing) return existing;
 
-  // Cria nova matrícula
-  return prisma.courseEnrollment.create({
-    data: { userId, courseId },
-  });
+  try {
+    return await prisma.courseEnrollment.create({
+      data: { userId, courseId },
+    });
+  } catch (error) {
+    if (isPrismaUniqueViolation(error)) {
+      const existing = await getEnrollment(userId, courseId);
+      if (existing) return existing;
+    }
+    throw error;
+  }
 }
 
 // Função para marcar aula como concluída
@@ -62,6 +70,36 @@ export async function markLessonComplete(
   const enrollment = await getEnrollment(userId, courseId);
   if (!enrollment) {
     throw new Error("Você precisa estar matriculado no curso.");
+  }
+
+  const course = await prisma.course.findUnique({
+    where: { id: courseId },
+    include: {
+      modules: {
+        orderBy: { orderNumber: "asc" },
+        include: { lessons: { orderBy: { orderNumber: "asc" } } },
+      },
+    },
+  });
+
+  if (!course) {
+    throw new Error("Curso não encontrado.");
+  }
+
+  const allLessons = course.modules.flatMap((module) => module.lessons);
+  const lessonIndex = allLessons.findIndex((lesson) => lesson.id === lessonId);
+  if (lessonIndex === -1) {
+    throw new Error("Aula não pertence a este curso.");
+  }
+
+  if (course.progressionType === "PROGRESSIVE" && lessonIndex > 0) {
+    const previousLesson = allLessons[lessonIndex - 1];
+    const previousCompleted = enrollment.lessonProgresses.some(
+      (progress) => progress.lessonId === previousLesson.id && progress.completed,
+    );
+    if (!previousCompleted) {
+      throw new Error("Conclua a aula anterior para desbloquear esta.");
+    }
   }
 
   // Busca progresso existente da aula
@@ -92,18 +130,6 @@ export async function markLessonComplete(
       completedAt: new Date(),
     },
   });
-
-  // Busca curso com módulos e aulas
-  const course = await prisma.course.findUnique({
-    where: { id: courseId },
-    include: {
-      modules: { include: { lessons: true } },
-    },
-  });
-
-  if (!course) {
-    return { progress: 0, xpAwards: [], totalXpEarned: 0 };
-  }
 
   // Calcula total de aulas e aulas concluídas
   const totalLessons = countTotalLessons(course.modules);

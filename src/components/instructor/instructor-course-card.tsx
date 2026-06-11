@@ -11,6 +11,7 @@ type Props = {
   slug: string;
   status: string;
   thumbnailUrl?: string | null;
+  coverImage?: string | null;
   categoryName: string;
   level: string;
   estimatedHours?: number | null;
@@ -23,6 +24,7 @@ export function InstructorCourseCard({
   title,
   status,
   thumbnailUrl,
+  coverImage,
   categoryName,
   level,
   estimatedHours,
@@ -36,7 +38,7 @@ export function InstructorCourseCard({
       aria-label={`Editar curso ${title}`}
     >
       <CourseThumbnail
-        url={thumbnailUrl}
+        url={coverImage ?? thumbnailUrl}
         title={title}
         className="h-36 w-full transition group-hover:opacity-95"
       />

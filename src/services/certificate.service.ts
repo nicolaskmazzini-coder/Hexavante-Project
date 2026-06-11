@@ -21,39 +21,28 @@ export async function issueCertificate(userId: string, courseId: string) {
     throw new Error("Você precisa concluir o curso para emitir o certificado.");
   }
 
-  // Verifica se já existe certificado para este curso
-  const existing = await prisma.certificate.findFirst({
-    where: { userId, courseId },
-  });
-
-  // Se já existe, retorna o certificado existente
-  if (existing) {
-    return existing;
-  }
-
-  // Gera código único para o certificado
-  const code = generateCertificateCode();
-
-  // Cria o certificado no banco de dados
-  const certificate = await prisma.certificate.create({
-    data: {
-      userId,
-      courseId,
-      code,
-    },
-    include: {
-      user: {
-        select: {
-          fullName: true,
-          username: true,
-        },
+  const certificate = await prisma.$transaction(async (tx) => {
+    const existing = await tx.certificate.findFirst({
+      where: { userId, courseId },
+      include: {
+        user: { select: { fullName: true, username: true } },
+        course: { select: { title: true } },
       },
-      course: {
-        select: {
-          title: true,
-        },
+    });
+
+    if (existing) return existing;
+
+    return tx.certificate.create({
+      data: {
+        userId,
+        courseId,
+        code: generateCertificateCode(),
       },
-    },
+      include: {
+        user: { select: { fullName: true, username: true } },
+        course: { select: { title: true } },
+      },
+    });
   });
 
   logger.info('Certificado emitido', { certificateId: certificate.id, userId, courseId });

@@ -12,6 +12,21 @@ export const courseSchema = z.object({
     .string()
     .optional()
     .refine((v) => !v || v === "" || z.url().safeParse(v).success, "URL inválida"),
+  coverImage: z
+    .string()
+    .optional()
+    .refine(
+      (v) =>
+        !v ||
+        v === "" ||
+        v.startsWith("/uploads/courses/") ||
+        z.url().safeParse(v).success,
+      "URL de capa inválida",
+    ),
+  removeCover: z
+    .enum(["true", "false"])
+    .optional()
+    .transform((v) => v === "true"),
   courseType: z.literal("FREE").default("FREE"),
   level: z.enum(["BEGINNER", "INTERMEDIATE", "ADVANCED"]).default("BEGINNER"),
   estimatedHours: z.coerce.number().int().min(1).max(500).optional(),

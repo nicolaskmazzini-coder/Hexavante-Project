@@ -23,7 +23,13 @@ export function NotificationBell() {
   const loadNotifications = useCallback(async () => {
     try {
       const response = await fetch("/api/notifications");
-      if (!response.ok) return;
+      if (!response.ok) {
+        if (response.status === 401) {
+          setNotifications([]);
+          setUnreadCount(0);
+        }
+        return;
+      }
       const data = (await response.json()) as {
         notifications: NotificationItem[];
         unreadCount: number;
@@ -36,9 +42,19 @@ export function NotificationBell() {
   }, []);
 
   useEffect(() => {
-    loadNotifications();
-    const interval = setInterval(loadNotifications, 30000);
-    return () => clearInterval(interval);
+    const run = () => {
+      void loadNotifications();
+    };
+
+    const timer = window.setTimeout(run, 0);
+    const interval = window.setInterval(() => {
+      if (!document.hidden) run();
+    }, 30000);
+
+    return () => {
+      window.clearTimeout(timer);
+      window.clearInterval(interval);
+    };
   }, [loadNotifications]);
 
   useEffect(() => {
@@ -55,7 +71,8 @@ export function NotificationBell() {
   }, [open]);
 
   const markAllRead = async () => {
-    await fetch("/api/notifications", { method: "PATCH" });
+    const response = await fetch("/api/notifications", { method: "PATCH" });
+    if (!response.ok) return;
     setUnreadCount(0);
     setNotifications((current) =>
       current.map((item) => ({ ...item, readAt: item.readAt ?? new Date().toISOString() })),
@@ -63,7 +80,8 @@ export function NotificationBell() {
   };
 
   const markOneRead = async (id: string) => {
-    await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
+    const response = await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
+    if (!response.ok) return;
     setNotifications((current) =>
       current.map((item) =>
         item.id === id ? { ...item, readAt: item.readAt ?? new Date().toISOString() } : item,
@@ -78,7 +96,7 @@ export function NotificationBell() {
         type="button"
         onClick={() => {
           setOpen((value) => !value);
-          if (!open) loadNotifications();
+          if (!open) void loadNotifications();
         }}
         className="relative rounded-lg border border-white/10 bg-white/[0.04] p-2 text-slate-200 transition hover:border-sky-400/30 hover:bg-sky-400/10"
         aria-label="Notificações"
@@ -98,7 +116,7 @@ export function NotificationBell() {
             {unreadCount > 0 && (
               <button
                 type="button"
-                onClick={markAllRead}
+                onClick={() => void markAllRead()}
                 className="text-xs text-sky-300 hover:underline"
               >
                 Marcar todas como lidas
@@ -132,7 +150,7 @@ export function NotificationBell() {
                       <Link
                         href={item.link}
                         onClick={() => {
-                          if (!item.readAt) markOneRead(item.id);
+                          if (!item.readAt) void markOneRead(item.id);
                           setOpen(false);
                         }}
                       >
@@ -143,7 +161,7 @@ export function NotificationBell() {
                         type="button"
                         className="w-full text-left"
                         onClick={() => {
-                          if (!item.readAt) markOneRead(item.id);
+                          if (!item.readAt) void markOneRead(item.id);
                         }}
                       >
                         {content}

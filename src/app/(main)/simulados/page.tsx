@@ -72,6 +72,7 @@ export default async function SimuladosPage({ searchParams }: Props) {
               slug={exam.slug}
               title={exam.title}
               description={exam.description}
+              coverImage={exam.coverImage}
               examType={exam.examType}
               questionCount={exam._count.questions}
               timeLimit={exam.timeLimit}

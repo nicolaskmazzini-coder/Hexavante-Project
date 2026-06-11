@@ -263,7 +263,7 @@ export default async function LiveRoomPage({
               username: msg.user.username,
               fullName: msg.user.fullName,
               message: msg.message,
-              createdAt: msg.createdAt,
+              createdAt: new Date(msg.createdAt),
             }))}
             disabled={!isLive}
           />

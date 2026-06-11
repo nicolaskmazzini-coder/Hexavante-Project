@@ -1,4 +1,7 @@
+import { auth } from "@/auth";
+import { isInstructor } from "@/lib/permissions";
 import { listCategories } from "@/services/course.service";
+import { redirect } from "next/navigation";
 import { NewCourseForm } from "./new-course-form";
 import { AppLink } from "@/components/ui/app-link";
 import { PageHeader } from "@/components/ui/page-header";
@@ -6,6 +9,10 @@ import { PageShell } from "@/components/ui/page-shell";
 import { BookPlus } from "lucide-react";
 
 export default async function NewCoursePage() {
+  const session = await auth();
+  if (!session?.user?.id) redirect("/login?callbackUrl=/instructor/courses/new");
+  if (!isInstructor(session.user.roles)) redirect("/instructor/apply");
+
   const categories = await listCategories();
 
   return (

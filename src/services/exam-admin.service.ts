@@ -46,6 +46,7 @@ export async function createExam(data: ExamAdminInput) {
       slug,
       examType: data.examType,
       description: data.description || null,
+      coverImage: data.coverImage || null,
       timeLimit: data.timeLimit ?? null,
       isPublished: data.isPublished ?? false,
     },
@@ -53,12 +54,20 @@ export async function createExam(data: ExamAdminInput) {
 }
 
 export async function updateExam(examId: string, data: Partial<ExamAdminInput>) {
+  const coverUpdate =
+    data.removeCover === true
+      ? { coverImage: null }
+      : data.coverImage !== undefined
+        ? { coverImage: data.coverImage || null }
+        : {};
+
   return prisma.exam.update({
     where: { id: examId },
     data: {
       ...(data.title !== undefined ? { title: data.title } : {}),
       ...(data.examType !== undefined ? { examType: data.examType } : {}),
       ...(data.description !== undefined ? { description: data.description || null } : {}),
+      ...coverUpdate,
       ...(data.timeLimit !== undefined ? { timeLimit: data.timeLimit ?? null } : {}),
       ...(data.isPublished !== undefined ? { isPublished: data.isPublished } : {}),
     },
@@ -70,22 +79,37 @@ export async function deleteExam(examId: string) {
 }
 
 export async function addExamQuestion(examId: string, data: ExamQuestionInput) {
-  const alternatives = [
-    { text: data.altA, key: "A" },
-    { text: data.altB, key: "B" },
-    { text: data.altC, key: "C" },
-    { text: data.altD, key: "D" },
-  ];
+  if (data.type === "ESSAY") {
+    return prisma.examQuestion.create({
+      data: {
+        examId,
+        statement: data.statement,
+        imageUrl: data.imageUrl || null,
+        imageWidth: data.imageUrl ? data.imageWidth ?? null : null,
+        imageHeight: data.imageUrl ? data.imageHeight ?? null : null,
+        imageDisplaySize: data.imageUrl ? data.imageDisplaySize ?? "MEDIUM" : null,
+        orderNumber: data.orderNumber,
+        type: "ESSAY",
+        expectedAnswer: data.expectedAnswer,
+      },
+    });
+  }
 
   return prisma.examQuestion.create({
     data: {
       examId,
       statement: data.statement,
+      imageUrl: data.imageUrl || null,
+      imageWidth: data.imageUrl ? data.imageWidth ?? null : null,
+      imageHeight: data.imageUrl ? data.imageHeight ?? null : null,
+      imageDisplaySize: data.imageUrl ? data.imageDisplaySize ?? "MEDIUM" : null,
       orderNumber: data.orderNumber,
+      type: "MULTIPLE_CHOICE",
       alternatives: {
-        create: alternatives.map((alt) => ({
-          text: alt.text,
-          isCorrect: alt.key === data.correctAlternative,
+        create: data.alternatives.map((text, index) => ({
+          text,
+          isCorrect:
+            String.fromCharCode(65 + index) === data.correctAlternative,
         })),
       },
     },

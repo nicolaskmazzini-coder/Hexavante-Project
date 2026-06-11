@@ -9,6 +9,7 @@ type CourseCardProps = {
   title: string;
   shortDescription?: string | null;
   thumbnailUrl?: string | null;
+  coverImage?: string | null;
   categoryName: string;
   moduleCount: number;
   enrollmentCount: number;
@@ -21,6 +22,7 @@ export function CourseCard({
   title,
   shortDescription,
   thumbnailUrl,
+  coverImage,
   categoryName,
   moduleCount,
   enrollmentCount,
@@ -34,7 +36,7 @@ export function CourseCard({
       className="overflow-hidden"
     >
       <CourseThumbnail
-        url={thumbnailUrl}
+        url={coverImage ?? thumbnailUrl}
         title={title}
         className="h-40 w-full transition group-hover:opacity-95"
       />

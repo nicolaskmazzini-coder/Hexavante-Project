@@ -1,5 +1,7 @@
 "use server";
 
+import { headers } from "next/headers";
+import { rateLimitAuthAction } from "@/lib/rate-limit";
 import {
   createPasswordResetToken,
   resetPasswordWithToken,
@@ -32,6 +34,12 @@ export async function requestPasswordResetAction(
   _prev: PasswordResetResult,
   formData: FormData,
 ): Promise<PasswordResetResult> {
+  const headersList = await headers();
+  const ip = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
+  if (!rateLimitAuthAction(ip)) {
+    return { success: false, error: "Muitas tentativas. Tente novamente em alguns minutos." };
+  }
+
   const parsed = forgotPasswordSchema.safeParse({ email: formData.get("email") });
   if (!parsed.success) {
     return {

@@ -21,14 +21,16 @@ export async function createPasswordResetToken(email: string): Promise<string | 
   const token = crypto.randomBytes(32).toString("hex");
   const identifier = resetIdentifier(user.email);
 
-  await prisma.verificationToken.deleteMany({ where: { identifier } });
-  await prisma.verificationToken.create({
-    data: {
-      identifier,
-      token,
-      expires: new Date(Date.now() + TOKEN_TTL_MS),
-    },
-  });
+  await prisma.$transaction([
+    prisma.verificationToken.deleteMany({ where: { identifier } }),
+    prisma.verificationToken.create({
+      data: {
+        identifier,
+        token,
+        expires: new Date(Date.now() + TOKEN_TTL_MS),
+      },
+    }),
+  ]);
 
   return token;
 }

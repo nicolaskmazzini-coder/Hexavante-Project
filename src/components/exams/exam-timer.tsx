@@ -1,60 +1,64 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCountdown } from "@/hooks/use-countdown";
+import { formatTimer, useElapsedTimer } from "@/hooks/use-elapsed-timer";
 import { Alert } from "@/components/ui/alert";
 import { Clock3 } from "lucide-react";
 
-type Props = {
+type CountdownProps = {
+  mode: "countdown";
   startedAt: string;
   timeLimitMinutes: number;
+  attemptId: string;
   onExpire: () => void;
 };
 
-function formatTime(ms: number) {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000));
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
+type ElapsedProps = {
+  mode: "elapsed";
+  startedAt: string;
+  attemptId: string;
+};
+
+type Props = CountdownProps | ElapsedProps;
+
+export function ExamTimer(props: Props) {
+  if (props.mode === "elapsed") {
+    return <ElapsedDisplay startedAt={props.startedAt} attemptId={props.attemptId} />;
+  }
+
+  return (
+    <CountdownDisplay
+      startedAt={props.startedAt}
+      timeLimitMinutes={props.timeLimitMinutes}
+      attemptId={props.attemptId}
+      onExpire={props.onExpire}
+    />
+  );
 }
 
-export function ExamTimer({ startedAt, timeLimitMinutes, onExpire }: Props) {
-  const [remainingMs, setRemainingMs] = useState(() => {
-    const limitMs = timeLimitMinutes * 60 * 1000;
-    return limitMs - (Date.now() - new Date(startedAt).getTime());
+function CountdownDisplay({
+  startedAt,
+  timeLimitMinutes,
+  attemptId,
+  onExpire,
+}: Omit<CountdownProps, "mode">) {
+  const remainingMs = useCountdown(startedAt, timeLimitMinutes, {
+    storageKey: `exam-countdown-${attemptId}`,
+    onExpire,
   });
-  const expiredRef = useRef(false);
-
-  useEffect(() => {
-    const limitMs = timeLimitMinutes * 60 * 1000;
-    const started = new Date(startedAt).getTime();
-
-    const tick = () => {
-      const left = limitMs - (Date.now() - started);
-      setRemainingMs(left);
-
-      if (left <= 0 && !expiredRef.current) {
-        expiredRef.current = true;
-        onExpire();
-      }
-    };
-
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
-  }, [startedAt, timeLimitMinutes, onExpire]);
 
   const warning = remainingMs > 0 && remainingMs <= 5 * 60 * 1000;
   const critical = remainingMs > 0 && remainingMs <= 60 * 1000;
 
   return (
-    <div className="space-y-3">
+    <div className="sticky top-4 z-20 space-y-3">
       <div
-        className={`flex items-center justify-between rounded-xl border px-4 py-3 ${
+        className={`flex items-center justify-between rounded-xl border px-4 py-3 backdrop-blur ${
           critical
             ? "border-red-400/40 bg-red-500/10"
             : warning
               ? "border-amber-400/40 bg-amber-500/10"
-              : "border-white/10 bg-white/[0.04]"
+              : "border-white/10 bg-slate-950/80"
         }`}
       >
         <span className="flex items-center gap-2 text-sm text-slate-300">
@@ -66,7 +70,7 @@ export function ExamTimer({ startedAt, timeLimitMinutes, onExpire }: Props) {
             critical ? "text-red-300" : warning ? "text-amber-300" : "text-white"
           }`}
         >
-          {formatTime(remainingMs)}
+          {formatTimer(remainingMs)}
         </span>
       </div>
 
@@ -77,6 +81,22 @@ export function ExamTimer({ startedAt, timeLimitMinutes, onExpire }: Props) {
             : "Restam menos de 5 minutos para concluir o simulado."}
         </Alert>
       )}
+    </div>
+  );
+}
+
+function ElapsedDisplay({ startedAt, attemptId }: { startedAt: string; attemptId: string }) {
+  const elapsedMs = useElapsedTimer(startedAt, `exam-elapsed-${attemptId}`);
+
+  return (
+    <div className="sticky top-4 z-20">
+      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 backdrop-blur">
+        <span className="flex items-center gap-2 text-sm text-slate-300">
+          <Clock3 className="h-4 w-4" />
+          Tempo decorrido
+        </span>
+        <span className="font-mono text-lg font-bold text-white">{formatTimer(elapsedMs)}</span>
+      </div>
     </div>
   );
 }

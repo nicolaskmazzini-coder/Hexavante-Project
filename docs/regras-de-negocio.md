@@ -106,25 +106,39 @@ Nota Mínima
 
 Todo certificado deverá possuir um código único para validação.
 
-*Simulados
+## Simulados
 
-#RN018 - Tipos de Simulados
+### RN018 — Tipos de simulados
 
-O sistema deverá suportar:
+O sistema suporta categorias:
 
-ENEM
-Vestibulares
-Tecnologia da Informação
+- ENEM
+- Vestibulares
+- Tecnologia da Informação
 
-#RN019 - Origem das Questões
+### RN019 — Origem das questões
 
-As questões poderão ser:
+As questões podem ser oficiais ou autorais (criadas pelo moderador no painel `/moderacao/simulados`).
 
-Oficiais
-Autorais
-RN020 - Tentativas
+### RN020 — Tentativas
 
-O sistema deverá registrar todas as tentativas realizadas pelos usuários.
+O sistema registra todas as tentativas (`ExamAttempt`) com score, respostas e timestamps.
+
+### RN020a — Alternativas dinâmicas (implementado)
+
+Questões de múltipla escolha aceitam **mínimo 2 e máximo 6** alternativas. A letra (A, B, C…) é derivada da ordem de cadastro.
+
+### RN020b — Questões dissertativas (implementado)
+
+Questões do tipo `ESSAY` não possuem alternativas. O gabarito de referência (`expectedAnswer`) orienta a correção manual. Status: `PENDING`, `CORRECT`, `PARTIAL`, `INCORRECT`.
+
+### RN020c — Tempo limite (implementado)
+
+Simulados podem definir `timeLimit` em minutos. Sem limite, exibe cronômetro progressivo. Com limite, cronômetro regressivo com auto-envio ao expirar.
+
+### RN020d — Imagem no enunciado (implementado)
+
+Questões podem incluir imagem opcional com tamanho de exibição configurável (`SMALL`, `MEDIUM`, `LARGE`, `FULL`), preservando a proporção original.
 
 *Gamificação
 

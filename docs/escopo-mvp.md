@@ -32,11 +32,11 @@ Com moderação de instrutores/cursos e versão básica do HexaSchools.
 
 | Módulo | Funcionalidades | RF relacionados |
 |--------|-----------------|-----------------|
-| **Simulados** | Questões objetivas, correção automática, histórico de tentativas | RF027–RF030 |
-| **Moderação** | Solicitação de instrutor, aprovação de instrutor, aprovação de curso | RN006–RN010 |
-| **Instrutor** | Criar/editar curso (status pendente até aprovação) | RF011–RF012 |
+| **Simulados** | Múltipla escolha (2–6 alternativas dinâmicas), dissertativas com correção manual, cronômetro com/sem limite, imagem no enunciado com tamanho configurável, capa do simulado, histórico e revisão com gabarito | RF027–RF030, RF048–RF051 |
+| **Moderação** | Solicitação de instrutor, aprovação de instrutor, aprovação de curso, correção de dissertativas | RN006–RN010 |
+| **Instrutor** | Criar/editar curso com capa (status pendente até aprovação) | RF011–RF012 |
 
-**Critério de pronto:** instrutor aprovado cria curso; moderador aprova; aluno faz simulado e vê resultado.
+**Critério de pronto:** instrutor aprovado cria curso com capa; moderador aprova; moderador cria simulado com questões MC e dissertativas; aluno realiza simulado com cronômetro e vê resultado/revisão.
 
 ---
 
@@ -102,11 +102,13 @@ Isso **não** entra no MVP. Está documentado em [visão-geral.md](visão-geral.
 Sprint 1  → Auth + User/Role (Prisma)
 Sprint 2  → Categorias + Cursos + Módulos + Aulas
 Sprint 3  → Matrícula + Progresso
-Sprint 4  → Simulados + Tentativas
-Sprint 5  → Moderação (instrutor + curso)
-Sprint 6  → Gamificação (XP básico)
+Sprint 4  → Simulados + Tentativas + Dissertativas + Timer
+Sprint 5  → Moderação (instrutor + curso + correções)
+Sprint 6  → Gamificação (XP básico) + Uploads (capas/imagens)
 Sprint 7  → HexaSchools básico (se houver tempo)
 ```
+
+Setup e migrations: [instalacao-e-desenvolvimento.md](instalacao-e-desenvolvimento.md).
 
 ---
 

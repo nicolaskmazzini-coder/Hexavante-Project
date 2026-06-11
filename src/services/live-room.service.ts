@@ -196,6 +196,9 @@ export async function startLiveRoom(roomId: string, instructorId: string) {
   if (!room) {
     throw new Error("Sala não encontrada ou você não é o instrutor.");
   }
+  if (room.status !== "SCHEDULED") {
+    throw new Error("Só é possível iniciar salas agendadas.");
+  }
 
   return prisma.liveRoom.update({
     where: { id: roomId },
@@ -214,6 +217,9 @@ export async function endLiveRoom(roomId: string, instructorId: string) {
   });
   if (!room) {
     throw new Error("Sala não encontrada ou você não é o instrutor.");
+  }
+  if (room.status !== "LIVE") {
+    throw new Error("Só é possível encerrar salas em transmissão.");
   }
 
   return prisma.liveRoom.update({
@@ -246,6 +252,15 @@ export async function joinLiveRoom(roomId: string, userId: string) {
     },
   });
   if (existing) {
+    if (existing.leftAt) {
+      return prisma.liveRoomParticipant.update({
+        where: { id: existing.id },
+        data: { leftAt: null, joinedAt: new Date() },
+        include: {
+          user: { select: { id: true, username: true, fullName: true } },
+        },
+      });
+    }
     return existing;
   }
 
@@ -293,7 +308,32 @@ export async function getLiveChatMessages(roomId: string, limit = 50) {
   });
 }
 
-export async function getLiveChatMessagesSince(roomId: string, since?: Date) {
+export async function canAccessLiveChat(roomId: string, userId: string) {
+  const room = await prisma.liveRoom.findUnique({
+    where: { id: roomId },
+    select: { instructorId: true },
+  });
+  if (!room) return false;
+  if (room.instructorId === userId) return true;
+
+  const participant = await prisma.liveRoomParticipant.findUnique({
+    where: { roomId_userId: { roomId, userId } },
+    select: { leftAt: true },
+  });
+
+  return Boolean(participant && !participant.leftAt);
+}
+
+export async function getLiveChatMessagesSince(
+  roomId: string,
+  userId: string,
+  since?: Date,
+) {
+  const allowed = await canAccessLiveChat(roomId, userId);
+  if (!allowed) {
+    throw new Error("Você não tem acesso ao chat desta sala.");
+  }
+
   return prisma.liveChatMessage.findMany({
     where: {
       roomId,
@@ -331,8 +371,8 @@ export async function sendLiveChatMessage(
       roomId_userId: { roomId, userId },
     },
   });
-  if (!participant) {
-    throw new Error("Você precisa entrar na sala para enviar mensagens.");
+  if (!participant || participant.leftAt) {
+    throw new Error("Você precisa estar na sala para enviar mensagens.");
   }
 
   return prisma.liveChatMessage.create({

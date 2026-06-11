@@ -16,6 +16,10 @@ async function uniqueUsername(base: string): Promise<string> {
   return username;
 }
 
+function normalizeEmail(email: string): string {
+  return email.trim().toLowerCase();
+}
+
 function toAdapterUser(user: {
   id: string;
   email: string;
@@ -40,7 +44,7 @@ export const authAdapter: Adapter = {
     return user ? toAdapterUser(user) : null;
   },
   async getUserByEmail(email) {
-    const user = await prisma.user.findUnique({ where: { email } });
+    const user = await prisma.user.findUnique({ where: { email: normalizeEmail(email) } });
     return user ? toAdapterUser(user) : null;
   },
   async getUserByAccount(providerAccountId) {
@@ -82,7 +86,11 @@ export const authAdapter: Adapter = {
       throw new Error("Papel USER não encontrado. Execute o seed do banco.");
     }
 
-    const email = user.email!;
+    if (!user.email) {
+      throw new Error("Provedor OAuth não retornou e-mail. Verifique as permissões do app.");
+    }
+
+    const email = normalizeEmail(user.email);
     const existing = await prisma.user.findUnique({ where: { email } });
     if (existing) {
       return toAdapterUser(existing);
@@ -141,7 +149,8 @@ export const authAdapter: Adapter = {
         token_type: account.token_type,
         scope: account.scope,
         id_token: account.id_token,
-        session_state: account.session_state,
+        session_state:
+          account.session_state != null ? String(account.session_state) : null,
       },
     }) as unknown as AdapterAccount;
   },

@@ -1,7 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
-import { canModerate, isInstructor } from "@/lib/permissions";
+import { isInstructor } from "@/lib/permissions";
 import {
   courseSchema,
   lessonSchema,
@@ -56,6 +56,8 @@ export async function createCourseAction(
     shortDescription: formData.get("shortDescription") || undefined,
     description: formData.get("description") || undefined,
     thumbnailUrl: formData.get("thumbnailUrl") || undefined,
+    coverImage: formData.get("coverImage") || undefined,
+    removeCover: formData.get("removeCover") || "false",
     courseType: "FREE",
     level: formData.get("level") || "BEGINNER",
     estimatedHours: formData.get("estimatedHours") || undefined,
@@ -66,7 +68,10 @@ export async function createCourseAction(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  const course = await createCourse(user.id, parsed.data);
+  const course = await createCourse(user.id, {
+    ...parsed.data,
+    coverImage: parsed.data.removeCover ? undefined : parsed.data.coverImage,
+  });
   revalidatePath("/courses");
   revalidatePath("/instructor/courses");
   redirect(`/instructor/courses/${course.id}/edit`);
@@ -85,6 +90,8 @@ export async function updateCourseAction(
       shortDescription: formData.get("shortDescription") || undefined,
       description: formData.get("description") || undefined,
       thumbnailUrl: formData.get("thumbnailUrl") || undefined,
+      coverImage: formData.get("coverImage") || undefined,
+      removeCover: formData.get("removeCover") || "false",
       courseType: "FREE",
       level: formData.get("level") || "BEGINNER",
       estimatedHours: formData.get("estimatedHours") || undefined,
@@ -95,7 +102,10 @@ export async function updateCourseAction(
       return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
     }
 
-    await updateCourse(courseId, user.id, parsed.data);
+    await updateCourse(courseId, user.id, {
+      ...parsed.data,
+      coverImage: parsed.data.removeCover ? undefined : parsed.data.coverImage,
+    });
     revalidatePath("/courses");
     revalidatePath("/instructor/courses");
     revalidatePath(`/instructor/courses/${courseId}/edit`);

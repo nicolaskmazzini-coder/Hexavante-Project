@@ -1,16 +1,20 @@
 // Cliente Prisma singleton — usar após: npm install @prisma/client && npx prisma generate
 // Evita múltiplas instâncias em desenvolvimento com hot reload
 
-import { PrismaClient } from "@prisma/client"; // Cliente Prisma para banco de dados
+import { PrismaClient } from "@prisma/client";
 
-// Define tipo global para armazenar instância do Prisma
-const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
+// Incremente ao alterar prisma/schema.prisma para invalidar cache em dev.
+const PRISMA_SINGLETON_KEY = "hexavante_prisma_exam_question_fields_v2";
 
-// Exporta instância única do Prisma (singleton)
-// Usa instância existente em desenvolvimento ou cria nova
-export const prisma = globalForPrisma.prisma ?? new PrismaClient();
+type PrismaGlobal = typeof globalThis & {
+  [PRISMA_SINGLETON_KEY]?: PrismaClient;
+};
 
-// Em desenvolvimento, armazena instância no global para evitar múltiplas conexões
+const globalForPrisma = globalThis as PrismaGlobal;
+
+export const prisma =
+  globalForPrisma[PRISMA_SINGLETON_KEY] ?? new PrismaClient();
+
 if (process.env.NODE_ENV !== "production") {
-  globalForPrisma.prisma = prisma;
+  globalForPrisma[PRISMA_SINGLETON_KEY] = prisma;
 }

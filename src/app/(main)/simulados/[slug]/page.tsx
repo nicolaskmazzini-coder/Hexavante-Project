@@ -6,6 +6,7 @@ import { Button, LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
 import { EXAM_PASS_SCORE } from "@/lib/gamification";
+import { ExamThumbnail } from "@/components/exams/exam-thumbnail";
 import { EXAM_TYPE_LABELS } from "@/lib/validations/exam";
 import { getExamBySlug, getUserExamPerformance } from "@/services/exam.service";
 import Link from "next/link";
@@ -31,24 +32,34 @@ export default async function ExamDetailPage({ params }: Props) {
         ← Simulados
       </AppLink>
 
-      <Badge variant="teal" className="mb-4">
-        {EXAM_TYPE_LABELS[exam.examType] ?? exam.examType}
-      </Badge>
-      <h1 className="hx-page-title">{exam.title}</h1>
+      <div className="overflow-hidden rounded-2xl border border-white/10">
+        <ExamThumbnail
+          url={exam.coverImage}
+          title={exam.title}
+          className="h-52 w-full sm:h-64"
+          priority
+        />
+        <div className="border-t border-white/10 bg-white/[0.03] p-6">
+          <Badge variant="teal" className="mb-4">
+            {EXAM_TYPE_LABELS[exam.examType] ?? exam.examType}
+          </Badge>
+          <h1 className="hx-page-title">{exam.title}</h1>
 
-      {exam.description && <p className="mt-4 text-slate-300">{exam.description}</p>}
+          {exam.description && <p className="mt-4 text-slate-300">{exam.description}</p>}
 
-      <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-400">
-        <span className="flex items-center gap-1.5">
-          <ClipboardList className="h-4 w-4 text-teal-300" />
-          {exam._count.questions} questões
-        </span>
-        {exam.timeLimit && (
-          <span className="flex items-center gap-1.5">
-            <Clock3 className="h-4 w-4 text-sky-300" />
-            {exam.timeLimit} minutos
-          </span>
-        )}
+          <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-400">
+            <span className="flex items-center gap-1.5">
+              <ClipboardList className="h-4 w-4 text-teal-300" />
+              {exam._count.questions} questões
+            </span>
+            {exam.timeLimit && (
+              <span className="flex items-center gap-1.5">
+                <Clock3 className="h-4 w-4 text-sky-300" />
+                {exam.timeLimit} minutos
+              </span>
+            )}
+          </div>
+        </div>
       </div>
 
       {performance && performance.attemptCount > 0 && (

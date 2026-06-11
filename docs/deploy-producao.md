@@ -73,6 +73,23 @@ Seed inicial (uma vez):
 docker compose -f docker-compose.prod.yml exec app npx prisma db seed
 ```
 
+Sincronizar schema após atualizações (migrations SQL ou push):
+
+```bash
+# Opção 1 — scripts incrementais (se já existem tabelas)
+docker compose -f docker-compose.prod.yml exec app npm run db:features
+docker compose -f docker-compose.prod.yml exec app npm run db:exam-cover
+docker compose -f docker-compose.prod.yml exec app npm run db:exam-questions
+
+# Opção 2 — alinhar schema completo
+docker compose -f docker-compose.prod.yml exec app npx prisma db push
+docker compose -f docker-compose.prod.yml exec app npx prisma generate
+```
+
+> Garanta permissão de escrita em `public/uploads/` dentro do container para capas e imagens de questões.
+
+Documentação de setup local: [instalacao-e-desenvolvimento.md](instalacao-e-desenvolvimento.md).
+
 ## 6. Nginx + HTTPS (Let's Encrypt)
 
 ```bash
@@ -103,6 +120,7 @@ No Google Cloud, adicione também `https://hexavante.com.br` em **Origens JavaSc
 cd ~/hexavante
 git pull origin main
 docker compose -f docker-compose.prod.yml --env-file .env.production up -d --build
+docker compose -f docker-compose.prod.yml exec app npx prisma generate
 ```
 
 ## Alternativa: Vercel (sem VPS)

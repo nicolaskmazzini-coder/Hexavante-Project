@@ -4,10 +4,6 @@ import { EXAM_PASS_SCORE } from "@/lib/gamification";
 import { prisma } from "@/lib/prisma";
 import { awardXp, XP_REWARDS } from "@/services/xp.service"; // Serviço de XP
 
-export async function listPublishedExams(examType?: string) {
-  return searchPublishedExams({ examType, sort: "recent" });
-}
-
 export type ExamSearchParams = {
   examType?: string;
   q?: string;
@@ -121,24 +117,29 @@ export async function getExamForTaking(slug: string) {
 // Função para iniciar tentativa de simulado
 // Cria nova tentativa se simulado estiver disponível
 export async function startAttempt(userId: string, examId: string) {
-  // Busca simulado publicado com contagem de questões
-  const exam = await prisma.exam.findFirst({
-    where: { id: examId, isPublished: true },
-    include: { _count: { select: { questions: true } } },
-  });
+  return prisma.$transaction(async (tx) => {
+    const active = await tx.examAttempt.findFirst({
+      where: { userId, examId, finishedAt: null },
+      orderBy: { startedAt: "desc" },
+    });
+    if (active) return active;
 
-  // Verifica se simulado existe e tem questões
-  if (!exam || exam._count.questions === 0) {
-    throw new Error("Simulado não disponível.");
-  }
+    const exam = await tx.exam.findFirst({
+      where: { id: examId, isPublished: true },
+      include: { _count: { select: { questions: true } } },
+    });
 
-  // Cria nova tentativa
-  return prisma.examAttempt.create({
-    data: {
-      examId,
-      userId,
-      totalQuestions: exam._count.questions,
-    },
+    if (!exam || exam._count.questions === 0) {
+      throw new Error("Simulado não disponível.");
+    }
+
+    return tx.examAttempt.create({
+      data: {
+        examId,
+        userId,
+        totalQuestions: exam._count.questions,
+      },
+    });
   });
 }
 
@@ -157,12 +158,18 @@ export async function getActiveAttempt(userId: string, examId: string) {
 
 // Função para submeter tentativa de simulado
 // Corrige respostas, calcula pontuação e concede XP
+export type SubmitAttemptPayload = {
+  answers: Record<string, string>;
+  essays: Record<string, string>;
+};
+
 export async function submitAttempt(
   userId: string,
   attemptId: string,
-  answers: Record<string, string>,
+  payload: SubmitAttemptPayload,
   options?: { allowPartial?: boolean },
 ) {
+  const { answers, essays } = payload;
   // Busca tentativa com simulado e questões
   const attempt = await prisma.examAttempt.findUnique({
     where: { id: attemptId },
@@ -196,24 +203,37 @@ export async function submitAttempt(
   }
 
   const questions = attempt.exam.questions;
-  if (!options?.allowPartial && Object.keys(answers).length !== questions.length) {
-    throw new Error("Responda todas as questões antes de enviar.");
+  const mcQuestions = questions.filter((q) => q.type !== "ESSAY");
+  const essayQuestions = questions.filter((q) => q.type === "ESSAY");
+
+  if (!options?.allowPartial) {
+    for (const question of mcQuestions) {
+      if (!answers[question.id]) {
+        throw new Error("Responda todas as questões de múltipla escolha antes de enviar.");
+      }
+    }
+    for (const question of essayQuestions) {
+      const text = essays[question.id]?.trim();
+      if (!text) {
+        throw new Error("Responda todas as questões dissertativas antes de enviar.");
+      }
+    }
   }
 
   let correct = 0;
   const answerRecords: {
     questionId: string;
-    alternativeId: string;
+    alternativeId?: string;
+    essayAnswer?: string;
+    essayStatus?: "PENDING" | "CORRECT" | "PARTIAL" | "INCORRECT";
     isCorrect: boolean;
   }[] = [];
 
-  for (const question of questions) {
-    let selectedId = answers[question.id];
-    if (!selectedId && options?.allowPartial) {
-      const fallback =
-        question.alternatives.find((a) => !a.isCorrect) ?? question.alternatives[0];
-      if (!fallback) continue;
-      selectedId = fallback.id;
+  for (const question of mcQuestions) {
+    const selectedId = answers[question.id];
+    if (!selectedId) {
+      if (options?.allowPartial) continue;
+      throw new Error("Responda todas as questões antes de enviar.");
     }
 
     const selected = question.alternatives.find((a) => a.id === selectedId);
@@ -232,32 +252,63 @@ export async function submitAttempt(
     });
   }
 
-  const total = questions.length;
-  const score = total > 0 ? Math.round((correct / total) * 100) : 0; // Calcula pontuação em porcentagem
+  for (const question of essayQuestions) {
+    const essayText = essays[question.id]?.trim();
+    if (!essayText) {
+      if (options?.allowPartial) continue;
+      throw new Error("Responda todas as questões dissertativas antes de enviar.");
+    }
 
-  // Salva respostas e atualiza tentativa em transação
-  await prisma.$transaction([
-    prisma.examAnswer.createMany({
-      data: answerRecords.map((a) => ({
-        attemptId,
-        questionId: a.questionId,
-        alternativeId: a.alternativeId,
-        isCorrect: a.isCorrect,
-      })),
-    }),
-    prisma.examAttempt.update({
+    answerRecords.push({
+      questionId: question.id,
+      essayAnswer: essayText.slice(0, 2000),
+      essayStatus: "PENDING",
+      isCorrect: false,
+    });
+  }
+
+  const total = questions.length;
+  const mcTotal = mcQuestions.length;
+  const score = mcTotal > 0 ? Math.round((correct / mcTotal) * 100) : 0;
+
+  const submitResult = await prisma.$transaction(async (tx) => {
+    const current = await tx.examAttempt.findUnique({
+      where: { id: attemptId },
+      select: { finishedAt: true, exam: { select: { title: true } } },
+    });
+
+    if (!current || current.finishedAt) {
+      throw new Error("Este simulado já foi finalizado.");
+    }
+
+    if (answerRecords.length > 0) {
+      await tx.examAnswer.createMany({
+        data: answerRecords.map((a) => ({
+          attemptId,
+          questionId: a.questionId,
+          alternativeId: a.alternativeId ?? null,
+          essayAnswer: a.essayAnswer ?? null,
+          essayStatus: a.essayStatus ?? null,
+          isCorrect: a.isCorrect,
+        })),
+      });
+    }
+
+    await tx.examAttempt.update({
       where: { id: attemptId },
       data: {
         correctAnswers: correct,
         score,
         finishedAt: new Date(),
       },
-    }),
-  ]);
+    });
+
+    return { examTitle: current.exam.title };
+  });
 
   // Concede XP por finalizar simulado
   let xpEarned = 0;
-  const examTitle = attempt.exam.title;
+  const examTitle = submitResult.examTitle;
   const baseAward = await awardXp(
     userId,
     XP_REWARDS.EXAM,
@@ -279,7 +330,15 @@ export async function submitAttempt(
     if (passAward) xpEarned += passAward.amount;
   }
 
-  return { attemptId, score, correct, total, xpEarned };
+  return {
+    attemptId,
+    score,
+    correct,
+    total,
+    mcTotal,
+    pendingEssays: essayQuestions.length,
+    xpEarned,
+  };
 }
 
 // Função para obter resultado da tentativa
@@ -288,7 +347,11 @@ export async function getAttemptResult(userId: string, attemptId: string) {
   return prisma.examAttempt.findFirst({
     where: { id: attemptId, userId },
     include: {
-      exam: true,
+      exam: {
+        include: {
+          questions: { orderBy: { orderNumber: "asc" } },
+        },
+      },
       answers: {
         include: {
           question: {
@@ -301,12 +364,6 @@ export async function getAttemptResult(userId: string, attemptId: string) {
       },
     },
   });
-}
-
-// Função para listar tentativas do usuário
-// Retorna todas as tentativas finalizadas do usuário
-export async function listUserAttempts(userId: string) {
-  return listUserAttemptsFiltered(userId, {});
 }
 
 export type AttemptHistoryParams = {

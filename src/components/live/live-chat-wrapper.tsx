@@ -24,6 +24,11 @@ export function LiveChatWrapper({ roomId, currentUserId, initialMessages, disabl
     messagesRef.current = messages;
   }, [messages]);
 
+  useEffect(() => {
+    const timer = window.setTimeout(() => setMessages(initialMessages), 0);
+    return () => window.clearTimeout(timer);
+  }, [initialMessages]);
+
   const mergeMessages = useCallback((incoming: ChatMessage[]) => {
     if (incoming.length === 0) return;
     setMessages((current) => {
@@ -68,7 +73,8 @@ export function LiveChatWrapper({ roomId, currentUserId, initialMessages, disabl
       }
     };
 
-    const interval = setInterval(poll, POLL_INTERVAL_MS);
+    void poll();
+    const interval = setInterval(() => void poll(), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [roomId, disabled, mergeMessages]);
 

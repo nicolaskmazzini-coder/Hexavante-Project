@@ -1,19 +1,26 @@
 "use client";
 
-import { useActionState, useCallback, useRef, useState } from "react";
+import { useActionState, useCallback, useEffect, useRef, useState } from "react";
 import {
   submitExamAction,
   submitExamTimeoutAction,
   type ActionResult,
 } from "@/app/actions/exam";
+import { ExamQuestionImage } from "@/components/exams/exam-question-image";
 import { ExamTimer } from "@/components/exams/exam-timer";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/cn";
 
 type Question = {
   id: string;
   statement: string;
+  imageUrl?: string | null;
+  imageWidth?: number | null;
+  imageHeight?: number | null;
+  imageDisplaySize?: "SMALL" | "MEDIUM" | "LARGE" | "FULL" | null;
   orderNumber: number;
+  type: "MULTIPLE_CHOICE" | "ESSAY";
   alternatives: { id: string; text: string }[];
 };
 
@@ -27,6 +34,7 @@ type ExamFormProps = {
 };
 
 const initialState: ActionResult = { success: false };
+const ESSAY_MAX = 2000;
 
 export function ExamForm({
   slug,
@@ -42,6 +50,47 @@ export function ExamForm({
   const timeoutFormRef = useRef<HTMLFormElement>(null);
   const [activeQuestionId, setActiveQuestionId] = useState(questions[0]?.id ?? "");
   const [answered, setAnswered] = useState<Record<string, boolean>>({});
+  const [essayDrafts, setEssayDrafts] = useState<Record<string, string>>({});
+
+  useEffect(() => {
+    const drafts: Record<string, string> = {};
+    for (const question of questions) {
+      if (question.type !== "ESSAY") continue;
+      const key = `exam-essay-${attemptId}-${question.id}`;
+      const saved = sessionStorage.getItem(key);
+      if (saved) {
+        drafts[question.id] = saved;
+        setAnswered((prev) => ({ ...prev, [question.id]: saved.trim().length > 0 }));
+      }
+    }
+    setEssayDrafts(drafts);
+  }, [attemptId, questions]);
+
+  const syncTimeoutForm = useCallback(() => {
+    const main = formRef.current;
+    const timeout = timeoutFormRef.current;
+    if (!main || !timeout) return;
+
+    for (const question of questions) {
+      if (question.type === "ESSAY") {
+        const essayInput = timeout.querySelector<HTMLTextAreaElement>(
+          `textarea[name="essay_${question.id}"]`,
+        );
+        if (essayInput) {
+          essayInput.value = essayDrafts[question.id] ?? "";
+        }
+        continue;
+      }
+
+      const selected = main.querySelector<HTMLInputElement>(
+        `input[name="q_${question.id}"]:checked`,
+      );
+      const hidden = timeout.querySelector<HTMLInputElement>(
+        `input[name="q_${question.id}"]`,
+      );
+      if (hidden && selected) hidden.value = selected.value;
+    }
+  }, [questions, essayDrafts]);
 
   const handleExpire = useCallback(() => {
     const main = formRef.current;
@@ -49,35 +98,39 @@ export function ExamForm({
     if (!main) return;
 
     if (timeLimitMinutes && timeout) {
-      for (const question of questions) {
-        const selected = main.querySelector<HTMLInputElement>(
-          `input[name="q_${question.id}"]:checked`,
-        );
-        const hidden = timeout.querySelector<HTMLInputElement>(
-          `input[name="q_${question.id}"]`,
-        );
-        if (hidden && selected) hidden.value = selected.value;
-      }
+      syncTimeoutForm();
       timeout.requestSubmit();
       return;
     }
 
     main.requestSubmit();
-  }, [timeLimitMinutes, questions]);
+  }, [timeLimitMinutes, syncTimeoutForm]);
 
   const markAnswered = (questionId: string) => {
     setAnswered((prev) => ({ ...prev, [questionId]: true }));
+  };
+
+  const handleEssayChange = (questionId: string, value: string) => {
+    const trimmed = value.slice(0, ESSAY_MAX);
+    setEssayDrafts((prev) => ({ ...prev, [questionId]: trimmed }));
+    sessionStorage.setItem(`exam-essay-${attemptId}-${questionId}`, trimmed);
+    setAnswered((prev) => ({ ...prev, [questionId]: trimmed.trim().length > 0 }));
+    setActiveQuestionId(questionId);
   };
 
   return (
     <div className="space-y-6">
       {timeLimitMinutes ? (
         <ExamTimer
+          mode="countdown"
           startedAt={startedAt}
+          attemptId={attemptId}
           timeLimitMinutes={timeLimitMinutes}
           onExpire={handleExpire}
         />
-      ) : null}
+      ) : (
+        <ExamTimer mode="elapsed" startedAt={startedAt} attemptId={attemptId} />
+      )}
 
       <div className="flex flex-wrap gap-2">
         {questions.map((question) => (
@@ -113,32 +166,62 @@ export function ExamForm({
           <fieldset
             key={question.id}
             id={`question-${question.id}`}
-            className="scroll-mt-24 rounded-xl border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/15"
+            className="scroll-mt-28 rounded-xl border border-white/10 bg-white/[0.04] p-5 shadow-xl shadow-black/15"
           >
-            <legend className="mb-3 text-base font-semibold text-white">
-              {question.orderNumber}. {question.statement}
+            <legend className="mb-3 block text-base font-semibold text-white">
+              <span>
+                {question.orderNumber}. {question.statement}
+                {question.type === "ESSAY" && (
+                  <span className="ml-2 text-xs font-normal text-amber-300">(Dissertativa)</span>
+                )}
+              </span>
+              <ExamQuestionImage
+                url={question.imageUrl}
+                naturalWidth={question.imageWidth}
+                naturalHeight={question.imageHeight}
+                displaySize={question.imageDisplaySize}
+                alt={`Imagem da questão ${question.orderNumber}`}
+              />
             </legend>
-            <div className="space-y-2">
-              {question.alternatives.map((alt) => (
-                <label
-                  key={alt.id}
-                  className="flex cursor-pointer items-start gap-3 rounded-lg border border-white/10 bg-slate-950/35 px-3 py-2.5 transition hover:border-teal-400/30 hover:bg-teal-400/10"
-                >
-                  <input
-                    type="radio"
-                    name={`q_${question.id}`}
-                    value={alt.id}
-                    required
-                    className="mt-1 accent-teal-400"
-                    onChange={() => {
-                      markAnswered(question.id);
-                      setActiveQuestionId(question.id);
-                    }}
-                  />
-                  <span className="text-sm leading-6 text-slate-300">{alt.text}</span>
-                </label>
-              ))}
-            </div>
+
+            {question.type === "ESSAY" ? (
+              <div className="space-y-2">
+                <Textarea
+                  name={`essay_${question.id}`}
+                  rows={6}
+                  maxLength={ESSAY_MAX}
+                  value={essayDrafts[question.id] ?? ""}
+                  onChange={(event) => handleEssayChange(question.id, event.target.value)}
+                  placeholder="Digite sua resposta..."
+                  required
+                />
+                <p className="text-right text-xs text-slate-500">
+                  {(essayDrafts[question.id] ?? "").length}/{ESSAY_MAX} caracteres
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {question.alternatives.map((alt) => (
+                  <label
+                    key={alt.id}
+                    className="flex cursor-pointer items-start gap-3 rounded-lg border border-white/10 bg-slate-950/35 px-3 py-2.5 transition hover:border-teal-400/30 hover:bg-teal-400/10"
+                  >
+                    <input
+                      type="radio"
+                      name={`q_${question.id}`}
+                      value={alt.id}
+                      required
+                      className="mt-1 accent-teal-400"
+                      onChange={() => {
+                        markAnswered(question.id);
+                        setActiveQuestionId(question.id);
+                      }}
+                    />
+                    <span className="text-sm leading-6 text-slate-300">{alt.text}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </fieldset>
         ))}
 
@@ -157,14 +240,23 @@ export function ExamForm({
         <form ref={timeoutFormRef} action={timeoutAction} className="hidden" aria-hidden>
           <input type="hidden" name="attemptId" value={attemptId} />
           <input type="hidden" name="slug" value={slug} />
-          {questions.map((question) => (
-            <input
-              key={question.id}
-              type="hidden"
-              name={`q_${question.id}`}
-              defaultValue=""
-            />
-          ))}
+          {questions.map((question) =>
+            question.type === "ESSAY" ? (
+              <textarea
+                key={question.id}
+                name={`essay_${question.id}`}
+                defaultValue=""
+                rows={1}
+              />
+            ) : (
+              <input
+                key={question.id}
+                type="hidden"
+                name={`q_${question.id}`}
+                defaultValue=""
+              />
+            ),
+          )}
         </form>
       ) : null}
     </div>

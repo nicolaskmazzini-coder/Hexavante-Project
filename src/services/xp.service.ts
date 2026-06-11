@@ -6,6 +6,8 @@ import {
   xpProgressPercent,
   xpRequiredForLevel,
 } from "@/lib/gamification"; // Funções de gamificação e constantes de XP
+import { logger } from "@/lib/logger";
+import { isPrismaUniqueViolation } from "@/lib/prisma-errors";
 import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
 import { createNotification } from "@/services/notification.service";
 import type { XpSource } from "@prisma/client"; // Tipo de fonte de XP
@@ -110,19 +112,32 @@ export async function awardXp(
     });
 
     if (result) {
-      await createNotification({
-        userId,
-        type: result.leveledUp ? "LEVEL_UP" : "XP_EARNED",
-        title: result.leveledUp ? `Nível ${result.newLevel}!` : "XP ganho",
-        message: result.leveledUp
-          ? `Parabéns! Você subiu para o nível ${result.newLevel}.`
-          : `+${result.amount} XP: ${result.description}`,
-        link: "/perfil",
-      });
+      try {
+        await createNotification({
+          userId,
+          type: result.leveledUp ? "LEVEL_UP" : "XP_EARNED",
+          title: result.leveledUp ? `Nível ${result.newLevel}!` : "XP ganho",
+          message: result.leveledUp
+            ? `Parabéns! Você subiu para o nível ${result.newLevel}.`
+            : `+${result.amount} XP: ${result.description}`,
+          link: "/perfil",
+        });
+      } catch (notificationError) {
+        logger.warn("Falha ao criar notificação de XP", {
+          userId,
+          error: notificationError,
+        });
+      }
     }
 
     return result;
-  } catch {
+  } catch (error) {
+    if (isPrismaUniqueViolation(error)) return null;
+    logger.error(
+      "Erro ao conceder XP",
+      error instanceof Error ? error : undefined,
+      { userId, source, sourceId },
+    );
     return null;
   }
 }

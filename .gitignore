@@ -12,6 +12,7 @@ dist/
 # Environment
 .env
 .env.local
+.env.production
 .env.*.local
 
 # Prisma
@@ -39,3 +40,8 @@ next-env.d.ts
 
 # Testing
 coverage/
+
+# User uploads (keep directory structure)
+public/uploads/**
+!public/uploads/**/
+!public/uploads/**/.gitkeep

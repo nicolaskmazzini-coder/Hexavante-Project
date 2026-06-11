@@ -76,6 +76,17 @@ Legenda: **MVP** = escopo do TCC | **F2** = Fase 2 | **F3** = Fase 3
 | RF028 | Responder simulados | MVP |
 | RF029 | Registrar resultados | MVP |
 | RF030 | Exibir estatísticas de desempenho | MVP |
+| RF048 | Questões de múltipla escolha com **2 a 6 alternativas dinâmicas** | MVP (implementado) |
+| RF049 | Questões **dissertativas** com correção manual pelo moderador | MVP (implementado) |
+| RF050 | **Cronômetro** regressivo (com limite) ou progressivo (sem limite) durante o simulado | MVP (implementado) |
+| RF051 | **Imagem opcional** no enunciado com tamanho de exibição configurável (`SMALL`–`FULL`) | MVP (implementado) |
+
+## Mídia e uploads (admin/instrutor)
+
+| ID | Requisito | Fase |
+|----|-----------|------|
+| RF052 | Upload de **capa de curso** (`coverImage`) | MVP (implementado) |
+| RF053 | Upload de **capa de simulado** (`Exam.coverImage`) | MVP (implementado) |
 
 ## Certificados
 

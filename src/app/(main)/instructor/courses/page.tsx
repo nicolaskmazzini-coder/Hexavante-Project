@@ -78,6 +78,7 @@ export default async function InstructorCoursesPage() {
               slug={course.slug}
               status={course.status}
               thumbnailUrl={course.thumbnailUrl}
+              coverImage={course.coverImage}
               categoryName={course.category.name}
               level={course.level}
               estimatedHours={course.estimatedHours}

@@ -6,8 +6,16 @@ import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/button";
 import { PageShell } from "@/components/ui/page-shell";
+import { ExamQuestionImage } from "@/components/exams/exam-question-image";
 import { EXAM_PASS_SCORE } from "@/lib/gamification";
 import { notFound, redirect } from "next/navigation";
+
+const ESSAY_STATUS_LABELS: Record<string, string> = {
+  PENDING: "Aguardando correção",
+  CORRECT: "Correta",
+  PARTIAL: "Parcialmente correta",
+  INCORRECT: "Incorreta",
+};
 
 type Props = {
   params: Promise<{ slug: string; attemptId: string }>;
@@ -21,7 +29,9 @@ export default async function ExamResultPage({ params }: Props) {
   const attempt = await getAttemptResult(session.user.id, attemptId);
   if (!attempt || !attempt.finishedAt || attempt.exam.slug !== slug) notFound();
 
-  const passed = attempt.score >= EXAM_PASS_SCORE;
+  const pendingEssays = attempt.answers.filter((a) => a.essayStatus === "PENDING").length;
+  const mcAnswers = attempt.answers.filter((a) => a.alternativeId);
+  const passed = attempt.score >= EXAM_PASS_SCORE && pendingEssays === 0;
 
   const [baseXp, passXp] = await Promise.all([
     getXpForSource(session.user.id, "EXAM", attemptId),
@@ -29,19 +39,30 @@ export default async function ExamResultPage({ params }: Props) {
   ]);
   const totalXpEarned = (baseXp?.amount ?? 0) + (passXp?.amount ?? 0);
 
+  const answeredQuestionIds = new Set(attempt.answers.map((a) => a.questionId));
+  const unanswered = attempt.exam.questions.filter((q) => !answeredQuestionIds.has(q.id));
+
   return (
     <PageShell size="md">
       <AppLink href="/simulados/historico" muted className="mb-4 inline-flex items-center gap-1">
         ← Meu histórico
       </AppLink>
 
-      <Alert variant={passed ? "success" : "warning"} className="p-6">
+      <Alert variant={passed ? "success" : pendingEssays > 0 ? "warning" : "warning"} className="p-6">
         <h1 className="text-2xl font-bold">Resultado</h1>
         <p className="mt-1 opacity-90">{attempt.exam.title}</p>
-        <p className="mt-4 text-4xl font-bold">{Math.round(attempt.score)}%</p>
-        <p className="mt-2 opacity-90">
-          {attempt.correctAnswers} de {attempt.totalQuestions} questões corretas
+        <p className="mt-4 text-4xl font-bold">
+          {pendingEssays > 0 ? "—" : `${Math.round(attempt.score)}%`}
         </p>
+        <p className="mt-2 opacity-90">
+          {attempt.correctAnswers} de {mcAnswers.length || attempt.totalQuestions} questões
+          automáticas corretas
+        </p>
+        {pendingEssays > 0 && (
+          <p className="mt-2 text-sm text-amber-200">
+            {pendingEssays} questão(ões) dissertativa(s) aguardando correção do professor.
+          </p>
+        )}
         {totalXpEarned > 0 && (
           <p className="mt-3 text-sm font-medium text-sky-200">
             +{totalXpEarned} XP ganhos neste simulado
@@ -54,6 +75,43 @@ export default async function ExamResultPage({ params }: Props) {
         {attempt.answers
           .sort((a, b) => a.question.orderNumber - b.question.orderNumber)
           .map((answer) => {
+            if (answer.question.type === "ESSAY") {
+              return (
+                <Card
+                  key={answer.id}
+                  padding="md"
+                  className="border-amber-400/30 bg-amber-400/5"
+                >
+                  <p className="font-medium text-white">
+                    {answer.question.orderNumber}. {answer.question.statement}
+                  </p>
+                  <ExamQuestionImage
+                    url={answer.question.imageUrl}
+                    naturalWidth={answer.question.imageWidth}
+                    naturalHeight={answer.question.imageHeight}
+                    displaySize={answer.question.imageDisplaySize}
+                    alt={`Imagem da questão ${answer.question.orderNumber}`}
+                  />
+                  <p className="mt-2 text-sm text-slate-300">
+                    Sua resposta: {answer.essayAnswer}
+                  </p>
+                  {answer.question.expectedAnswer && (
+                    <p className="mt-2 text-sm font-medium text-emerald-300">
+                      Gabarito de referência: {answer.question.expectedAnswer}
+                    </p>
+                  )}
+                  <p className="mt-2 text-sm font-medium text-amber-300">
+                    {ESSAY_STATUS_LABELS[answer.essayStatus ?? "PENDING"]}
+                  </p>
+                  {answer.essayComment && (
+                    <p className="mt-2 text-sm text-slate-400">
+                      Comentário do professor: {answer.essayComment}
+                    </p>
+                  )}
+                </Card>
+              );
+            }
+
             const correctAlternative = answer.question.alternatives.find((alt) => alt.isCorrect);
 
             return (
@@ -69,8 +127,15 @@ export default async function ExamResultPage({ params }: Props) {
                 <p className="font-medium text-white">
                   {answer.question.orderNumber}. {answer.question.statement}
                 </p>
+                <ExamQuestionImage
+                  url={answer.question.imageUrl}
+                  naturalWidth={answer.question.imageWidth}
+                  naturalHeight={answer.question.imageHeight}
+                  displaySize={answer.question.imageDisplaySize}
+                  alt={`Imagem da questão ${answer.question.orderNumber}`}
+                />
                 <p className="mt-2 text-sm text-slate-300">
-                  Sua resposta: {answer.alternative.text}
+                  Sua resposta: {answer.alternative?.text ?? "—"}
                 </p>
                 {!answer.isCorrect && correctAlternative && (
                   <p className="mt-2 text-sm font-medium text-emerald-300">
@@ -87,6 +152,22 @@ export default async function ExamResultPage({ params }: Props) {
               </Card>
             );
           })}
+
+        {unanswered.map((question) => (
+          <Card key={question.id} padding="md" className="border-slate-500/30 bg-slate-500/5">
+            <p className="font-medium text-white">
+              {question.orderNumber}. {question.statement}
+            </p>
+            <ExamQuestionImage
+              url={question.imageUrl}
+              naturalWidth={question.imageWidth}
+              naturalHeight={question.imageHeight}
+              displaySize={question.imageDisplaySize}
+              alt={`Imagem da questão ${question.orderNumber}`}
+            />
+            <p className="mt-2 text-sm text-slate-400">Não respondida (tempo esgotado).</p>
+          </Card>
+        ))}
       </div>
 
       <div className="mt-8 flex gap-3">

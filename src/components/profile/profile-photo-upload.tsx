@@ -15,7 +15,8 @@ const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
 export function ProfilePhotoUpload({ currentAvatar }: Props) {
-  const [preview, setPreview] = useState<string | null>(currentAvatar || null);
+  const [localPreview, setLocalPreview] = useState<string | null>(null);
+  const preview = localPreview ?? currentAvatar ?? null;
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -41,9 +42,9 @@ export function ProfilePhotoUpload({ currentAvatar }: Props) {
       return;
     }
 
-    const previousPreview = preview;
+    const previousPreview = localPreview;
     const reader = new FileReader();
-    reader.onload = (event) => setPreview(event.target?.result as string);
+    reader.onload = (event) => setLocalPreview(event.target?.result as string);
     reader.readAsDataURL(file);
 
     setUploading(true);
@@ -55,17 +56,17 @@ export function ProfilePhotoUpload({ currentAvatar }: Props) {
       const result = await updateProfilePhotoAction(formData);
       if (!result.success) {
         setError(result.error || "Erro ao fazer upload da foto.");
-        setPreview(previousPreview);
+        setLocalPreview(previousPreview);
         return;
       }
 
       if (result.avatarUrl) {
-        setPreview(result.avatarUrl);
+        setLocalPreview(result.avatarUrl);
       }
       router.refresh();
     } catch (uploadError) {
       setError(uploadError instanceof Error ? uploadError.message : "Erro ao fazer upload da foto.");
-      setPreview(previousPreview);
+      setLocalPreview(previousPreview);
     } finally {
       setUploading(false);
       e.target.value = "";

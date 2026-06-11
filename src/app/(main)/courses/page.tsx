@@ -75,6 +75,7 @@ export default async function CoursesPage({ searchParams }: Props) {
               title={course.title}
               shortDescription={course.shortDescription}
               thumbnailUrl={course.thumbnailUrl}
+              coverImage={course.coverImage}
               categoryName={course.category.name}
               moduleCount={course._count.modules}
               enrollmentCount={course._count.enrollments}

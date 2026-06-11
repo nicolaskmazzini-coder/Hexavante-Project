@@ -1,10 +1,12 @@
-# Hexavante - Documento de Visão Geral
+# Hexavante — visão geral
 
 ## Descrição
 
-A Hexavante é uma plataforma educacional multiplataforma voltada para estudantes do ensino médio técnico, universitários da área de tecnologia da informação e candidatos ao ENEM e vestibulares.
+A Hexavante é uma plataforma educacional voltada a estudantes do ensino médio técnico, universitários de TI e candidatos ao ENEM e vestibulares.
 
-A plataforma busca unir aprendizado, organização de estudos e acompanhamento de desempenho em um único ambiente digital, permitindo que os usuários realizem cursos, participem de aulas ao vivo, acompanhem metas de estudo, realizem simulados e gerenciem suas atividades acadêmicas.
+A plataforma integra cursos com vídeo externo, simulados (objetivos e dissertativos), gamificação (XP), certificados e moderação de conteúdo — com visão futura de aulas ao vivo, planner e marketplace.
+
+**Stack atual:** Next.js 16, TypeScript, Prisma, MariaDB. Ver [stack.md](stack.md) e [instalacao-e-desenvolvimento.md](instalacao-e-desenvolvimento.md).
 
 ## Produtos
 

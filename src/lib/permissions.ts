@@ -16,6 +16,10 @@ export function canModerate(roles: string[] | undefined): boolean {
   return hasRole(roles, "MODERATOR") || hasRole(roles, "ADMIN");
 }
 
+export function isAdmin(roles: string[] | undefined): boolean {
+  return hasRole(roles, "ADMIN");
+}
+
 // Rótulos para status de cursos
 export const COURSE_STATUS_LABELS: Record<string, string> = {
   PENDING_REVIEW: "Aguardando análise",

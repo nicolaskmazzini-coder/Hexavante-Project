@@ -53,6 +53,7 @@ export default async function PerfilPage({ searchParams }: Props) {
         <div className="grid gap-6 p-6 lg:grid-cols-[220px_minmax(0,1fr)]">
           <div className="-mt-20 flex justify-center lg:justify-start">
             <ProfilePhotoUpload
+              key={session.user.image || userProfile.avatarUrl || "no-avatar"}
               currentAvatar={session.user.image || userProfile.avatarUrl || undefined}
             />
           </div>

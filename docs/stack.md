@@ -1,114 +1,168 @@
-# Stack Técnica — Hexavante
+# Stack técnica — Hexavante
 
-## Decisão
+Documento de referência da arquitetura **implementada** no repositório.
 
-Stack escolhida para o MVP do TCC, priorizando produtividade, tipagem forte e alinhamento com o DER documentado.
+---
 
-## Tecnologias
+## Visão geral
 
-### Next.js 15 (App Router)
+| Camada | Tecnologia | Versão (referência) |
+|--------|------------|---------------------|
+| Framework | Next.js (App Router) | 16.x |
+| Linguagem | TypeScript | 6.x |
+| UI | React | 19.x |
+| Estilização | Tailwind CSS | 4.x |
+| Banco relacional | MariaDB / MySQL | 10.6+ / 8+ |
+| ORM | Prisma | 6.x |
+| Autenticação | Auth.js (NextAuth v5) | beta |
+| Validação | Zod | 4.x |
+| Testes | Vitest + Testing Library | 2.x |
+| Processamento de imagem | sharp | uploads locais |
 
-- Frontend e backend no mesmo projeto (Route Handlers + Server Actions)
-- Renderização híbrida (SSR/SSG) para SEO em páginas públicas de cursos
-- Suporte nativo a TypeScript
-- Ecossistema maduro para TCC e portfólio
+---
 
-### TypeScript
-
-- Tipagem em toda a aplicação
-- Integração com Prisma (tipos gerados automaticamente)
-- Menos erros em tempo de execução
-
-### MariaDB + Prisma 6
-
-- MariaDB atende relacionamentos N:N do DER (papéis, instrutores, matrículas)
-- Prisma 6 gera migrations a partir do `prisma/schema.prisma`
-- Provider no Prisma: `mysql` (compatível com MariaDB)
-- Schema espelha o [DER lógico](der-logico.md)
-- Subir o banco: `docker compose up -d` ou MariaDB local (XAMPP/Laragon)
-
-### Auth.js (NextAuth v5)
-
-- Login com e-mail/senha
-- OAuth Google (requisito do MVP)
-- OAuth Microsoft (Fase 2)
-- Sessões JWT ou database — database recomendado para RBAC
-
-### Tailwind CSS + shadcn/ui
-
-- UI consistente sem reinventar componentes
-- shadcn/ui fornece formulários, dialogs, tabelas prontos
-- Responsivo para web (mobile/desktop nativos ficam na Fase 3)
-
-### Zod
-
-- Validação de formulários e APIs
-- Schemas compartilhados entre client e server
-
-### Hospedagem de vídeos (externa)
-
-- Aulas armazenam apenas `video_url` e `video_provider`
-- Sem upload de vídeo na plataforma (decisão de negócio RN implícita)
-- Reduz custo de infraestrutura no TCC
-
-## Arquitetura
+## Arquitetura em camadas
 
 ```
 ┌─────────────────────────────────────────┐
-│              Browser (React)             │
+│           Browser (React 19)             │
 └──────────────────┬──────────────────────┘
                    │
 ┌──────────────────▼──────────────────────┐
-│         Next.js App Router               │
+│         Next.js 16 — App Router          │
 │  ┌─────────────┐  ┌──────────────────┐  │
-│  │   Pages     │  │  Server Actions  │  │
-│  │  (RSC/CSR)  │  │  + Route Handlers│  │
+│  │ RSC / Pages │  │ Server Actions   │  │
+│  │ + Client    │  │ + Route Handlers │  │
 │  └─────────────┘  └────────┬─────────┘  │
 └────────────────────────────┼────────────┘
                              │
 ┌────────────────────────────▼────────────┐
-│              services/                   │
-│     (regras de negócio, orquestração)    │
+│              src/services/               │
+│        (regras de negócio, orquestração)  │
 └────────────────────────────┬────────────┘
                              │
 ┌────────────────────────────▼────────────┐
-│         Prisma ORM → MariaDB             │
+│     Prisma Client → MariaDB (mysql)      │
 └─────────────────────────────────────────┘
 ```
 
-## Convenções de código
+### Responsabilidades por pasta
 
 | Pasta | Responsabilidade |
 |-------|------------------|
-| `src/app/` | Rotas, layouts, páginas |
-| `src/components/` | Componentes de UI reutilizáveis |
-| `src/lib/` | Configurações (prisma, auth, utils) |
-| `src/services/` | Lógica de negócio (sem JSX) |
-| `src/types/` | Tipos e interfaces compartilhados |
-| `prisma/` | Schema, seeds, migrations |
+| `src/app/` | Rotas, layouts, páginas, API Routes (`/api/*`) |
+| `src/components/` | Componentes de UI (inclui `ui/` estilo shadcn) |
+| `src/hooks/` | Hooks client-side (cronômetro, timers) |
+| `src/lib/` | Prisma singleton, auth, validações Zod, helpers |
+| `src/services/` | Lógica de negócio pura — **sem JSX** |
+| `prisma/` | `schema.prisma`, seeds, scripts SQL em `sql/` |
+| `public/uploads/` | Arquivos estáticos enviados pelo admin |
+
+---
+
+## Next.js — padrões adotados
+
+- **App Router** com Route Groups: `(main)`, `(auth)`, etc.
+- **Server Actions** para formulários (cursos, simulados, moderação).
+- **Route Handlers** para uploads (`/api/upload/*`), auth (`/api/auth/*`), PDF de certificados.
+- **React Server Components** nas páginas de listagem; componentes `"use client"` onde há estado (formulários, cronômetro).
+
+---
+
+## Prisma e banco de dados
+
+- Provider: `mysql` (compatível com MariaDB).
+- Schema oficial: `prisma/schema.prisma` — espelha [der-logico.md](der-logico.md).
+- Migrations incrementais em `prisma/sql/` + scripts npm (`db:features`, `db:exam-cover`, etc.).
+- Client gerado em `node_modules/.prisma/client` — requer `npx prisma generate` após mudanças no schema.
+
+> Guia completo de setup: [instalacao-e-desenvolvimento.md](instalacao-e-desenvolvimento.md)
+
+---
+
+## Autenticação (Auth.js v5)
+
+| Método | Status |
+|--------|--------|
+| E-mail + senha (credenciais) | Implementado |
+| OAuth Google | Implementado |
+| OAuth GitHub | Implementado |
+| OAuth Microsoft | Planejado (Fase 2) |
+
+- Adapter Prisma customizado: `src/lib/auth-adapter.ts`
+- Sessões e papéis RBAC via tabelas `users`, `roles`, `user_roles`
+- Helpers: `isInstructor()`, `canModerate()`, `isAdmin()` em `src/lib/permissions.ts`
+
+---
+
+## Validação (Zod)
+
+Schemas centralizados em `src/lib/validations/`:
+
+| Arquivo | Domínio |
+|---------|---------|
+| `course.ts` | Cursos, módulos, aulas |
+| `exam.ts` | Simulados, questões, correção dissertativa |
+
+Exemplo — questões de múltipla escolha aceitam **2 a 6 alternativas** dinâmicas (`alternatives: string[]`), não mais campos fixos `altA`–`altD`.
+
+---
+
+## Upload de imagens
+
+| Recurso | Endpoint | Pasta pública |
+|---------|----------|---------------|
+| Capa de curso | `POST /api/upload/course-cover` | `/uploads/courses/` |
+| Capa de simulado | `POST /api/upload/exam-cover` | `/uploads/exams/` |
+| Imagem de questão | `POST /api/upload/exam-question-image` | `/uploads/exam-questions/` |
+
+- Formatos: JPEG, PNG, WebP — máx. 5 MB
+- Redimensionamento com **sharp** (proporção preservada)
+- Proteção: instrutor/moderador conforme o recurso
+
+---
+
+## Simulados — recursos implementados
+
+| Recurso | Detalhe técnico |
+|---------|-----------------|
+| Tipos de questão | `MULTIPLE_CHOICE` \| `ESSAY` (`ExamQuestionType`) |
+| Alternativas dinâmicas | 2–6 por questão (`ExamAlternative` N:1 `ExamQuestion`) |
+| Imagem na questão | `imageUrl`, `imageWidth`, `imageHeight`, `imageDisplaySize` |
+| Tamanho de exibição | Enum `SMALL` \| `MEDIUM` \| `LARGE` \| `FULL` |
+| Tempo limite | `Exam.timeLimit` (minutos); cronômetro com `sessionStorage` |
+| Dissertativas | Correção manual pelo moderador (`EssayGradeStatus`) |
+| Capa do simulado | `Exam.coverImage` |
+
+---
 
 ## Variáveis de ambiente
 
 ```env
-DATABASE_URL="mysql://user:pass@localhost:3306/hexavante"
+# Obrigatórias
+DATABASE_URL="mysql://user:pass@host:3306/hexavante"
 AUTH_SECRET="..."
-AUTH_GOOGLE_ID="..."
-AUTH_GOOGLE_SECRET="..."
+AUTH_URL="http://localhost:3000"
+
+# OAuth (opcional em dev)
+AUTH_GOOGLE_ID=""
+AUTH_GOOGLE_SECRET=""
+AUTH_GITHUB_ID=""
+AUTH_GITHUB_SECRET=""
 ```
 
-## O que fica fora do MVP
+Template completo: `.env.example` na raiz do projeto.
 
-| Item | Motivo | Fase |
-|------|--------|------|
-| Redis / filas | Complexidade desnecessária no TCC | Fase 2 |
-| WebSocket (chat/ao vivo) | Requisito futuro | Fase 2 |
-| App mobile (React Native) | Escopo futuro | Fase 3 |
-| Upload de vídeo próprio | Vídeos externos por decisão de negócio | — |
-| Pagamentos reais (Stripe) | Marketplace na Fase 2 | Fase 2 |
+---
 
-## Próximo passo de implementação
+## Fora do escopo atual (referência)
 
-1. `npm install` + configurar Prisma com schema base (users, roles)
-2. Auth.js com cadastro/login/Google
-3. CRUD de categorias e cursos
-4. Simulados e gamificação conforme [escopo-mvp.md](escopo-mvp.md)
+| Item | Fase |
+|------|------|
+| Redis / filas | Fase 2 |
+| WebSocket (chat ao vivo) | Fase 2 |
+| Upload de vídeo próprio | — (vídeos externos: YouTube/Vimeo) |
+| Pagamentos (Stripe) | Fase 2 |
+| App mobile nativo | Fase 3 |
+
+Escopo do TCC: [escopo-mvp.md](escopo-mvp.md).

@@ -10,23 +10,18 @@ type Props = {
 };
 
 export function LiveRoomCountdown({ scheduledAt, status }: Props) {
-  const [label, setLabel] = useState<string | null>(null);
+  const isScheduled = status === "SCHEDULED";
+  const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
-    if (status !== "SCHEDULED") {
-      setLabel(null);
-      return;
-    }
-
-    const update = () => {
-      setLabel(getStartsInLabel(new Date(scheduledAt)));
-    };
-
-    update();
-    const interval = setInterval(update, 30_000);
+    if (!isScheduled) return;
+    const interval = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(interval);
-  }, [scheduledAt, status]);
+  }, [isScheduled]);
 
+  if (!isScheduled) return null;
+
+  const label = getStartsInLabel(new Date(scheduledAt), now);
   if (!label) return null;
 
   return (

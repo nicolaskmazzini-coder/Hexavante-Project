@@ -182,7 +182,8 @@ export async function createCourse(userId: string, data: CourseInput) {
       categoryId: data.categoryId,
       shortDescription: data.shortDescription || null,
       description: data.description || null,
-      thumbnailUrl: data.thumbnailUrl || null,
+      thumbnailUrl: data.coverImage || data.thumbnailUrl || null,
+      coverImage: data.coverImage || null,
       courseType: "FREE",
       level: data.level,
       estimatedHours: data.estimatedHours ?? null,
@@ -220,6 +221,8 @@ export async function updateCourse(
     data.shortDescription !== undefined ||
     data.description !== undefined ||
     data.thumbnailUrl !== undefined ||
+    data.coverImage !== undefined ||
+    data.removeCover === true ||
     data.level !== undefined ||
     data.estimatedHours !== undefined ||
     data.progressionType !== undefined;
@@ -238,9 +241,19 @@ export async function updateCourse(
       ...(data.description !== undefined
         ? { description: data.description || null }
         : {}),
-      ...(data.thumbnailUrl !== undefined
-        ? { thumbnailUrl: data.thumbnailUrl || null }
-        : {}),
+      ...(data.removeCover === true
+        ? { coverImage: null, thumbnailUrl: null }
+        : data.coverImage !== undefined
+          ? {
+              coverImage: data.coverImage || null,
+              thumbnailUrl: data.coverImage || null,
+            }
+          : data.thumbnailUrl !== undefined
+            ? {
+                thumbnailUrl: data.thumbnailUrl || null,
+                coverImage: data.thumbnailUrl || null,
+              }
+            : {}),
       ...(data.level ? { level: data.level } : {}),
       ...(data.estimatedHours !== undefined
         ? { estimatedHours: data.estimatedHours ?? null }

@@ -1,4 +1,5 @@
 import { Clock3, ClipboardList, Target } from "lucide-react";
+import { ExamThumbnail } from "@/components/exams/exam-thumbnail";
 import { Badge } from "@/components/ui/badge";
 import { CardFooter, CardHeader, CardTitle, InteractiveCard } from "@/components/ui/card";
 import { EXAM_TYPE_LABELS } from "@/lib/validations/exam";
@@ -7,6 +8,7 @@ type ExamCardProps = {
   slug: string;
   title: string;
   description?: string | null;
+  coverImage?: string | null;
   examType: string;
   questionCount: number;
   timeLimit?: number | null;
@@ -23,6 +25,7 @@ export function ExamCard({
   slug,
   title,
   description,
+  coverImage,
   examType,
   questionCount,
   timeLimit,
@@ -31,9 +34,14 @@ export function ExamCard({
   return (
     <InteractiveCard
       href={`/simulados/${slug}`}
-      className="hover:border-teal-400/35"
+      className="overflow-hidden hover:border-teal-400/35"
       ariaLabel={`Ver simulado: ${title}. ${questionCount} questões${timeLimit ? `, ${timeLimit} minutos` : ""}`}
     >
+      <ExamThumbnail
+        url={coverImage}
+        title={title}
+        className="h-36 w-full transition group-hover:opacity-95"
+      />
       <div className="p-5">
         <CardHeader>
           <Badge variant={examBadgeVariant[examType] ?? "default"}>

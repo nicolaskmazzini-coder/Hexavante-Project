@@ -18,9 +18,10 @@ export async function GET(request: Request, { params }: Props) {
     return NextResponse.json({ error: "Parâmetro since inválido" }, { status: 400 });
   }
 
-  const messages = await getLiveChatMessagesSince(id, since);
+  try {
+    const messages = await getLiveChatMessagesSince(id, session.user.id, since);
 
-  return NextResponse.json(
+    return NextResponse.json(
     messages.map((msg) => ({
       id: msg.id,
       userId: msg.userId,
@@ -29,5 +30,10 @@ export async function GET(request: Request, { params }: Props) {
       message: msg.message,
       createdAt: msg.createdAt.toISOString(),
     })),
-  );
+    );
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Erro ao buscar mensagens";
+    const status = message.includes("acesso") ? 403 : 500;
+    return NextResponse.json({ error: message }, { status });
+  }
 }

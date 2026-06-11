@@ -48,11 +48,13 @@ hexavante/
 |-----------|-----------|
 | [Visão geral](docs/visão-geral.md) | Produto, público-alvo e diferenciais |
 | [Escopo MVP](docs/escopo-mvp.md) | O que será desenvolvido no TCC (priorizado) |
-| [Requisitos funcionais](docs/requisitos-funcionais.md) | RF001–RF043 |
+| [Requisitos funcionais](docs/requisitos-funcionais.md) | RF001–RF053 |
+| [Casos de uso](docs/casos-de-uso.md) | UC001–UC071 — fluxos por ator |
 | [Regras de negócio](docs/regras-de-negocio.md) | RN001–RN037 |
 | [Permissões](docs/permissoes.md) | Papéis e RBAC |
 | [DER lógico](docs/der-logico.md) | Modelo de dados oficial |
 | [Stack](docs/stack.md) | Decisões técnicas |
+| [Instalação e desenvolvimento](docs/instalacao-e-desenvolvimento.md) | Setup, `.env`, Prisma, migrations |
 
 ## Pré-requisitos
 
@@ -78,11 +80,14 @@ O banco `hexavante` deve existir no servidor (crie pelo DBeaver se necessário).
 npm install
 cp .env.example .env    # Windows: copy .env.example .env
 
-npx prisma db push      # cria tabelas
-npm run db:seed         # cria papéis (USER, INSTRUCTOR...)
+npx prisma db push      # cria/atualiza tabelas
+npx prisma generate     # atualiza Prisma Client
+npm run db:seed         # papéis e contas demo
 
 npm run dev             # http://localhost:3000
 ```
+
+Guia completo (migrations SQL, troubleshooting, uploads): [docs/instalacao-e-desenvolvimento.md](docs/instalacao-e-desenvolvimento.md).
 
 Deploy em produção com domínio: [docs/deploy-producao.md](docs/deploy-producao.md)
 

@@ -1,4 +1,4 @@
-import { Medal, Sparkles, Trophy } from "lucide-react";
+import { Sparkles, Trophy } from "lucide-react";
 import { auth } from "@/auth";
 import { RankingFilters } from "@/components/ranking/ranking-filters";
 import { RankingPodium } from "@/components/ranking/ranking-podium";

@@ -12,6 +12,22 @@ import { redirect } from "next/navigation";
 
 export type ActionResult = { success: boolean; error?: string };
 
+function parseExamSubmission(formData: FormData) {
+  const answers: Record<string, string> = {};
+  const essays: Record<string, string> = {};
+
+  for (const [key, value] of formData.entries()) {
+    if (key.startsWith("q_")) {
+      answers[key.replace("q_", "")] = value as string;
+    }
+    if (key.startsWith("essay_")) {
+      essays[key.replace("essay_", "")] = value as string;
+    }
+  }
+
+  return { answers, essays };
+}
+
 export async function startExamAction(examId: string, slug: string) {
   const session = await auth();
   if (!session?.user?.id) {
@@ -38,25 +54,18 @@ export async function submitExamAction(
 
   const attemptId = formData.get("attemptId") as string;
   const slug = formData.get("slug") as string;
+  const { answers, essays } = parseExamSubmission(formData);
 
-  const answers: Record<string, string> = {};
-  for (const [key, value] of formData.entries()) {
-    if (key.startsWith("q_")) {
-      answers[key.replace("q_", "")] = value as string;
-    }
-  }
-
-  const parsed = submitExamSchema.safeParse({ attemptId, answers });
+  const parsed = submitExamSchema.safeParse({ attemptId, answers, essays });
   if (!parsed.success) {
     return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
   try {
-    await submitAttempt(
-      session.user.id,
-      parsed.data.attemptId,
-      parsed.data.answers,
-    );
+    await submitAttempt(session.user.id, parsed.data.attemptId, {
+      answers: parsed.data.answers,
+      essays: parsed.data.essays,
+    });
   } catch (error) {
     return {
       success: false,
@@ -82,16 +91,15 @@ export async function submitExamTimeoutAction(
 
   const attemptId = formData.get("attemptId") as string;
   const slug = formData.get("slug") as string;
-
-  const answers: Record<string, string> = {};
-  for (const [key, value] of formData.entries()) {
-    if (key.startsWith("q_")) {
-      answers[key.replace("q_", "")] = value as string;
-    }
-  }
+  const { answers, essays } = parseExamSubmission(formData);
 
   try {
-    await submitAttempt(session.user.id, attemptId, answers, { allowPartial: true });
+    await submitAttempt(
+      session.user.id,
+      attemptId,
+      { answers, essays },
+      { allowPartial: true },
+    );
   } catch (error) {
     return {
       success: false,

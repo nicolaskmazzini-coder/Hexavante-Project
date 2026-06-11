@@ -137,17 +137,27 @@ export async function ensureUserProvisioned(userId: string) {
 
   if (!user) return;
 
-  if (user.roles.length === 0) {
-    await prisma.userRole.create({
-      data: { userId, roleId: userRole.id },
-    });
-  }
+  await prisma.$transaction(async (tx) => {
+    if (user.roles.length === 0) {
+      await tx.userRole.create({
+        data: { userId, roleId: userRole.id },
+      });
+    }
 
-  if (!user.xp) {
-    await prisma.userXP.create({ data: { userId } });
-  }
+    if (!user.xp) {
+      await tx.userXP.upsert({
+        where: { userId },
+        create: { userId },
+        update: {},
+      });
+    }
 
-  if (!user.wallet) {
-    await prisma.userWallet.create({ data: { userId } });
-  }
+    if (!user.wallet) {
+      await tx.userWallet.upsert({
+        where: { userId },
+        create: { userId },
+        update: {},
+      });
+    }
+  });
 }

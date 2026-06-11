@@ -3,18 +3,18 @@ import {
   addExamQuestionAction,
   deleteExamAction,
   deleteExamQuestionAction,
-  updateExamAction,
 } from "@/app/actions/exam-admin";
 import { DeleteContentButton } from "@/components/courses/delete-content-button";
+import { EditExamForm } from "@/components/exams/edit-exam-form";
+import { ExamQuestionImage } from "@/components/exams/exam-question-image";
 import { ExamQuestionForm } from "@/components/exams/exam-question-form";
-import { InlineForm } from "@/components/courses/inline-form";
 import { AppLink } from "@/components/ui/app-link";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
 import { canModerate } from "@/lib/permissions";
-import { EXAM_TYPE_LABELS } from "@/lib/validations/exam";
+import { EXAM_QUESTION_TYPE_LABELS, EXAM_TYPE_LABELS } from "@/lib/validations/exam";
 import { getExamForAdmin } from "@/services/exam-admin.service";
 import { notFound, redirect } from "next/navigation";
 import { ClipboardList } from "lucide-react";
@@ -56,46 +56,16 @@ export default async function EditExamPage({ params }: Props) {
       <Card padding="lg" className="mb-8">
         <h2 className="font-semibold text-white">Informações do simulado</h2>
         <div className="mt-4">
-          <InlineForm
-            title=""
-            submitLabel="Salvar alterações"
-            action={updateExamAction.bind(null, id)}
-            fields={[
-              { name: "title", label: "Título", defaultValue: exam.title },
-              {
-                name: "examType",
-                label: "Tipo",
-                defaultValue: exam.examType,
-                options: [
-                  { value: "ENEM", label: "ENEM" },
-                  { value: "VESTIBULAR", label: "Vestibular" },
-                  { value: "TECNOLOGIA", label: "Tecnologia" },
-                ],
-              },
-              {
-                name: "description",
-                label: "Descrição",
-                type: "textarea",
-                defaultValue: exam.description ?? "",
-                required: false,
-              },
-              {
-                name: "timeLimit",
-                label: "Tempo limite (min)",
-                type: "number",
-                defaultValue: exam.timeLimit ? String(exam.timeLimit) : "",
-                required: false,
-              },
-              {
-                name: "isPublished",
-                label: "Status",
-                defaultValue: exam.isPublished ? "true" : "false",
-                options: [
-                  { value: "false", label: "Rascunho" },
-                  { value: "true", label: "Publicado" },
-                ],
-              },
-            ]}
+          <EditExamForm
+            examId={id}
+            exam={{
+              title: exam.title,
+              examType: exam.examType,
+              description: exam.description,
+              coverImage: exam.coverImage,
+              timeLimit: exam.timeLimit,
+              isPublished: exam.isPublished,
+            }}
           />
         </div>
       </Card>
@@ -103,29 +73,53 @@ export default async function EditExamPage({ params }: Props) {
       <section className="mb-8 space-y-4">
         <h2 className="text-lg font-semibold text-white">Questões</h2>
         {exam.questions.map((question) => {
+          const isEssay = question.type === "ESSAY";
           const correct = question.alternatives.find((alt) => alt.isCorrect);
           return (
             <Card key={question.id} padding="md">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium text-white">
-                    {question.orderNumber}. {question.statement}
-                  </p>
-                  <ul className="mt-2 space-y-1 text-sm text-slate-400">
-                    {question.alternatives.map((alt, index) => (
-                      <li
-                        key={alt.id}
-                        className={alt.isCorrect ? "font-medium text-emerald-300" : undefined}
-                      >
-                        {String.fromCharCode(65 + index)}) {alt.text}
-                        {alt.isCorrect ? " ✓" : ""}
-                      </li>
-                    ))}
-                  </ul>
-                  {correct && (
-                    <p className="mt-2 text-xs text-slate-500">
-                      Gabarito: {correct.text}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <p className="font-medium text-white">
+                      {question.orderNumber}. {question.statement}
                     </p>
+                    <Badge variant={isEssay ? "amber" : "teal"}>
+                      {EXAM_QUESTION_TYPE_LABELS[question.type] ?? question.type}
+                    </Badge>
+                  </div>
+                  <ExamQuestionImage
+                    url={question.imageUrl}
+                    naturalWidth={question.imageWidth}
+                    naturalHeight={question.imageHeight}
+                    displaySize={question.imageDisplaySize}
+                    alt={`Imagem da questão ${question.orderNumber}`}
+                  />
+                  {isEssay ? (
+                    question.expectedAnswer && (
+                      <p className="mt-2 text-sm text-slate-400">
+                        <span className="font-medium text-slate-300">Gabarito de referência:</span>{" "}
+                        {question.expectedAnswer}
+                      </p>
+                    )
+                  ) : (
+                    <>
+                      <ul className="mt-2 space-y-1 text-sm text-slate-400">
+                        {question.alternatives.map((alt, index) => (
+                          <li
+                            key={alt.id}
+                            className={alt.isCorrect ? "font-medium text-emerald-300" : undefined}
+                          >
+                            {String.fromCharCode(65 + index)}) {alt.text}
+                            {alt.isCorrect ? " ✓" : ""}
+                          </li>
+                        ))}
+                      </ul>
+                      {correct && (
+                        <p className="mt-2 text-xs text-slate-500">
+                          Gabarito: {correct.text}
+                        </p>
+                      )}
+                    </>
                   )}
                 </div>
                 <DeleteContentButton

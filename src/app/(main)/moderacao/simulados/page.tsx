@@ -31,9 +31,14 @@ export default async function ModerationExamsPage() {
         title="Simulados"
         description="Crie, edite e publique simulados da plataforma."
         action={
-          <LinkButton href="/moderacao/simulados/new" size="sm">
-            Novo simulado
-          </LinkButton>
+          <div className="flex flex-wrap gap-2">
+            <LinkButton href="/moderacao/simulados/correcoes" variant="outline" size="sm">
+              Correções dissertativas
+            </LinkButton>
+            <LinkButton href="/moderacao/simulados/new" size="sm">
+              Novo simulado
+            </LinkButton>
+          </div>
         }
       />
 

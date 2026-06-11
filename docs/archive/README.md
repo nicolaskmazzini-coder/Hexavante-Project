@@ -1,5 +1,7 @@
-# Arquivo
+# Arquivo histórico
 
-Histórico de decisões e transcripts de conversas usados para montar a documentação oficial.
+Esta pasta guarda decisões e transcripts antigos para referência.
 
-Os documentos na raiz de `docs/` são a fonte de verdade. Este arquivo é apenas referência.
+> **Fonte de verdade:** documentos na raiz de `docs/`, especialmente [der-logico.md](../der-logico.md), [stack.md](../stack.md) e [instalacao-e-desenvolvimento.md](../instalacao-e-desenvolvimento.md).
+
+Se houver divergência entre um arquivo aqui e a documentação atual, prevalece o conteúdo fora de `archive/`.

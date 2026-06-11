@@ -17,6 +17,12 @@
     "db:sync": "prisma db execute --file prisma/sql/add-course-level-columns.sql --schema prisma/schema.prisma",
     "db:sprint5": "prisma db execute --file prisma/sql/sprint-5-notifications.sql --schema prisma/schema.prisma",
     "db:avatar": "prisma db execute --file prisma/sql/avatar-url-longtext.sql --schema prisma/schema.prisma",
+    "db:certificates": "prisma db execute --file prisma/sql/certificate-user-course-unique.sql --schema prisma/schema.prisma",
+    "db:features": "prisma db execute --file prisma/sql/course-cover-exam-essay.sql --schema prisma/schema.prisma",
+    "db:exam-cover": "prisma db execute --file prisma/sql/exam-cover-image.sql --schema prisma/schema.prisma",
+    "db:exam-question-image": "prisma db execute --file prisma/sql/exam-question-image.sql --schema prisma/schema.prisma",
+    "db:exam-question-image-size": "prisma db execute --file prisma/sql/exam-question-image-size.sql --schema prisma/schema.prisma",
+    "db:exam-questions": "npm run db:exam-question-image && npm run db:exam-question-image-size",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed"
   },
@@ -33,6 +39,7 @@
     "pdf-lib": "^1.17.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "sharp": "^0.35.1",
     "zod": "^4.4.3"
   },
   "devDependencies": {

@@ -222,27 +222,33 @@ export async function moderateCourse(
   ]);
 
   const notificationType =
-    data.status === "APPROVED" ? "COURSE_APPROVED" : "COURSE_REJECTED";
-  const title =
     data.status === "APPROVED"
-      ? "Curso aprovado"
+      ? "COURSE_APPROVED"
       : data.status === "REVISION_REQUIRED"
-        ? "Curso devolvido para revisão"
-        : "Curso rejeitado";
+        ? "COURSE_REJECTED"
+        : "COURSE_REJECTED";
 
-  for (const instructor of instructors) {
-    await createNotification({
+  const defaultMessage =
+    data.status === "APPROVED"
+      ? `Seu curso "${course.title}" foi publicado na plataforma.`
+      : data.status === "REVISION_REQUIRED"
+        ? `Seu curso "${course.title}" foi devolvido para revisão.`
+        : `Seu curso "${course.title}" foi rejeitado.`;
+
+  await prisma.notification.createMany({
+    data: instructors.map((instructor) => ({
       userId: instructor.userId,
       type: notificationType,
-      title,
-      message:
-        data.reviewNotes ??
-        (data.status === "APPROVED"
-          ? `Seu curso "${course.title}" foi publicado na plataforma.`
-          : `Seu curso "${course.title}" precisa de ajustes.`),
+      title:
+        data.status === "APPROVED"
+          ? "Curso aprovado"
+          : data.status === "REVISION_REQUIRED"
+            ? "Curso devolvido para revisão"
+            : "Curso rejeitado",
+      message: data.reviewNotes ?? defaultMessage,
       link: `/instructor/courses/${data.courseId}/edit`,
-    });
-  }
+    })),
+  });
 }
 
 // Função para submeter curso para revisão

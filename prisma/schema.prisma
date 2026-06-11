@@ -104,6 +104,7 @@ model Course {
   shortDescription String?         @map("short_description") @db.VarChar(255)
   description      String?         @db.Text
   thumbnailUrl     String?         @map("thumbnail_url")
+  coverImage       String?         @map("cover_image")
   courseType       CourseType      @default(FREE) @map("course_type")
   level            CourseLevel     @default(BEGINNER)
   estimatedHours   Int?            @map("estimated_hours")
@@ -255,12 +256,32 @@ enum ExamType {
   TECNOLOGIA
 }
 
+enum ExamQuestionType {
+  MULTIPLE_CHOICE
+  ESSAY
+}
+
+enum EssayGradeStatus {
+  PENDING
+  CORRECT
+  PARTIAL
+  INCORRECT
+}
+
+enum ExamQuestionImageSize {
+  SMALL
+  MEDIUM
+  LARGE
+  FULL
+}
+
 model Exam {
   id          String   @id @default(cuid())
   title       String
   slug        String   @unique
   examType    ExamType @map("exam_type")
   description String?  @db.Text
+  coverImage  String?  @map("cover_image") @db.VarChar(500)
   timeLimit   Int?     @map("time_limit")
   isPublished Boolean  @default(true) @map("is_published")
   createdAt   DateTime @default(now()) @map("created_at")
@@ -272,11 +293,17 @@ model Exam {
 }
 
 model ExamQuestion {
-  id          String @id @default(cuid())
-  examId      String @map("exam_id")
-  statement   String @db.Text
-  orderNumber Int    @map("order_number")
-  points      Int    @default(1)
+  id               String                 @id @default(cuid())
+  examId           String                 @map("exam_id")
+  statement        String                 @db.Text
+  imageUrl         String?                @map("image_url") @db.VarChar(500)
+  imageWidth       Int?                   @map("image_width")
+  imageHeight      Int?                   @map("image_height")
+  imageDisplaySize ExamQuestionImageSize? @default(MEDIUM) @map("image_display_size")
+  orderNumber      Int                    @map("order_number")
+  points           Int                    @default(1)
+  type             ExamQuestionType       @default(MULTIPLE_CHOICE)
+  expectedAnswer   String?                @map("expected_answer") @db.Text
 
   exam         Exam              @relation(fields: [examId], references: [id], onDelete: Cascade)
   alternatives ExamAlternative[]
@@ -319,15 +346,18 @@ model ExamAttempt {
 }
 
 model ExamAnswer {
-  id            String  @id @default(cuid())
-  attemptId     String  @map("attempt_id")
-  questionId    String  @map("question_id")
-  alternativeId String  @map("alternative_id")
-  isCorrect     Boolean @map("is_correct")
+  id            String            @id @default(cuid())
+  attemptId     String            @map("attempt_id")
+  questionId    String            @map("question_id")
+  alternativeId String?           @map("alternative_id")
+  essayAnswer   String?           @map("essay_answer") @db.Text
+  essayStatus   EssayGradeStatus? @map("essay_status")
+  essayComment  String?           @map("essay_comment") @db.Text
+  isCorrect     Boolean           @map("is_correct")
 
-  attempt     ExamAttempt     @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-  question    ExamQuestion    @relation(fields: [questionId], references: [id], onDelete: Cascade)
-  alternative ExamAlternative @relation(fields: [alternativeId], references: [id], onDelete: Cascade)
+  attempt     ExamAttempt      @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+  question    ExamQuestion     @relation(fields: [questionId], references: [id], onDelete: Cascade)
+  alternative ExamAlternative? @relation(fields: [alternativeId], references: [id], onDelete: Cascade)
 
   @@unique([attemptId, questionId])
   @@map("exam_answers")
@@ -479,6 +509,7 @@ model Certificate {
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
   course Course @relation(fields: [courseId], references: [id], onDelete: Cascade)
 
+  @@unique([userId, courseId])
   @@index([userId])
   @@index([courseId])
   @@index([code])

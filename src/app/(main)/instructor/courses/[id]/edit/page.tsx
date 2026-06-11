@@ -6,10 +6,10 @@ import {
   deleteLessonAction,
   deleteMaterialAction,
   deleteModuleAction,
-  updateCourseAction,
   updateLessonAction,
   updateModuleAction,
 } from "@/app/actions/course";
+import { EditCourseForm } from "@/components/courses/edit-course-form";
 import { resubmitCourseAction } from "@/app/actions/moderation";
 import { DeleteContentButton } from "@/components/courses/delete-content-button";
 import { InlineForm } from "@/components/courses/inline-form";
@@ -79,65 +79,21 @@ export default async function EditCoursePage({ params }: Props) {
       )}
 
       <section className="mt-8 rounded-xl border border-white/10 bg-white/[0.04] p-6">
-        <h2 className="font-semibold text-white">Informações do curso</h2>
-        <InlineForm
-          title=""
-          submitLabel="Salvar alterações"
-          action={updateCourseAction.bind(null, id)}
-          fields={[
-            { name: "title", label: "Título", defaultValue: course.title },
-            {
-              name: "categoryId",
-              label: "Categoria",
-              defaultValue: course.categoryId,
-              options: categories.map((c) => ({ value: c.id, label: c.name })),
-            },
-            {
-              name: "shortDescription",
-              label: "Descrição curta",
-              defaultValue: course.shortDescription ?? "",
-            },
-            {
-              name: "description",
-              label: "Descrição",
-              type: "textarea",
-              defaultValue: course.description ?? "",
-              required: false,
-            },
-            {
-              name: "thumbnailUrl",
-              label: "URL da thumbnail",
-              defaultValue: course.thumbnailUrl ?? "",
-              required: false,
-              placeholder: "https://...",
-            },
-            {
-              name: "level",
-              label: "Nível",
-              defaultValue: course.level,
-              options: [
-                { value: "BEGINNER", label: "Iniciante" },
-                { value: "INTERMEDIATE", label: "Intermediário" },
-                { value: "ADVANCED", label: "Avançado" },
-              ],
-            },
-            {
-              name: "estimatedHours",
-              label: "Carga horária (horas)",
-              type: "number",
-              defaultValue: course.estimatedHours ? String(course.estimatedHours) : "",
-              required: false,
-            },
-            {
-              name: "progressionType",
-              label: "Progressão",
-              defaultValue: course.progressionType,
-              options: [
-                { value: "FREE", label: "Livre" },
-                { value: "PROGRESSIVE", label: "Progressiva" },
-              ],
-            },
-          ]}
+        <h2 className="mb-4 font-semibold text-white">Informações do curso</h2>
+        <EditCourseForm
+          courseId={id}
+          categories={categories}
+          course={{
+            title: course.title,
+            categoryId: course.categoryId,
+            shortDescription: course.shortDescription,
+            description: course.description,
+            coverImage: course.coverImage,
+            thumbnailUrl: course.thumbnailUrl,
+            level: course.level,
+            estimatedHours: course.estimatedHours,
+            progressionType: course.progressionType,
+          }}
         />
       </section>
 

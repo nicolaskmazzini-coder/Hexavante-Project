@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 import { CalendarClock, Link2, Radio, Users } from "lucide-react";
 import { createLiveRoomAction, type ActionResult } from "@/app/actions/live-room";
 import { Button } from "@/components/ui/button";
@@ -18,7 +18,9 @@ const initialState: ActionResult = { success: false };
 
 export function CreateLiveRoomForm({ courses }: Props) {
   const [state, formAction, pending] = useActionState(createLiveRoomAction, initialState);
-  const defaultScheduled = new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16);
+  const [defaultScheduled] = useState(
+    () => new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16),
+  );
 
   return (
     <form action={formAction} className="space-y-6">

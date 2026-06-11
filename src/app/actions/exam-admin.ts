@@ -2,6 +2,7 @@
 
 import { auth } from "@/auth";
 import { canModerate } from "@/lib/permissions";
+import { parseAlternativesFromFormData } from "@/lib/exam-alternatives";
 import { examAdminSchema, examQuestionSchema } from "@/lib/validations/exam";
 import {
   addExamQuestion,
@@ -43,6 +44,8 @@ export async function createExamAction(
     title: formData.get("title"),
     examType: formData.get("examType"),
     description: formData.get("description") || undefined,
+    coverImage: formData.get("coverImage") || undefined,
+    removeCover: formData.get("removeCover") || "false",
     timeLimit: formData.get("timeLimit") || undefined,
     isPublished: formData.get("isPublished") || "false",
   });
@@ -51,7 +54,10 @@ export async function createExamAction(
     return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
   }
 
-  const exam = await createExam(parsed.data);
+  const exam = await createExam({
+    ...parsed.data,
+    coverImage: parsed.data.removeCover ? undefined : parsed.data.coverImage,
+  });
   revalidatePath("/moderacao/simulados");
   revalidatePath("/simulados");
   redirect(`/moderacao/simulados/${exam.id}/edit`);
@@ -68,6 +74,8 @@ export async function updateExamAction(
       title: formData.get("title"),
       examType: formData.get("examType"),
       description: formData.get("description") || undefined,
+      coverImage: formData.get("coverImage") || undefined,
+      removeCover: formData.get("removeCover") || "false",
       timeLimit: formData.get("timeLimit") || undefined,
       isPublished: formData.get("isPublished") || "false",
     });
@@ -76,7 +84,10 @@ export async function updateExamAction(
       return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };
     }
 
-    await updateExam(examId, parsed.data);
+    await updateExam(examId, {
+      ...parsed.data,
+      coverImage: parsed.data.removeCover ? undefined : parsed.data.coverImage,
+    });
     revalidatePath("/moderacao/simulados");
     revalidatePath(`/moderacao/simulados/${examId}/edit`);
     revalidatePath("/simulados");
@@ -96,15 +107,32 @@ export async function addExamQuestionAction(
 ): Promise<ActionResult> {
   try {
     await requireModerator();
-    const parsed = examQuestionSchema.safeParse({
-      statement: formData.get("statement"),
-      orderNumber: formData.get("orderNumber"),
-      altA: formData.get("altA"),
-      altB: formData.get("altB"),
-      altC: formData.get("altC"),
-      altD: formData.get("altD"),
-      correctAlternative: formData.get("correctAlternative"),
-    });
+    const type = formData.get("type") === "ESSAY" ? "ESSAY" : "MULTIPLE_CHOICE";
+
+    const parsed = examQuestionSchema.safeParse(
+      type === "ESSAY"
+        ? {
+            type: "ESSAY",
+            statement: formData.get("statement"),
+            imageUrl: formData.get("imageUrl") || undefined,
+            imageWidth: formData.get("imageWidth") || undefined,
+            imageHeight: formData.get("imageHeight") || undefined,
+            imageDisplaySize: formData.get("imageDisplaySize") || "MEDIUM",
+            orderNumber: formData.get("orderNumber"),
+            expectedAnswer: formData.get("expectedAnswer"),
+          }
+        : {
+            type: "MULTIPLE_CHOICE",
+            statement: formData.get("statement"),
+            imageUrl: formData.get("imageUrl") || undefined,
+            imageWidth: formData.get("imageWidth") || undefined,
+            imageHeight: formData.get("imageHeight") || undefined,
+            imageDisplaySize: formData.get("imageDisplaySize") || "MEDIUM",
+            orderNumber: formData.get("orderNumber"),
+            alternatives: parseAlternativesFromFormData(formData),
+            correctAlternative: formData.get("correctAlternative"),
+          },
+    );
 
     if (!parsed.success) {
       return { success: false, error: parsed.error.issues[0]?.message ?? "Dados inválidos" };

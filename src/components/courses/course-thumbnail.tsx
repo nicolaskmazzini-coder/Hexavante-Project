@@ -1,17 +1,27 @@
 import { BookOpen } from "lucide-react";
+import Image from "next/image";
 import { cn } from "@/lib/cn";
 
 type Props = {
   url?: string | null;
   title: string;
   className?: string;
+  priority?: boolean;
 };
 
-export function CourseThumbnail({ url, title, className }: Props) {
+export function CourseThumbnail({ url, title, className, priority }: Props) {
   if (url) {
     return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={url} alt={title} className={cn("object-cover", className)} />
+      <div className={cn("relative overflow-hidden bg-slate-900", className)}>
+        <Image
+          src={url}
+          alt={`Capa do curso ${title}`}
+          fill
+          className="object-cover"
+          sizes="(max-width: 640px) 100vw, 400px"
+          priority={priority}
+        />
+      </div>
     );
   }
 

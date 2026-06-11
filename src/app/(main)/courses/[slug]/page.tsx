@@ -35,7 +35,7 @@ export default async function CourseDetailPage({ params }: Props) {
     <PageShell size="md">
       <div className="overflow-hidden rounded-2xl border border-white/10">
         <CourseThumbnail
-          url={course.thumbnailUrl}
+          url={course.coverImage ?? course.thumbnailUrl}
           title={course.title}
           className="h-52 w-full sm:h-64"
         />

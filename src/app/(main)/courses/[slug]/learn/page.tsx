@@ -1,7 +1,6 @@
 import { auth } from "@/auth";
 import { getCourseBySlug } from "@/services/course.service";
 import { getEnrollment } from "@/services/enrollment.service";
-import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
 type Props = { params: Promise<{ slug: string }> };

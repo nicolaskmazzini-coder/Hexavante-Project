@@ -57,8 +57,8 @@ export function CompleteLessonButton({
             <p className="text-base font-semibold text-sky-100">XP ganho</p>
           </div>
           <ul className="space-y-2">
-            {xpFeedback.map((msg) => (
-              <li key={msg} className="flex items-start gap-2 text-sm text-slate-300">
+            {xpFeedback.map((msg, index) => (
+              <li key={`${msg}-${index}`} className="flex items-start gap-2 text-sm text-slate-300">
                 <span className="mt-2 h-1.5 w-1.5 rounded-full bg-sky-300" />
                 <span>{msg}</span>
               </li>

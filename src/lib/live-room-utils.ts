@@ -1,5 +1,5 @@
-export function getStartsInLabel(scheduledAt: Date): string | null {
-  const diff = scheduledAt.getTime() - Date.now();
+export function getStartsInLabel(scheduledAt: Date, now = Date.now()): string | null {
+  const diff = scheduledAt.getTime() - now;
   if (diff <= 0) return null;
 
   const minutes = Math.ceil(diff / (60 * 1000));

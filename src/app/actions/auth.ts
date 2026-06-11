@@ -7,7 +7,9 @@ import type { ZodError } from "zod";
 import { registerUser } from "@/services/auth.service"; // Serviço de registro
 import { signIn } from "@/auth"; // Função de login do NextAuth
 import { AuthError } from "next-auth"; // Tipo de erro do NextAuth
+import { isSignInFailureResult } from "@/lib/auth-env";
 import { rateLimitAuthAction } from "@/lib/rate-limit"; // Rate limiting
+import { Prisma } from "@prisma/client";
 
 // Tipo para resultado de ações (sucesso ou erro)
 export type ActionResult = {
@@ -70,6 +72,12 @@ export async function registerAction(
   try {
     await registerUser(parsed.data);
   } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2002"
+    ) {
+      return { success: false, error: "E-mail ou nome de usuário já está em uso." };
+    }
     return {
       success: false,
       error: error instanceof Error ? error.message : "Erro ao cadastrar",
@@ -78,8 +86,9 @@ export async function registerAction(
 
   const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
 
+  let signInResult: unknown;
   try {
-    await signIn("credentials", {
+    signInResult = await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
       redirect: false,
@@ -93,6 +102,10 @@ export async function registerAction(
       success: false,
       error: error instanceof Error ? error.message : "Erro ao entrar após cadastro.",
     };
+  }
+
+  if (isSignInFailureResult(signInResult)) {
+    return { success: false, error: "Cadastro ok, mas falha ao entrar. Tente o login." };
   }
 
   return { success: true, redirectTo: callbackUrl };
@@ -128,8 +141,9 @@ export async function loginAction(
 
   const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
 
+  let signInResult: unknown;
   try {
-    await signIn("credentials", {
+    signInResult = await signIn("credentials", {
       email: parsed.data.email,
       password: parsed.data.password,
       redirect: false,
@@ -143,6 +157,10 @@ export async function loginAction(
       success: false,
       error: error instanceof Error ? error.message : "Erro ao entrar. Tente novamente.",
     };
+  }
+
+  if (isSignInFailureResult(signInResult)) {
+    return { success: false, error: "E-mail ou senha incorretos." };
   }
 
   return { success: true, redirectTo: callbackUrl };
