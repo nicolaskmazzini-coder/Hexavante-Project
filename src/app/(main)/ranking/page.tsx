@@ -1,10 +1,10 @@
-import { Sparkles, Trophy } from "lucide-react";
+import { Trophy } from "lucide-react";
 import { auth } from "@/auth";
 import { RankingFilters } from "@/components/ranking/ranking-filters";
 import { RankingPodium } from "@/components/ranking/ranking-podium";
+import { RankingRow } from "@/components/ranking/ranking-row";
 import { AppLink } from "@/components/ui/app-link";
 import { Alert } from "@/components/ui/alert";
-import { Badge } from "@/components/ui/badge";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
@@ -82,45 +82,15 @@ export default async function RankingPage({ searchParams }: Props) {
 
           {rest.length > 0 && (
           <ol className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20">
-            {rest.map((entry, index) => {
-              const position = listStartIndex + index + 1;
-              const isCurrentUser = session?.user?.id === entry.userId;
-
-              return (
-                <li
-                  key={entry.id}
-                  className={`flex items-center gap-4 border-b border-white/10 px-4 py-4 last:border-b-0 transition hover:bg-sky-400/5 ${
-                    isCurrentUser ? "bg-sky-400/10" : ""
-                  }`}
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-white/[0.05] text-sm font-bold text-slate-400">
-                    {position}
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="truncate font-semibold text-white">@{entry.user.username}</p>
-                      {isCurrentUser && <Badge variant="sky">Você</Badge>}
-                    </div>
-                    <div className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">
-                      <Sparkles className="h-4 w-4 text-sky-300" />
-                      Nível {entry.level}
-                    </div>
-                  </div>
-
-                  <div className="text-right">
-                    <p className="font-semibold text-sky-200">
-                      {entry.periodXp.toLocaleString("pt-BR")} XP
-                    </p>
-                    {period !== "all" && (
-                      <p className="text-xs text-slate-500">
-                        Total: {entry.totalXp.toLocaleString("pt-BR")}
-                      </p>
-                    )}
-                  </div>
-                </li>
-              );
-            })}
+            {rest.map((entry, index) => (
+              <RankingRow
+                key={entry.id}
+                entry={entry}
+                position={listStartIndex + index + 1}
+                isCurrentUser={session?.user?.id === entry.userId}
+                showTotalXp={period !== "all"}
+              />
+            ))}
           </ol>
           )}
         </>

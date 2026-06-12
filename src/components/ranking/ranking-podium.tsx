@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { Crown, Medal, Sparkles } from "lucide-react";
 import type { RankingEntry } from "@/services/xp.service";
+import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 
@@ -52,21 +54,19 @@ export function RankingPodium({ entries, currentUserId, periodLabel }: Props) {
           const isCurrentUser = currentUserId === entry.userId;
 
           return (
-            <div
+            <Link
               key={entry.id}
-              className={cn("flex w-28 flex-col items-center md:w-32", style.order)}
+              href={`/perfil/${entry.user.username}`}
+              className={cn(
+                "flex w-28 flex-col items-center transition hover:opacity-90 md:w-32",
+                style.order,
+              )}
             >
-              <div
-                className={cn(
-                  "mb-3 flex h-14 w-14 items-center justify-center rounded-full border-2",
-                  style.medal,
-                )}
-              >
-                <Icon className="h-6 w-6" />
-              </div>
-              <p className="truncate text-center text-sm font-bold text-white">
-                @{entry.user.username}
+              <Avatar src={entry.user.avatarUrl} alt={entry.user.username} size="sm" />
+              <p className="mt-2 truncate text-center text-sm font-bold text-white">
+                {entry.user.fullName}
               </p>
+              <p className="truncate text-center text-xs text-slate-400">@{entry.user.username}</p>
               {isCurrentUser && (
                 <Badge variant="sky" className="mt-1">
                   Você
@@ -87,7 +87,7 @@ export function RankingPodium({ entries, currentUserId, periodLabel }: Props) {
               >
                 <span className="pb-2 text-lg font-black text-white">{style.label}</span>
               </div>
-            </div>
+            </Link>
           );
         })}
       </div>

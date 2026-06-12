@@ -1,8 +1,10 @@
 // Importações necessárias para o serviço de simulados
 import type { Prisma } from "@prisma/client";
-import { EXAM_PASS_SCORE } from "@/lib/gamification";
+import { COIN_REWARDS, EXAM_PASS_SCORE } from "@/lib/gamification";
 import { prisma } from "@/lib/prisma";
-import { awardXp, XP_REWARDS } from "@/services/xp.service"; // Serviço de XP
+import { canAccessPremiumExam } from "@/services/premium.service";
+import { awardCoins } from "@/services/wallet.service";
+import { awardXp, XP_REWARDS } from "@/services/xp.service";
 
 export type ExamSearchParams = {
   examType?: string;
@@ -10,11 +12,23 @@ export type ExamSearchParams = {
   sort?: "recent" | "popular";
 };
 
-export async function searchPublishedExams({
-  examType,
-  q,
-  sort = "recent",
-}: ExamSearchParams = {}) {
+export async function searchPublishedExams(
+  {
+    examType,
+    q,
+    sort = "recent",
+  }: ExamSearchParams = {},
+  userId?: string,
+) {
+  let includePremiumOnly = false;
+  if (userId) {
+    const { isPremiumActive } = await import("@/lib/premium");
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { isPremium: true, premiumExpiresAt: true },
+    });
+    includePremiumOnly = user ? isPremiumActive(user) : false;
+  }
   const query = q?.trim();
   const type =
     examType === "ENEM" || examType === "VESTIBULAR" || examType === "TECNOLOGIA"
@@ -24,6 +38,7 @@ export async function searchPublishedExams({
   return prisma.exam.findMany({
     where: {
       isPublished: true,
+      ...(!includePremiumOnly ? { isPremiumOnly: false } : {}),
       ...(type ? { examType: type } : {}),
       ...(query
         ? {
@@ -128,6 +143,10 @@ export async function startAttempt(userId: string, examId: string) {
       where: { id: examId, isPublished: true },
       include: { _count: { select: { questions: true } } },
     });
+
+    if (exam && !(await canAccessPremiumExam(userId, exam))) {
+      throw new Error("Este simulado é exclusivo para assinantes Premium.");
+    }
 
     if (!exam || exam._count.questions === 0) {
       throw new Error("Simulado não disponível.");
@@ -274,7 +293,7 @@ export async function submitAttempt(
   const submitResult = await prisma.$transaction(async (tx) => {
     const current = await tx.examAttempt.findUnique({
       where: { id: attemptId },
-      select: { finishedAt: true, exam: { select: { title: true } } },
+      select: { finishedAt: true, exam: { select: { title: true, slug: true } } },
     });
 
     if (!current || current.finishedAt) {
@@ -303,12 +322,27 @@ export async function submitAttempt(
       },
     });
 
-    return { examTitle: current.exam.title };
+    return { examTitle: current.exam.title, examSlug: current.exam.slug };
   });
 
-  // Concede XP por finalizar simulado
   let xpEarned = 0;
+  let coinsEarned = 0;
   const examTitle = submitResult.examTitle;
+  const examSlug = submitResult.examSlug;
+
+  for (const record of answerRecords) {
+    if (!record.isCorrect || !record.alternativeId) continue;
+    const coinAward = await awardCoins(
+      userId,
+      COIN_REWARDS.EXAM_CORRECT,
+      "EXAM_CORRECT",
+      `${attemptId}-q-${record.questionId}`,
+      `Questão correta: ${examTitle}`,
+    );
+    if (coinAward) coinsEarned += coinAward.amount;
+  }
+
+  // Concede XP por finalizar simulado
   const baseAward = await awardXp(
     userId,
     XP_REWARDS.EXAM,
@@ -328,6 +362,18 @@ export async function submitAttempt(
       `Aprovado no simulado: ${examTitle}`,
     );
     if (passAward) xpEarned += passAward.amount;
+
+    try {
+      const { recordSocialActivity } = await import("@/services/social.service");
+      await recordSocialActivity(
+        userId,
+        "SIMULADO_PASSED",
+        { simulado: examTitle, simuladoSlug: examSlug, score },
+        `exam:${attemptId}`,
+      );
+    } catch {
+      // feed opcional
+    }
   }
 
   return {
@@ -338,6 +384,7 @@ export async function submitAttempt(
     mcTotal,
     pendingEssays: essayQuestions.length,
     xpEarned,
+    coinsEarned,
   };
 }
 

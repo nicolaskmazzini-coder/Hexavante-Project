@@ -1,5 +1,6 @@
 import { auth } from "@/auth";
 import { getAttemptResult } from "@/services/exam.service";
+import { getCoinsForSource } from "@/services/wallet.service";
 import { getXpForSource } from "@/services/xp.service";
 import { AppLink } from "@/components/ui/app-link";
 import { Alert } from "@/components/ui/alert";
@@ -33,6 +34,14 @@ export default async function ExamResultPage({ params }: Props) {
   const mcAnswers = attempt.answers.filter((a) => a.alternativeId);
   const passed = attempt.score >= EXAM_PASS_SCORE && pendingEssays === 0;
 
+  const correctAnswers = attempt.answers.filter((a) => a.isCorrect && a.alternativeId);
+  const coinEntries = await Promise.all(
+    correctAnswers.map((answer) =>
+      getCoinsForSource(session.user.id, "EXAM_CORRECT", `${attemptId}-q-${answer.questionId}`),
+    ),
+  );
+  const totalCoinsEarned = coinEntries.reduce((sum, entry) => sum + (entry?.amount ?? 0), 0);
+
   const [baseXp, passXp] = await Promise.all([
     getXpForSource(session.user.id, "EXAM", attemptId),
     getXpForSource(session.user.id, "EXAM", `${attemptId}-pass`),
@@ -63,10 +72,13 @@ export default async function ExamResultPage({ params }: Props) {
             {pendingEssays} questão(ões) dissertativa(s) aguardando correção do professor.
           </p>
         )}
-        {totalXpEarned > 0 && (
-          <p className="mt-3 text-sm font-medium text-sky-200">
-            +{totalXpEarned} XP ganhos neste simulado
-          </p>
+        {(totalXpEarned > 0 || totalCoinsEarned > 0) && (
+          <div className="mt-3 space-y-1 text-sm font-medium">
+            {totalXpEarned > 0 && <p className="text-sky-200">+{totalXpEarned} XP ganhos neste simulado</p>}
+            {totalCoinsEarned > 0 && (
+              <p className="text-amber-200">+{totalCoinsEarned} moedas por questões corretas</p>
+            )}
+          </div>
         )}
       </Alert>
 

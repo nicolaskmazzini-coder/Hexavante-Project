@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useCallback, useContext, useMemo, useState } from "react";
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from "react";
 import { CheckCircle2, CircleAlert, Info } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -32,9 +32,11 @@ const variantIcons = {
 
 export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const toastCounter = useRef(0);
 
   const toast = useCallback((message: string, variant: ToastVariant = "info") => {
-    const id = crypto.randomUUID();
+    toastCounter.current += 1;
+    const id = `toast-${toastCounter.current}`;
     setToasts((current) => [...current, { id, message, variant }]);
     window.setTimeout(() => {
       setToasts((current) => current.filter((item) => item.id !== id));
@@ -46,8 +48,9 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   return (
     <ToastContext.Provider value={value}>
       {children}
+      {/* Sempre renderizado (vazio no SSR) para manter a árvore DOM estável vs scripts do Next */}
       <div
-        className="pointer-events-none fixed bottom-4 right-4 z-[100] flex w-full max-w-sm flex-col gap-2 px-4 sm:px-0"
+        className="pointer-events-none fixed bottom-4 right-4 z-[100] flex max-w-sm flex-col gap-2 px-4 sm:px-0"
         aria-live="polite"
       >
         {toasts.map((item) => {

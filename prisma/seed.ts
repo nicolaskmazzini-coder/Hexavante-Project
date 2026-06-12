@@ -1,5 +1,6 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { SHOP_CATALOG } from "../src/lib/shop-catalog";
 
 const prisma = new PrismaClient();
 
@@ -8,6 +9,7 @@ const roles = [
   { name: "INSTRUCTOR", description: "Cria cursos após aprovação" },
   { name: "MODERATOR", description: "Aprova instrutores e cursos" },
   { name: "ADMIN", description: "Administração geral" },
+  { name: "SUPERADMIN", description: "Controle total da plataforma" },
 ];
 
 const categories = [
@@ -266,6 +268,27 @@ async function main() {
     });
   }
 
+  const superAdminRole = await prisma.role.findUnique({ where: { name: "SUPERADMIN" } });
+  if (superAdminRole && userRole) {
+    const superPassword = await bcrypt.hash("Superadmin123!", 12);
+    await prisma.user.upsert({
+      where: { email: "superadmin@hexavante.com" },
+      update: {},
+      create: {
+        username: "superadmin_demo",
+        fullName: "Superadmin Demo",
+        email: "superadmin@hexavante.com",
+        passwordHash: superPassword,
+        birthDate: new Date("1985-03-10"),
+        roles: {
+          create: [{ roleId: userRole.id }, { roleId: superAdminRole.id }],
+        },
+        xp: { create: {} },
+        wallet: { create: {} },
+      },
+    });
+  }
+
   const demoCourse = await prisma.course.findUnique({
     where: { slug: "introducao-a-logica-de-programacao" },
   });
@@ -307,14 +330,98 @@ async function main() {
     });
   }
 
+  for (const item of SHOP_CATALOG) {
+    await prisma.storeItem.upsert({
+      where: { slug: item.slug },
+      update: {
+        name: item.name,
+        description: item.description,
+        cost: item.cost,
+        category: item.category,
+        imageUrl: item.imageUrl ?? null,
+        isPremiumOnly: item.isPremiumOnly ?? false,
+        metadata: item.metadata ?? undefined,
+        isActive: true,
+      },
+      create: {
+        slug: item.slug,
+        name: item.name,
+        description: item.description,
+        cost: item.cost,
+        category: item.category,
+        imageUrl: item.imageUrl ?? null,
+        isPremiumOnly: item.isPremiumOnly ?? false,
+        metadata: item.metadata ?? undefined,
+      },
+    });
+  }
+
+  const premiumExam = await prisma.exam.findUnique({
+    where: { slug: "desafio-premium-logica-avancada" },
+  });
+  if (!premiumExam) {
+    await prisma.exam.create({
+      data: {
+        title: "Desafio Premium — Lógica Avançada",
+        slug: "desafio-premium-logica-avancada",
+        examType: "TECNOLOGIA",
+        description: "Simulado exclusivo para assinantes Premium com estatísticas avançadas.",
+        isPremiumOnly: true,
+        timeLimit: 45,
+        questions: {
+          create: [
+            {
+              statement: "Qual estrutura de dados usa LIFO?",
+              orderNumber: 1,
+              alternatives: {
+                create: [
+                  { text: "Pilha (Stack)", isCorrect: true },
+                  { text: "Fila (Queue)", isCorrect: false },
+                  { text: "Lista ligada", isCorrect: false },
+                ],
+              },
+            },
+            {
+              statement: "Big-O de busca binária em array ordenado:",
+              orderNumber: 2,
+              alternatives: {
+                create: [
+                  { text: "O(log n)", isCorrect: true },
+                  { text: "O(n)", isCorrect: false },
+                  { text: "O(n log n)", isCorrect: false },
+                ],
+              },
+            },
+          ],
+        },
+      },
+    });
+  }
+
+  const aluno = await prisma.user.findUnique({ where: { email: "aluno@hexavante.com" } });
+  if (aluno) {
+    await prisma.user.update({
+      where: { id: aluno.id },
+      data: { coins: 500 },
+    });
+    await prisma.userWallet.upsert({
+      where: { userId: aluno.id },
+      create: { userId: aluno.id, coins: 500 },
+      update: { coins: 500 },
+    });
+  }
+
   console.log("Seed concluído:");
   console.log("- Roles:", roles.map((r) => r.name).join(", "));
   console.log("- Categorias:", categories.length);
   console.log("- Instrutor demo: instrutor@hexavante.com / Instrutor123!");
   console.log("- Moderador demo: moderador@hexavante.com / Moderador123!");
   console.log("- Admin demo: admin@hexavante.com / Admin123!");
+  console.log("- Superadmin demo: superadmin@hexavante.com / Superadmin123!");
   console.log("- Aluno demo: aluno@hexavante.com / Aluno123!");
   console.log("- Simulado demo: /simulados/logica-programacao-basica");
+  console.log("- Simulado Premium: /simulados/desafio-premium-logica-avancada");
+  console.log("- Loja: /shop (aluno demo com 500 moedas)");
 }
 
 main()

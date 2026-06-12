@@ -1,4 +1,4 @@
-import { Clock3, ClipboardList, Target } from "lucide-react";
+import { Clock3, ClipboardList, Crown, Target } from "lucide-react";
 import { ExamThumbnail } from "@/components/exams/exam-thumbnail";
 import { Badge } from "@/components/ui/badge";
 import { CardFooter, CardHeader, CardTitle, InteractiveCard } from "@/components/ui/card";
@@ -13,6 +13,7 @@ type ExamCardProps = {
   questionCount: number;
   timeLimit?: number | null;
   userAttemptCount?: number;
+  isPremiumOnly?: boolean;
 };
 
 const examBadgeVariant: Record<string, "blue" | "violet" | "teal"> = {
@@ -30,6 +31,7 @@ export function ExamCard({
   questionCount,
   timeLimit,
   userAttemptCount,
+  isPremiumOnly,
 }: ExamCardProps) {
   return (
     <InteractiveCard
@@ -44,10 +46,18 @@ export function ExamCard({
       />
       <div className="p-5">
         <CardHeader>
-          <Badge variant={examBadgeVariant[examType] ?? "default"}>
-            <Target className="h-3.5 w-3.5" />
-            {EXAM_TYPE_LABELS[examType] ?? examType}
-          </Badge>
+          <div className="flex flex-wrap gap-2">
+            <Badge variant={examBadgeVariant[examType] ?? "default"}>
+              <Target className="h-3.5 w-3.5" />
+              {EXAM_TYPE_LABELS[examType] ?? examType}
+            </Badge>
+            {isPremiumOnly && (
+              <Badge variant="violet">
+                <Crown className="h-3.5 w-3.5" />
+                Premium
+              </Badge>
+            )}
+          </div>
         </CardHeader>
 
         <CardTitle className="transition-colors group-hover:text-teal-200">{title}</CardTitle>

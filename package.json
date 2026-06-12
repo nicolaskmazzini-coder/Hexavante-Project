@@ -23,6 +23,11 @@
     "db:exam-question-image": "prisma db execute --file prisma/sql/exam-question-image.sql --schema prisma/schema.prisma",
     "db:exam-question-image-size": "prisma db execute --file prisma/sql/exam-question-image-size.sql --schema prisma/schema.prisma",
     "db:exam-questions": "npm run db:exam-question-image && npm run db:exam-question-image-size",
+    "db:economy": "prisma db execute --file prisma/sql/economy-shop-premium.sql --schema prisma/schema.prisma",
+    "db:booster": "prisma db execute --file prisma/sql/user-booster-fields.sql --schema prisma/schema.prisma",
+    "db:social": "prisma db execute --file prisma/sql/social-features.sql --schema prisma/schema.prisma",
+    "db:moderation": "prisma db execute --file prisma/sql/moderation-admin.sql --schema prisma/schema.prisma",
+    "db:superadmin": "prisma db execute --file prisma/sql/superadmin-role.sql --schema prisma/schema.prisma",
     "db:studio": "prisma studio",
     "db:seed": "prisma db seed"
   },
@@ -39,6 +44,7 @@
     "pdf-lib": "^1.17.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
+    "recharts": "^3.8.1",
     "sharp": "^0.35.1",
     "zod": "^4.4.3"
   },

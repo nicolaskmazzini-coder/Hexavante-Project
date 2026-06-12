@@ -1,5 +1,6 @@
 // Importações necessárias para autenticação
 import bcrypt from "bcryptjs"; // Biblioteca para hash de senhas
+import { getActiveModerationStatus } from "@/lib/moderation/status";
 import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
 import { logger } from "@/lib/logger"; // Sistema de logging
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth"; // Tipos de entrada
@@ -100,6 +101,12 @@ export async function validateCredentials(data: LoginInput) {
   const valid = await bcrypt.compare(data.password, user.passwordHash);
   if (!valid) {
     logger.warn('Tentativa de login com senha inválida', { email: data.email });
+    return null;
+  }
+
+  const moderationStatus = await getActiveModerationStatus(user.id);
+  if (moderationStatus.isBanned) {
+    logger.warn("Tentativa de login com conta suspensa", { email: data.email, userId: user.id });
     return null;
   }
 

@@ -21,11 +21,14 @@ export default async function SimuladosPage({ searchParams }: Props) {
   const sort = params.sort === "popular" ? "popular" : "recent";
   const session = await auth();
 
-  const exams = await searchPublishedExams({
-    examType: params.tipo,
-    q: params.q,
-    sort,
-  });
+  const exams = await searchPublishedExams(
+    {
+      examType: params.tipo,
+      q: params.q,
+      sort,
+    },
+    session?.user?.id,
+  );
 
   const attemptCounts = session?.user?.id
     ? await getUserFinishedAttemptCounts(session.user.id)
@@ -77,6 +80,7 @@ export default async function SimuladosPage({ searchParams }: Props) {
               questionCount={exam._count.questions}
               timeLimit={exam.timeLimit}
               userAttemptCount={attemptCounts[exam.id]}
+              isPremiumOnly={exam.isPremiumOnly}
             />
           ))}
         </div>

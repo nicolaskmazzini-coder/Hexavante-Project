@@ -2,7 +2,9 @@
 import { isPrismaUniqueViolation } from "@/lib/prisma-errors";
 import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
 import { countTotalLessons } from "@/services/course.service"; // Função para contar aulas
-import { awardXp, type XpAward, XP_REWARDS } from "@/services/xp.service"; // Serviço de XP
+import { COIN_REWARDS } from "@/lib/gamification";
+import { awardCoins } from "@/services/wallet.service";
+import { awardXp, type XpAward, XP_REWARDS } from "@/services/xp.service";
 import { issueCertificate } from "@/services/certificate.service"; // Serviço de certificados
 
 // Tipo para resultado de conclusão de aula
@@ -171,6 +173,14 @@ export async function markLessonComplete(
     );
     if (lessonAward) xpAwards.push(lessonAward);
 
+    await awardCoins(
+      userId,
+      COIN_REWARDS.LESSON,
+      "LESSON",
+      lessonId,
+      `Aula concluída: ${lessonTitle}`,
+    );
+
     // Busca módulo da aula
     const lessonModule = course.modules.find((m) =>
       m.lessons.some((l) => l.id === lessonId),
@@ -197,6 +207,13 @@ export async function markLessonComplete(
           `Módulo concluído: ${lessonModule.title}`,
         );
         if (moduleAward) xpAwards.push(moduleAward);
+        await awardCoins(
+          userId,
+          COIN_REWARDS.MODULE,
+          "MODULE",
+          lessonModule.id,
+          `Módulo concluído: ${lessonModule.title}`,
+        );
       }
     }
 
@@ -211,9 +228,26 @@ export async function markLessonComplete(
       );
       if (courseAward) xpAwards.push(courseAward);
 
+      await awardCoins(
+        userId,
+        COIN_REWARDS.COURSE,
+        "COURSE",
+        courseId,
+        `Curso concluído: ${course.title}`,
+      );
+
       // Emite certificado automaticamente quando o curso é concluído
       try {
-        await issueCertificate(userId, courseId);
+        const certificate = await issueCertificate(userId, courseId);
+        if (certificate) {
+          const { recordSocialActivity } = await import("@/services/social.service");
+          await recordSocialActivity(
+            userId,
+            "COURSE_COMPLETED",
+            { course: course.title, courseSlug: course.slug },
+            `cert:${certificate.id}`,
+          );
+        }
       } catch (error) {
         // Se o certificado já existe, ignora o erro
         console.error("Erro ao emitir certificado (pode já existir):", error);

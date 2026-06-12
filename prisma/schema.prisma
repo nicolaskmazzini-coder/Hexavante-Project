@@ -25,7 +25,12 @@ model User {
   bio               String?   @db.Text
   profileVisibility String    @default("private") @map("profile_visibility")
   isVerified        Boolean   @default(false) @map("is_verified")
-  createdAt         DateTime  @default(now()) @map("created_at")
+  isPremium         Boolean   @default(false) @map("is_premium")
+  premiumExpiresAt  DateTime? @map("premium_expires_at")
+  coins              Int       @default(0)
+  boosterMultiplier  Float     @default(1.0) @map("booster_multiplier")
+  boosterExpiresAt   DateTime? @map("booster_expires_at")
+  createdAt          DateTime  @default(now()) @map("created_at")
   updatedAt         DateTime  @updatedAt @map("updated_at")
   lastLogin         DateTime? @map("last_login")
 
@@ -47,8 +52,92 @@ model User {
   liveRoomParticipations LiveRoomParticipant[]
   liveChatMessages       LiveChatMessage[]
   notifications          Notification[]
+  coinTransactions       CoinTransaction[]
+  inventory              UserInventory[]
+  followers              UserFollow[]        @relation("UserFollowers")
+  following              UserFollow[]        @relation("UserFollowing")
+  socialActivities       SocialActivity[]
+  activityLikes          ActivityLike[]
+  activityComments       ActivityComment[]
+
+  bansReceived           UserBan[]         @relation("BannedUser")
+  bansIssued             UserBan[]         @relation("BanModerator")
+  mutesReceived          UserMute[]        @relation("MutedUser")
+  mutesIssued            UserMute[]        @relation("MuteModerator")
+  warningsReceived       UserWarning[]     @relation("WarnedUser")
+  warningsIssued         UserWarning[]     @relation("WarnModerator")
+  moderationLogsAsActor  ModerationLog[]   @relation("ModerationActor")
+  moderationLogsAsTarget ModerationLog[]   @relation("ModerationTarget")
 
   @@map("users")
+}
+
+enum SocialActivityType {
+  COURSE_COMPLETED
+  SIMULADO_PASSED
+  LEVEL_UP
+  ACHIEVEMENT
+  STREAK
+}
+
+model UserFollow {
+  id          String   @id @default(cuid())
+  followerId  String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  follower  User @relation("UserFollowers", fields: [followerId], references: [id], onDelete: Cascade)
+  following User @relation("UserFollowing", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("user_follows")
+}
+
+model SocialActivity {
+  id        String             @id @default(cuid())
+  userId    String             @map("user_id")
+  type      SocialActivityType
+  sourceKey String?            @map("source_key")
+  metadata  Json
+  createdAt DateTime           @default(now()) @map("created_at")
+
+  user     User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  likes    ActivityLike[]
+  comments ActivityComment[]
+
+  @@unique([userId, sourceKey])
+  @@index([userId, createdAt])
+  @@index([createdAt])
+  @@map("social_activities")
+}
+
+model ActivityLike {
+  id         String   @id @default(cuid())
+  activityId String   @map("activity_id")
+  userId     String   @map("user_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  activity SocialActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([activityId, userId])
+  @@map("activity_likes")
+}
+
+model ActivityComment {
+  id         String   @id @default(cuid())
+  activityId String   @map("activity_id")
+  userId     String   @map("user_id")
+  content    String   @db.VarChar(500)
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  activity SocialActivity @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  user     User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([activityId])
+  @@map("activity_comments")
 }
 
 enum CourseLevel {
@@ -283,8 +372,9 @@ model Exam {
   description String?  @db.Text
   coverImage  String?  @map("cover_image") @db.VarChar(500)
   timeLimit   Int?     @map("time_limit")
-  isPublished Boolean  @default(true) @map("is_published")
-  createdAt   DateTime @default(now()) @map("created_at")
+  isPublished    Boolean  @default(true) @map("is_published")
+  isPremiumOnly  Boolean  @default(false) @map("is_premium_only")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   questions ExamQuestion[]
   attempts  ExamAttempt[]
@@ -447,11 +537,88 @@ model UserWallet {
   @@map("user_wallets")
 }
 
+enum StoreItemCategory {
+  TITLE
+  AVATAR_BORDER
+  THEME
+  COSMETIC
+  BOOSTER
+}
+
+model StoreItem {
+  id            String            @id @default(cuid())
+  slug          String            @unique
+  name          String
+  description   String            @db.Text
+  cost          Int               @default(0)
+  category      StoreItemCategory
+  imageUrl      String?           @map("image_url") @db.VarChar(500)
+  isPremiumOnly Boolean           @default(false) @map("is_premium_only")
+  metadata      Json?
+  isActive      Boolean           @default(true) @map("is_active")
+  createdAt     DateTime          @default(now()) @map("created_at")
+
+  inventory UserInventory[]
+
+  @@index([category])
+  @@map("store_items")
+}
+
+model UserInventory {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  storeItemId String    @map("store_item_id")
+  isEquipped  Boolean   @default(false) @map("is_equipped")
+  expiresAt   DateTime? @map("expires_at")
+  purchasedAt DateTime  @default(now()) @map("purchased_at")
+
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storeItem StoreItem @relation(fields: [storeItemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, storeItemId])
+  @@index([userId])
+  @@map("user_inventory")
+}
+
+enum CoinTransactionType {
+  EARN
+  SPEND
+}
+
+enum CoinSource {
+  EXAM_CORRECT
+  SHOP_PURCHASE
+  LESSON
+  MODULE
+  COURSE
+  PREMIUM_GRANT
+  ADMIN
+}
+
+model CoinTransaction {
+  id          String              @id @default(cuid())
+  userId      String              @map("user_id")
+  amount      Int
+  type        CoinTransactionType
+  source      CoinSource
+  sourceId    String              @map("source_id")
+  description String?
+  createdAt   DateTime            @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, source, sourceId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("coin_transactions")
+}
+
 enum XpSource {
   LESSON
   MODULE
   COURSE
   EXAM
+  ADMIN
 }
 
 model XpTransaction {
@@ -473,12 +640,122 @@ model XpTransaction {
 
 enum NotificationType {
   XP_EARNED
+  COIN_EARNED
   LEVEL_UP
   COURSE_APPROVED
   COURSE_REJECTED
   INSTRUCTOR_APPROVED
   INSTRUCTOR_REJECTED
   CERTIFICATE_ISSUED
+  SYSTEM_ANNOUNCEMENT
+  MODERATION_ACTION
+}
+
+enum ModerationLogType {
+  XP_ADD
+  XP_REMOVE
+  XP_SET
+  LEVEL_SET
+  COIN_ADD
+  COIN_REMOVE
+  COIN_SET
+  ROLE_ADD
+  ROLE_REMOVE
+  BAN
+  UNBAN
+  MUTE
+  UNMUTE
+  WARN
+  BROADCAST
+  MAINTENANCE
+  GLOBAL_BOOSTER
+  COURSE_PUBLISH
+  COURSE_UNPUBLISH
+  EXAM_RESET
+  PASSWORD_RESET
+  IMPERSONATE
+  OTHER
+}
+
+model UserBan {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  moderatorId String    @map("moderator_id")
+  reason      String    @db.Text
+  expiresAt   DateTime? @map("expires_at")
+  liftedAt    DateTime? @map("lifted_at")
+  liftedById  String?   @map("lifted_by_id")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user      User @relation("BannedUser", fields: [userId], references: [id], onDelete: Cascade)
+  moderator User @relation("BanModerator", fields: [moderatorId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([createdAt])
+  @@map("user_bans")
+}
+
+model UserMute {
+  id          String    @id @default(cuid())
+  userId      String    @map("user_id")
+  moderatorId String    @map("moderator_id")
+  reason      String    @db.Text
+  expiresAt   DateTime? @map("expires_at")
+  liftedAt    DateTime? @map("lifted_at")
+  liftedById  String?   @map("lifted_by_id")
+  isActive    Boolean   @default(true) @map("is_active")
+  createdAt   DateTime  @default(now()) @map("created_at")
+
+  user      User @relation("MutedUser", fields: [userId], references: [id], onDelete: Cascade)
+  moderator User @relation("MuteModerator", fields: [moderatorId], references: [id], onDelete: Cascade)
+
+  @@index([userId, isActive])
+  @@index([createdAt])
+  @@map("user_mutes")
+}
+
+model UserWarning {
+  id          String   @id @default(cuid())
+  userId      String   @map("user_id")
+  moderatorId String   @map("moderator_id")
+  reason      String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  user      User @relation("WarnedUser", fields: [userId], references: [id], onDelete: Cascade)
+  moderator User @relation("WarnModerator", fields: [moderatorId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([createdAt])
+  @@map("user_warnings")
+}
+
+model ModerationLog {
+  id           String            @id @default(cuid())
+  moderatorId  String            @map("moderator_id")
+  targetUserId String?           @map("target_user_id")
+  action       ModerationLogType
+  description  String            @db.Text
+  metadata     Json?
+  createdAt    DateTime          @default(now()) @map("created_at")
+
+  moderator  User  @relation("ModerationActor", fields: [moderatorId], references: [id], onDelete: Cascade)
+  targetUser User? @relation("ModerationTarget", fields: [targetUserId], references: [id], onDelete: SetNull)
+
+  @@index([moderatorId])
+  @@index([targetUserId])
+  @@index([action])
+  @@index([createdAt])
+  @@map("moderation_logs")
+}
+
+model PlatformSetting {
+  key         String   @id
+  value       Json
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  updatedById String?  @map("updated_by_id")
+
+  @@map("platform_settings")
 }
 
 model Notification {

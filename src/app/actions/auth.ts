@@ -1,13 +1,13 @@
 "use server";
 
 // Importações necessárias para autenticação
-import { headers } from "next/headers"; // Para obter IP do usuário
+import { cookies, headers } from "next/headers";
 import { registerSchema, loginSchema } from "@/lib/validations/auth"; // Schema de validação
 import type { ZodError } from "zod";
 import { registerUser } from "@/services/auth.service"; // Serviço de registro
 import { signIn } from "@/auth"; // Função de login do NextAuth
 import { AuthError } from "next-auth"; // Tipo de erro do NextAuth
-import { isSignInFailureResult } from "@/lib/auth-env";
+import { AUTH_SESSION_COOKIE_NAMES, isSignInFailureResult } from "@/lib/auth-env";
 import { rateLimitAuthAction } from "@/lib/rate-limit"; // Rate limiting
 import { Prisma } from "@prisma/client";
 
@@ -32,6 +32,13 @@ function getSafeCallbackUrl(value: FormDataEntryValue | null): string {
   const url = typeof value === "string" ? value : "/";
   if (!url.startsWith("/") || url.startsWith("//")) return "/";
   return url;
+}
+
+async function clearStaleSessionCookies() {
+  const cookieStore = await cookies();
+  for (const name of AUTH_SESSION_COOKIE_NAMES) {
+    cookieStore.delete(name);
+  }
 }
 
 // Action de registro de novo usuário
@@ -85,6 +92,8 @@ export async function registerAction(
   }
 
   const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
+
+  await clearStaleSessionCookies();
 
   let signInResult: unknown;
   try {
@@ -140,6 +149,8 @@ export async function loginAction(
   }
 
   const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
+
+  await clearStaleSessionCookies();
 
   let signInResult: unknown;
   try {

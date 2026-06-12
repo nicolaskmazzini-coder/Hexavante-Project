@@ -7,6 +7,13 @@ export const XP_REWARDS = {
   EXAM_PASS_BONUS: 30, // Bônus por passar no simulado
 } as const;
 
+export const COIN_REWARDS = {
+  EXAM_CORRECT: 5,
+  LESSON: 3,
+  MODULE: 10,
+  COURSE: 25,
+} as const;
+
 // Pontuação mínima para aprovação em simulados
 export const EXAM_PASS_SCORE = 70;
 
@@ -50,4 +57,15 @@ export const XP_SOURCE_LABELS: Record<string, string> = {
   MODULE: "Módulo concluído",
   COURSE: "Curso concluído",
   EXAM: "Simulado finalizado",
+  ADMIN: "Ajuste administrativo",
+};
+
+export const COIN_SOURCE_LABELS: Record<string, string> = {
+  EXAM_CORRECT: "Questão correta",
+  SHOP_PURCHASE: "Compra na loja",
+  LESSON: "Aula concluída",
+  MODULE: "Módulo concluído",
+  COURSE: "Curso concluído",
+  PREMIUM_GRANT: "Bônus Premium",
+  ADMIN: "Ajuste administrativo",
 };

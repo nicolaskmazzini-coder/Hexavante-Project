@@ -9,9 +9,10 @@ import { EXAM_PASS_SCORE } from "@/lib/gamification";
 import { ExamThumbnail } from "@/components/exams/exam-thumbnail";
 import { EXAM_TYPE_LABELS } from "@/lib/validations/exam";
 import { getExamBySlug, getUserExamPerformance } from "@/services/exam.service";
+import { canAccessPremiumExam } from "@/services/premium.service";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BarChart3, Clock3, ClipboardList, Trophy } from "lucide-react";
+import { BarChart3, Clock3, ClipboardList, Crown, Trophy } from "lucide-react";
 
 type Props = { params: Promise<{ slug: string }> };
 
@@ -25,6 +26,9 @@ export default async function ExamDetailPage({ params }: Props) {
   const performance = session?.user?.id
     ? await getUserExamPerformance(session.user.id, exam.id)
     : null;
+
+  const canAccess =
+    !exam.isPremiumOnly || (session?.user?.id && (await canAccessPremiumExam(session.user.id, exam)));
 
   return (
     <PageShell size="md">
@@ -40,9 +44,17 @@ export default async function ExamDetailPage({ params }: Props) {
           priority
         />
         <div className="border-t border-white/10 bg-white/[0.03] p-6">
-          <Badge variant="teal" className="mb-4">
-            {EXAM_TYPE_LABELS[exam.examType] ?? exam.examType}
-          </Badge>
+          <div className="mb-4 flex flex-wrap gap-2">
+            <Badge variant="teal">
+              {EXAM_TYPE_LABELS[exam.examType] ?? exam.examType}
+            </Badge>
+            {exam.isPremiumOnly && (
+              <Badge variant="violet">
+                <Crown className="h-3.5 w-3.5" />
+                Exclusivo Premium
+              </Badge>
+            )}
+          </div>
           <h1 className="hx-page-title">{exam.title}</h1>
 
           {exam.description && <p className="mt-4 text-slate-300">{exam.description}</p>}
@@ -120,11 +132,22 @@ export default async function ExamDetailPage({ params }: Props) {
 
       <div className="mt-8">
         {session?.user ? (
-          <form action={startExamAction.bind(null, exam.id, slug)}>
-            <Button type="submit" size="lg">
-              {performance?.attemptCount ? "Fazer nova tentativa" : "Iniciar simulado"}
-            </Button>
-          </form>
+          canAccess ? (
+            <form action={startExamAction.bind(null, exam.id, slug)}>
+              <Button type="submit" size="lg">
+                {performance?.attemptCount ? "Fazer nova tentativa" : "Iniciar simulado"}
+              </Button>
+            </form>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-sm text-fuchsia-200">
+                Este simulado é exclusivo para assinantes Premium.
+              </p>
+              <LinkButton href="/shop" size="lg">
+                Conhecer o Premium
+              </LinkButton>
+            </div>
+          )
         ) : (
           <LinkButton
             href={`/login?callbackUrl=/simulados/${slug}`}

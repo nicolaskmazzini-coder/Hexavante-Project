@@ -15,6 +15,11 @@ declare module "next-auth" {
       name?: string | null;
       email?: string | null;
       image?: string | null;
+      isBanned?: boolean;
+      banReason?: string;
+      isMuted?: boolean;
+      isImpersonating?: boolean;
+      impersonatorUsername?: string;
     };
   }
 }
@@ -24,5 +29,12 @@ declare module "next-auth/jwt" {
     id?: string;
     username?: string;
     roles?: string[];
+    isBanned?: boolean;
+    banReason?: string;
+    isMuted?: boolean;
+    isImpersonating?: boolean;
+    impersonatorId?: string;
+    impersonatorUsername?: string;
+    impersonatorRoles?: string[];
   }
 }

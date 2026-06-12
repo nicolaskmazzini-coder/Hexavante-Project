@@ -9,8 +9,9 @@ import {
 import { logger } from "@/lib/logger";
 import { isPrismaUniqueViolation } from "@/lib/prisma-errors";
 import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
+import { getTotalRewardMultiplier } from "@/services/booster.service";
 import { createNotification } from "@/services/notification.service";
-import type { XpSource } from "@prisma/client"; // Tipo de fonte de XP
+import type { XpSource } from "@prisma/client";
 
 // Tipo para prêmio de XP
 export type XpAward = {
@@ -53,11 +54,21 @@ export async function awardXp(
   sourceId: string,
   description?: string,
 ): Promise<XpAward | null> {
-  // Não concede XP se quantidade for inválida
   if (amount <= 0) return null;
 
-  // Usa descrição fornecida ou rótulo padrão da fonte
+  const rewards = await getTotalRewardMultiplier(userId);
+  const boosterMultiplier = rewards.booster;
+  const finalAmount = Math.round(amount * boosterMultiplier);
   const label = description ?? XP_SOURCE_LABELS[source] ?? "XP ganho";
+  const boosterParts: string[] = [];
+  if (rewards.global > 1) boosterParts.push(`global x${rewards.global}`);
+  if (rewards.booster / rewards.global > 1) {
+    boosterParts.push(`pessoal x${(rewards.booster / rewards.global).toFixed(1).replace(/\.0$/, "")}`);
+  }
+  const awardLabel =
+    boosterMultiplier > 1
+      ? `${label} (booster ${boosterParts.join(" · ") || `x${boosterMultiplier}`})`
+      : label;
 
   try {
     const result = await prisma.$transaction(async (tx) => {
@@ -82,7 +93,7 @@ export async function awardXp(
         userXp.level,
         userXp.currentXp,
         userXp.totalXp,
-        amount,
+        finalAmount,
       );
       const leveledUp = updated.level > userXp.level;
 
@@ -90,10 +101,10 @@ export async function awardXp(
       await tx.xpTransaction.create({
         data: {
           userId,
-          amount,
+          amount: finalAmount,
           source,
           sourceId,
-          description: label,
+          description: awardLabel,
         },
       });
 
@@ -104,12 +115,26 @@ export async function awardXp(
       });
 
       return {
-        amount,
-        description: label,
+        amount: finalAmount,
+        description: awardLabel,
         leveledUp,
         newLevel: leveledUp ? updated.level : undefined,
       };
     });
+
+    if (result?.leveledUp && result.newLevel) {
+      try {
+        const { recordSocialActivity } = await import("@/services/social.service");
+        await recordSocialActivity(
+          userId,
+          "LEVEL_UP",
+          { newLevel: result.newLevel },
+          `level:${result.newLevel}`,
+        );
+      } catch {
+        // feed opcional
+      }
+    }
 
     if (result) {
       try {
@@ -178,6 +203,7 @@ export type RankingEntry = {
     id: string;
     username: string;
     fullName: string;
+    avatarUrl: string | null;
   };
 };
 
@@ -202,6 +228,7 @@ export async function getRanking(limit = 50, period: RankingPeriod = "all"): Pro
             id: true,
             username: true,
             fullName: true,
+            avatarUrl: true,
           },
         },
       },
@@ -237,6 +264,7 @@ export async function getRanking(limit = 50, period: RankingPeriod = "all"): Pro
           id: true,
           username: true,
           fullName: true,
+          avatarUrl: true,
         },
       },
     },

@@ -82,6 +82,8 @@ export async function updateProfileAction(
   });
 
   revalidatePath("/perfil");
+  revalidatePath(`/perfil/${session.user.username}`);
+  revalidatePath("/configuracoes/perfil");
   revalidatePath("/");
 
   return { success: true };
@@ -120,6 +122,8 @@ export async function updateProfilePhotoAction(
     });
 
     revalidatePath("/perfil");
+    revalidatePath(`/perfil/${session.user.username}`);
+    revalidatePath("/configuracoes/perfil");
     revalidatePath("/");
     return { success: true, avatarUrl };
   } catch (error) {

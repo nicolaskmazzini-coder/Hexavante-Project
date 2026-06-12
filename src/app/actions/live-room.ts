@@ -1,6 +1,7 @@
 "use server";
 
 import { auth } from "@/auth";
+import { assertUserCanInteract } from "@/lib/moderation/status";
 import { isInstructor } from "@/lib/permissions";
 import {
   createLiveRoomSchema,
@@ -155,6 +156,7 @@ export async function sendChatMessageAction(
   }
 
   try {
+    await assertUserCanInteract(session.user.id);
     const parsed = sendChatMessageSchema.safeParse({ message });
     if (!parsed.success) {
       return {

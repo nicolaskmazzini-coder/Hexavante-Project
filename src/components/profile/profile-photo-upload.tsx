@@ -2,19 +2,21 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, UserRound } from "lucide-react";
+import { Camera } from "lucide-react";
 import { updateProfilePhotoAction } from "@/app/actions/profile";
+import { Avatar } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { resizeImageFile } from "@/lib/resize-image";
 
 type Props = {
   currentAvatar?: string;
+  borderClassName?: string | null;
 };
 
 const MAX_FILE_SIZE = 5 * 1024 * 1024;
 const ALLOWED_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp"];
 
-export function ProfilePhotoUpload({ currentAvatar }: Props) {
+export function ProfilePhotoUpload({ currentAvatar, borderClassName }: Props) {
   const [localPreview, setLocalPreview] = useState<string | null>(null);
   const preview = localPreview ?? currentAvatar ?? null;
   const [uploading, setUploading] = useState(false);
@@ -80,30 +82,23 @@ export function ProfilePhotoUpload({ currentAvatar }: Props) {
   return (
     <div className="flex flex-col items-center gap-4">
       <div className="group relative">
-        <div className="relative h-32 w-32 overflow-hidden rounded-full border border-sky-400/30 bg-slate-950/70 shadow-xl shadow-black/25">
-          {preview ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={preview}
-              alt="Foto de perfil"
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <div className="flex h-full w-full items-center justify-center text-slate-500">
-              <UserRound className="h-14 w-14" />
-            </div>
-          )}
-        </div>
-
-        <button
-          type="button"
-          onClick={handleClick}
-          disabled={uploading}
-          className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-not-allowed"
-          aria-label="Alterar foto de perfil"
-        >
-          <Camera className="h-8 w-8 text-white" />
-        </button>
+        <Avatar
+          src={preview}
+          alt="Foto de perfil"
+          size="xl"
+          borderClassName={borderClassName}
+          overlay={
+            <button
+              type="button"
+              onClick={handleClick}
+              disabled={uploading}
+              className="absolute inset-0 flex items-center justify-center rounded-full bg-black/55 opacity-0 transition-opacity group-hover:opacity-100 disabled:cursor-not-allowed"
+              aria-label="Alterar foto de perfil"
+            >
+              <Camera className="h-8 w-8 text-white" />
+            </button>
+          }
+        />
       </div>
 
       <input

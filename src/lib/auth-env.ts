@@ -62,7 +62,53 @@ export function resolveOAuthEmail(
   return null;
 }
 
+const PLACEHOLDER_SECRETS = new Set([
+  "gere-um-secret-aleatorio-aqui",
+  "change-me",
+  "your-secret-here",
+]);
+
+export function getAuthSecret(): string {
+  const secret =
+    process.env.AUTH_SECRET?.trim() ||
+    process.env.NEXTAUTH_SECRET?.trim() ||
+    "";
+
+  if (secret && !PLACEHOLDER_SECRETS.has(secret)) {
+    return secret;
+  }
+
+  if (process.env.NODE_ENV === "production") {
+    throw new Error(
+      "AUTH_SECRET ausente ou inválido. Gere um valor com: node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
+    );
+  }
+
+  return "hexavante-dev-auth-secret";
+}
+
+export const AUTH_SESSION_COOKIE_NAMES = [
+  "authjs.session-token",
+  "__Secure-authjs.session-token",
+  "next-auth.session-token",
+  "__Secure-next-auth.session-token",
+] as const;
+
 export function isSignInFailureResult(result: unknown): boolean {
-  if (typeof result !== "string") return false;
-  return result.includes("error=") || result.includes("/api/auth/error");
+  if (result === undefined || result === null) return false;
+
+  if (typeof result === "string") {
+    return result.includes("error=") || result.includes("/api/auth/error");
+  }
+
+  if (typeof result === "object") {
+    const response = result as { error?: string | null; ok?: boolean; url?: string | null };
+    if (response.error) return true;
+    if (response.ok === false) return true;
+    if (response.url) {
+      return response.url.includes("error=") || response.url.includes("/api/auth/error");
+    }
+  }
+
+  return false;
 }
