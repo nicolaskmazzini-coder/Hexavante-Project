@@ -1,5 +1,6 @@
 import { PREMIUM_TRIAL_DAYS, buildPremiumStatus, isPremiumActive } from "@/lib/premium";
 import { prisma } from "@/lib/prisma";
+import { canAccessExamWithShopPasses } from "@/services/shop-entitlement.service";
 
 export async function getPremiumStatus(userId: string) {
   const user = await prisma.user.findUnique({
@@ -10,14 +11,18 @@ export async function getPremiumStatus(userId: string) {
   return buildPremiumStatus(user);
 }
 
-export async function canAccessPremiumExam(userId: string, exam: { isPremiumOnly: boolean }) {
+export async function canAccessPremiumExam(
+  userId: string,
+  exam: { slug: string; isPremiumOnly: boolean },
+) {
   if (!exam.isPremiumOnly) return true;
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { isPremium: true, premiumExpiresAt: true },
   });
   if (!user) return false;
-  return isPremiumActive(user);
+  if (isPremiumActive(user)) return true;
+  return canAccessExamWithShopPasses(userId, exam);
 }
 
 export async function activatePremiumTrial(userId: string) {

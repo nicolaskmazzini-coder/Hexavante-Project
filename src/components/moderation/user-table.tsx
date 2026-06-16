@@ -52,7 +52,7 @@ export function UserTable() {
       alert(data.error ?? "Erro ao impersonar.");
       return;
     }
-    window.location.href = "/";
+    globalThis.location.assign("/");
   };
 
   const openModal = (user: ModUser, type: typeof modal) => {

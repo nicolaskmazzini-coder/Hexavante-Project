@@ -40,6 +40,12 @@ export const AVATAR_BORDERS: Record<string, AvatarBorderDef> = {
     rarity: "legendary",
     description: "Chroma animado exclusivo para assinantes.",
   },
+  "border-crystal": {
+    id: "border-crystal",
+    label: "Moldura Cristal",
+    rarity: "legendary",
+    description: "Brilho gelo com reflexos prateados.",
+  },
 };
 
 export const APP_THEMES: Record<string, AppThemeDef> = {
@@ -163,3 +169,36 @@ export const RARITY_LABELS: Record<AvatarBorderRarity, string> = {
   legendary: "Lendária",
   premium: "Premium",
 };
+
+export type ProfileIconDef = {
+  id: string;
+  label: string;
+  lucideName: string;
+  className: string;
+};
+
+export const PROFILE_ICONS: Record<string, ProfileIconDef> = {
+  "icon-flame": {
+    id: "icon-flame",
+    label: "Chama",
+    lucideName: "Flame",
+    className: "text-orange-400",
+  },
+  "icon-brain": {
+    id: "icon-brain",
+    label: "Mente Brilhante",
+    lucideName: "Brain",
+    className: "text-violet-400",
+  },
+  "icon-trophy": {
+    id: "icon-trophy",
+    label: "Troféu",
+    lucideName: "Trophy",
+    className: "text-amber-400",
+  },
+};
+
+export function resolveProfileIcon(iconId: string | null | undefined) {
+  if (!iconId) return null;
+  return PROFILE_ICONS[iconId] ?? null;
+}

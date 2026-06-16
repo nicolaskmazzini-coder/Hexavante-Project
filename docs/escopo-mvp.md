@@ -56,10 +56,27 @@ Com moderação de instrutores/cursos e versão básica do HexaSchools.
 
 | Item | Motivo do corte |
 |------|-----------------|
-| Loja de moedas | Complexidade de e-commerce virtual |
 | Avaliações de curso (nota + comentário) | Conflita com tempo; Fase 2 |
 | Quiz por módulo com moedas | Simplificar para quiz básico ou simulado apenas |
 | Perfil especial de instrutor (métricas) | UI extra; dados podem ser mockados |
+
+---
+
+## Implementado além do escopo MVP original
+
+Estes módulos foram entregues após o escopo inicial do TCC e estão **ativos no código**:
+
+| Módulo | Entregas |
+|--------|----------|
+| **Loja Hexavante** | Moedas, itens permanentes/temporários, boosters, passes, pacotes de revisão |
+| **Premium trial** | Ativação demonstrativa de benefícios premium |
+| **Social** | Seguidores, feed de atividades, curtidas |
+| **Mensagens privadas** | Inbox, threads 1:1, notificações `NEW_MESSAGE` |
+| **Recompensas diárias** | Multiplicador decrescente por simulado no mesmo dia |
+| **Moderação avançada** | Ban, mute, impersonate, modo manutenção, superadmin |
+| **Salas ao vivo** | Agendamento, participantes, chat de sala |
+
+Documentação técnica: [stack.md](stack.md), [glossario.md](glossario.md).
 
 ---
 
@@ -71,7 +88,7 @@ Com moderação de instrutores/cursos e versão básica do HexaSchools.
 | Assinatura Premium funcional | Cobrança recorrente |
 | Loja Hexavante completa | Catálogo de itens, compras |
 | Aulas ao vivo | WebRTC/infraestrutura |
-| Chat em tempo real | WebSocket |
+| Chat em tempo real (WebSocket) | Polling usado em chat ao vivo e DMs |
 | Download offline | App mobile + sync |
 | Planner (metas e tarefas) | RF021–RF026 |
 | Notificações push/e-mail | RF034 |

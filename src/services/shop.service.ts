@@ -1,12 +1,27 @@
-import { getAvatarBorderClassName, resolveAppTheme } from "@/lib/cosmetics";
+import {
+  getAvatarBorderClassName,
+  resolveAppTheme,
+  resolveProfileIcon,
+} from "@/lib/cosmetics";
 import { buildPremiumStatus } from "@/lib/premium";
 import { prisma } from "@/lib/prisma";
 import { SHOP_CATALOG } from "@/lib/shop-catalog";
+import {
+  computeTemporaryExpiry,
+  getShopOwnershipStatus,
+  type ShopOwnershipStatus,
+} from "@/lib/shop-item-utils";
 import { activateBooster } from "@/services/booster.service";
 import { getUserCoinProfile, spendCoins } from "@/services/wallet.service";
-import type { StoreItemCategory } from "@prisma/client";
+import type { StoreItem, StoreItemCategory } from "@prisma/client";
 
 const DEPRECATED_SHOP_SLUGS = ["booster-coins-24h"];
+
+type TemporaryMetadata = {
+  multiplier?: number;
+  durationHours?: number;
+  durationDays?: number;
+};
 
 export async function ensureShopCatalog() {
   if (DEPRECATED_SHOP_SLUGS.length > 0) {
@@ -26,6 +41,7 @@ export async function ensureShopCatalog() {
         category: item.category,
         imageUrl: item.imageUrl ?? null,
         isPremiumOnly: item.isPremiumOnly ?? false,
+        isPermanent: item.isPermanent ?? true,
         metadata: item.metadata ?? undefined,
         isActive: true,
       },
@@ -37,6 +53,7 @@ export async function ensureShopCatalog() {
         category: item.category,
         imageUrl: item.imageUrl ?? null,
         isPremiumOnly: item.isPremiumOnly ?? false,
+        isPermanent: item.isPermanent ?? true,
         metadata: item.metadata ?? undefined,
       },
     });
@@ -74,6 +91,13 @@ export async function getEquippedItems(userId: string) {
   });
 }
 
+export type ShopItemView = StoreItem & {
+  ownershipStatus: ShopOwnershipStatus;
+  inventoryId?: string;
+  isEquipped: boolean;
+  expiresAt: Date | null;
+};
+
 export async function getShopState(userId: string) {
   const [items, inventory, coinProfile, user] = await Promise.all([
     listShopItems(),
@@ -86,48 +110,42 @@ export async function getShopState(userId: string) {
   ]);
 
   const premium = user ? buildPremiumStatus(user) : null;
-  const ownedIds = new Set(inventory.map((entry) => entry.storeItemId));
-  const equippedByItem = new Map(inventory.map((entry) => [entry.storeItemId, entry.isEquipped]));
+  const inventoryByItem = new Map(inventory.map((entry) => [entry.storeItemId, entry]));
+
+  const itemViews: ShopItemView[] = items.map((item) => {
+    const entry = inventoryByItem.get(item.id);
+    const ownershipStatus = getShopOwnershipStatus(item.isPermanent, entry);
+    return {
+      ...item,
+      ownershipStatus,
+      inventoryId: entry?.id,
+      isEquipped: entry?.isEquipped ?? false,
+      expiresAt: entry?.expiresAt ?? null,
+    };
+  });
 
   return {
-    items,
+    items: itemViews,
     inventory,
     coins: coinProfile.coins,
     premium,
     coinMultiplier: coinProfile.coinMultiplier,
     activeBooster: coinProfile.activeBooster,
-    ownedIds,
-    equippedByItem,
   };
 }
 
-export async function purchaseStoreItem(userId: string, storeItemId: string) {
-  const item = await prisma.storeItem.findFirst({
-    where: { id: storeItemId, isActive: true },
-  });
-  if (!item) {
-    throw new Error("Item não encontrado.");
-  }
-
-  const existing = await prisma.userInventory.findUnique({
-    where: { userId_storeItemId: { userId, storeItemId } },
-  });
-  if (existing) {
-    throw new Error("Você já possui este item.");
-  }
-
+async function chargeForItem(
+  userId: string,
+  item: StoreItem,
+  premiumActive: boolean,
+) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { isPremium: true, premiumExpiresAt: true, coins: true },
+    select: { coins: true },
   });
   if (!user) throw new Error("Usuário não encontrado.");
 
-  const premium = buildPremiumStatus(user);
-  if (item.isPremiumOnly && !premium.isActive) {
-    throw new Error("Este item é exclusivo para assinantes Premium.");
-  }
-
-  const isFreeForPremium = item.isPremiumOnly && premium.isActive;
+  const isFreeForPremium = item.isPremiumOnly && premiumActive;
   const finalCost = isFreeForPremium ? 0 : item.cost;
 
   if (finalCost > 0 && user.coins < finalCost) {
@@ -139,35 +157,106 @@ export async function purchaseStoreItem(userId: string, storeItemId: string) {
       userId,
       finalCost,
       "SHOP_PURCHASE",
-      storeItemId,
+      item.id,
       `Compra: ${item.name}`,
     );
     if (!spent) throw new Error("Não foi possível processar o pagamento.");
   }
+}
 
-  let boosterExpiresAt: Date | null = null;
+function resolveTemporaryExpiry(item: StoreItem, baseDate = new Date()) {
+  const meta = item.metadata as TemporaryMetadata | null;
+  return computeTemporaryExpiry(meta?.durationHours, meta?.durationDays, baseDate);
+}
 
+async function applyTemporaryPurchaseEffects(userId: string, item: StoreItem, baseDate: Date) {
   if (item.category === "BOOSTER") {
-    const meta = item.metadata as { multiplier?: number; durationHours?: number } | null;
+    const meta = item.metadata as TemporaryMetadata | null;
     const booster = await activateBooster(
       userId,
       meta?.multiplier ?? 2,
-      meta?.durationHours ?? 24,
+      meta?.durationHours ?? (meta?.durationDays ? meta.durationDays * 24 : 24),
     );
-    boosterExpiresAt = booster.expiresAt;
+    return booster.expiresAt;
   }
 
-  const inventory = await prisma.userInventory.create({
+  if (item.category === "PASS" || item.category === "REVIEW_PACK") {
+    return resolveTemporaryExpiry(item, baseDate);
+  }
+
+  return null;
+}
+
+async function repurchaseTemporaryItem(
+  userId: string,
+  item: StoreItem,
+  existingId: string,
+  premiumActive: boolean,
+) {
+  await chargeForItem(userId, item, premiumActive);
+
+  const existing = await prisma.userInventory.findUnique({ where: { id: existingId } });
+  const baseDate =
+    existing?.expiresAt && existing.expiresAt > new Date() ? existing.expiresAt : new Date();
+  const expiresAt = await applyTemporaryPurchaseEffects(userId, item, baseDate);
+
+  return prisma.userInventory.update({
+    where: { id: existingId },
+    data: {
+      purchasedAt: new Date(),
+      expiresAt,
+      isEquipped: item.category === "BOOSTER" ? true : false,
+    },
+    include: { storeItem: true },
+  });
+}
+
+export async function purchaseStoreItem(userId: string, storeItemId: string) {
+  const item = await prisma.storeItem.findFirst({
+    where: { id: storeItemId, isActive: true },
+  });
+  if (!item) {
+    throw new Error("Item não encontrado.");
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isPremium: true, premiumExpiresAt: true },
+  });
+  if (!user) throw new Error("Usuário não encontrado.");
+
+  const premium = buildPremiumStatus(user);
+  if (item.isPremiumOnly && !premium.isActive) {
+    throw new Error("Este item é exclusivo para assinantes Premium.");
+  }
+
+  const existing = await prisma.userInventory.findUnique({
+    where: { userId_storeItemId: { userId, storeItemId } },
+  });
+
+  if (existing) {
+    if (item.isPermanent) {
+      throw new Error("Você já possui este item.");
+    }
+    return repurchaseTemporaryItem(userId, item, existing.id, premium.isActive);
+  }
+
+  await chargeForItem(userId, item, premium.isActive);
+
+  let expiresAt: Date | null = null;
+  if (!item.isPermanent) {
+    expiresAt = await applyTemporaryPurchaseEffects(userId, item, new Date());
+  }
+
+  return prisma.userInventory.create({
     data: {
       userId,
       storeItemId,
       isEquipped: item.category === "BOOSTER",
-      expiresAt: boosterExpiresAt,
+      expiresAt,
     },
     include: { storeItem: true },
   });
-
-  return inventory;
 }
 
 const EQUIPPABLE_CATEGORIES: StoreItemCategory[] = [
@@ -217,18 +306,28 @@ export async function getProfileCosmetics(userId: string) {
   const title = equipped.find((e) => e.storeItem.category === "TITLE");
   const border = equipped.find((e) => e.storeItem.category === "AVATAR_BORDER");
   const theme = equipped.find((e) => e.storeItem.category === "THEME");
+  const cosmetic = equipped.find((e) => e.storeItem.category === "COSMETIC");
 
   const titleMeta = title?.storeItem.metadata as { titleText?: string } | null;
   const borderMeta = border?.storeItem.metadata as { borderId?: string; rarity?: string } | null;
   const themeMeta = theme?.storeItem.metadata as { themeId?: string } | null;
+  const cosmeticMeta = cosmetic?.storeItem.metadata as {
+    cosmeticType?: string;
+    iconId?: string;
+  } | null;
+
   const themeId = themeMeta?.themeId ?? null;
   const borderId = borderMeta?.borderId ?? null;
+  const profileIconId =
+    cosmeticMeta?.cosmeticType === "profile_icon" ? (cosmeticMeta.iconId ?? null) : null;
   const appTheme = resolveAppTheme(themeId);
 
   return {
     equippedTitle: titleMeta?.titleText ?? title?.storeItem.name ?? null,
     borderId,
     avatarBorderClassName: getAvatarBorderClassName(borderId),
+    profileIconId,
+    profileIcon: resolveProfileIcon(profileIconId),
     themeId,
     themeClassName: appTheme.className,
     themeVars: appTheme.vars,

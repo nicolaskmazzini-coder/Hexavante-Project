@@ -5,10 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { PageShell } from "@/components/ui/page-shell";
-import { EXAM_PASS_SCORE } from "@/lib/gamification";
+import { ExamDailyRewardPreview } from "@/components/exams/exam-daily-reward-preview";
 import { ExamThumbnail } from "@/components/exams/exam-thumbnail";
+import { EXAM_PASS_SCORE } from "@/lib/gamification";
 import { EXAM_TYPE_LABELS } from "@/lib/validations/exam";
 import { getExamBySlug, getUserExamPerformance } from "@/services/exam.service";
+import { getUserDailyExamRewardStatus } from "@/services/exam-daily-rewards.service";
 import { canAccessPremiumExam } from "@/services/premium.service";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -29,6 +31,12 @@ export default async function ExamDetailPage({ params }: Props) {
 
   const canAccess =
     !exam.isPremiumOnly || (session?.user?.id && (await canAccessPremiumExam(session.user.id, exam)));
+
+  const mcQuestionCount = exam.questions.filter((q) => q.type !== "ESSAY").length;
+  const dailyRewardPreview =
+    session?.user?.id && canAccess
+      ? await getUserDailyExamRewardStatus(session.user.id, mcQuestionCount)
+      : null;
 
   return (
     <PageShell size="md">
@@ -129,6 +137,8 @@ export default async function ExamDetailPage({ params }: Props) {
           </ul>
         </Card>
       )}
+
+      {dailyRewardPreview && <ExamDailyRewardPreview preview={dailyRewardPreview} />}
 
       <div className="mt-8">
         {session?.user ? (

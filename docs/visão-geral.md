@@ -4,9 +4,30 @@
 
 A Hexavante é uma plataforma educacional voltada a estudantes do ensino médio técnico, universitários de TI e candidatos ao ENEM e vestibulares.
 
-A plataforma integra cursos com vídeo externo, simulados (objetivos e dissertativos), gamificação (XP), certificados e moderação de conteúdo — com visão futura de aulas ao vivo, planner e marketplace.
+A plataforma integra cursos com vídeo externo, simulados (objetivos e dissertativos), gamificação (XP e moedas), certificados, loja virtual, comunidade social com mensagens privadas, aulas ao vivo e moderação de conteúdo.
 
-**Stack atual:** Next.js 16, TypeScript, Prisma, MariaDB. Ver [stack.md](stack.md) e [instalacao-e-desenvolvimento.md](instalacao-e-desenvolvimento.md).
+**Stack atual:** Next.js 16, TypeScript, Prisma, MariaDB, Auth.js, Tailwind. Ver [stack.md](stack.md) e [instalacao-e-desenvolvimento.md](instalacao-e-desenvolvimento.md).
+
+---
+
+## Features implementadas (estado atual do código)
+
+| Área | Funcionalidades |
+|------|-----------------|
+| **Autenticação** | Cadastro, login e-mail/senha, OAuth Google/GitHub, perfil editável, visibilidade pública/privada |
+| **Cursos** | Catálogo moderado, módulos, aulas (vídeo externo), capa, progresso, matrícula |
+| **Simulados** | MC (2–6 alternativas), dissertativas, cronômetro, imagens, capa, histórico, recompensas diárias de XP |
+| **Gamificação** | XP, níveis, moedas, ranking, boosters temporários |
+| **Loja** | Títulos, molduras, temas, cosméticos, boosters, passes, pacotes de revisão; premium trial |
+| **Social** | Seguidores, feed de atividades, curtidas |
+| **Mensagens** | DMs privadas 1:1 com inbox e notificações |
+| **Ao vivo** | Salas agendadas com chat público |
+| **Certificados** | Emissão ao concluir curso, verificação por código |
+| **Moderação** | Aprovação instrutor/curso, correção dissertativas, ban/mute, painel admin |
+
+Itens ainda **planejados** (não completos): planner de estudos, pagamentos reais, WebSocket em tempo real, avaliações de curso com nota.
+
+---
 
 ## Produtos
 
@@ -16,53 +37,42 @@ Aplicação destinada aos estudantes.
 
 A plataforma oferece:
 
-* Cursos produzidos pela equipe Hexavante.
-* Cursos publicados por usuários autorizados.
-* Aulas gravadas.
-* Aulas ao vivo.
-* Simulados.
-* Planejamento de estudos.
-* Controle de metas.
-* Chat e interação entre participantes.
+* Cursos produzidos pela equipe Hexavante e por instrutores aprovados.
+* Aulas gravadas (vídeo externo) e salas ao vivo.
+* Simulados com gamificação.
+* Loja de itens virtuais e comunidade.
+* Plano gratuito com limitações e benefícios premium (trial demonstrativo).
 
-O sistema possui um plano gratuito com limitações e planos premium com recursos adicionais.
-
-> Escopo do TCC: ver [escopo-mvp.md](escopo-mvp.md). Índice da documentação: [README.md](README.md).
+> Escopo do TCC: [escopo-mvp.md](escopo-mvp.md). Índice da documentação: [README.md](README.md).
 
 ### HexaSchools
 
-Aplicação destinada a instituições de ensino.
+Aplicação destinada a instituições de ensino (projeto separado em `../hexaschools`).
 
-Permite que escolas, faculdades e cursos preparatórios criem e gerenciem seu próprio ambiente educacional dentro da plataforma.
+Permite que escolas, faculdades e cursos preparatórios criem e gerenciem seu próprio ambiente educacional.
 
-As instituições poderão:
+---
 
-* Criar cursos.
-* Criar turmas.
-* Gerenciar alunos.
-* Gerenciar professores.
-* Criar simulados.
-* Emitir certificados.
-* Acompanhar relatórios de desempenho.
-
-Por se tratar de um serviço contratado pelas instituições, todos os recursos da plataforma estarão disponíveis sem as limitações existentes no plano gratuito do Hexavante.
-
-## Público-Alvo
+## Público-alvo
 
 * Estudantes do ensino médio técnico.
 * Estudantes universitários da área de tecnologia.
-* Candidatos ao ENEM.
-* Candidatos a vestibulares.
-* Instituições de ensino técnico.
-* Faculdades.
-* Cursos preparatórios.
+* Candidatos ao ENEM e vestibulares.
+* Instituições de ensino (via HexaSchools).
+
+---
 
 ## Diferenciais
 
-* Plataforma multiplataforma.
-* Sistema integrado de cursos e simulados.
-* Planejamento de estudos.
-* Acompanhamento de metas.
-* Aulas ao vivo integradas.
-* Ambiente institucional próprio para escolas e faculdades.
-* Modelo SaaS para instituições de ensino.
+* Plataforma web responsiva (Next.js App Router).
+* Sistema integrado de cursos, simulados e gamificação.
+* Economia virtual (moedas, loja, boosters) ligada ao estudo.
+* Comunidade com feed e mensagens privadas.
+* Moderação e RBAC para conteúdo gerado por usuários.
+* Modelo SaaS institucional planejado (HexaSchools).
+
+---
+
+## English summary
+
+Hexavante is a student-facing learning platform combining moderated courses, gamified practice exams, XP/coins, a virtual shop, community feed, private messaging, live rooms, certificates, and an admin moderation panel. Built with Next.js 16, Prisma, and MariaDB. Institutional features live in the separate HexaSchools project.

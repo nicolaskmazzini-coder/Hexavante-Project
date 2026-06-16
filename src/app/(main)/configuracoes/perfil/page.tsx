@@ -42,8 +42,8 @@ export default async function ConfiguracoesPerfilPage() {
 
       <div className="mt-6 flex justify-center sm:justify-start">
         <ProfilePhotoUpload
-          key={session.user.image || profile.avatarUrl || "no-avatar"}
-          currentAvatar={session.user.image || profile.avatarUrl || undefined}
+          key={profile.avatarUrl || "no-avatar"}
+          currentAvatar={profile.avatarUrl || undefined}
           borderClassName={cosmetics.avatarBorderClassName}
         />
       </div>

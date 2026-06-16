@@ -6,27 +6,21 @@ import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import type { PremiumStatus } from "@/lib/premium";
+import { getShopOwnershipStatus } from "@/lib/shop-item-utils";
+import type { ShopItemView } from "@/services/shop.service";
 import { BarChart3, Ban, Coins, Crown, Sparkles } from "lucide-react";
 import type { StoreItemCategory } from "@prisma/client";
-
-type ShopItem = {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  category: StoreItemCategory;
-  isPremiumOnly: boolean;
-};
 
 type InventoryEntry = {
   id: string;
   storeItemId: string;
   isEquipped: boolean;
+  expiresAt: Date | string | null;
 };
 
 type Props = {
   premium: PremiumStatus | null;
-  premiumItems: ShopItem[];
+  premiumItems: ShopItemView[];
   inventory: InventoryEntry[];
   coins: number;
 };
@@ -117,13 +111,30 @@ export function PremiumPanel({ premium, premiumItems, inventory, coins }: Props)
           <div className="mt-4 grid gap-4 sm:grid-cols-2">
             {premiumItems.map((item) => {
               const entry = inventoryByItem.get(item.id);
+              const ownershipStatus = getShopOwnershipStatus(item.isPermanent, entry ?? null);
+              const metadata =
+                item.metadata && typeof item.metadata === "object" && !Array.isArray(item.metadata)
+                  ? (item.metadata as Record<string, unknown>)
+                  : null;
+
               return (
                 <ShopItemCard
                   key={item.id}
-                  item={item}
-                  owned={Boolean(entry)}
+                  item={{
+                    id: item.id,
+                    slug: item.slug,
+                    name: item.name,
+                    description: item.description,
+                    cost: item.cost,
+                    category: item.category as StoreItemCategory,
+                    isPremiumOnly: item.isPremiumOnly,
+                    isPermanent: item.isPermanent,
+                    metadata,
+                  }}
+                  ownershipStatus={ownershipStatus}
                   equipped={entry?.isEquipped ?? false}
                   inventoryId={entry?.id}
+                  expiresAt={entry?.expiresAt ?? null}
                   userCoins={coins}
                   isPremium={premium?.isActive ?? false}
                 />

@@ -24,6 +24,8 @@ export async function purchaseItemAction(
     await purchaseStoreItem(session.user.id, storeItemId);
     revalidatePath("/shop");
     revalidatePath("/perfil");
+    revalidatePath("/simulados");
+    revalidatePath("/pacotes-revisao");
     return { success: true };
   } catch (err) {
     return {
@@ -51,6 +53,8 @@ export async function equipItemAction(
     await equipStoreItem(session.user.id, inventoryId);
     revalidatePath("/shop");
     revalidatePath("/perfil");
+    revalidatePath("/simulados");
+    revalidatePath("/pacotes-revisao");
     return { success: true };
   } catch (err) {
     return {

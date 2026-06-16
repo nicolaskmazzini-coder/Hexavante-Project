@@ -1,65 +1,78 @@
 import { auth } from "@/auth";
-import { AUTH_SESSION_COOKIE_NAMES } from "@/lib/auth-env";
+import { clearAllSessionCookies, isSessionCookieTooLarge } from "@/lib/auth-cookies";
 import { isStaff } from "@/lib/permissions";
 import { NextResponse } from "next/server";
 
 const MODERATOR_REQUIRED = /^\/moderacao(\/|$)/;
 
 const MAINTENANCE_EXEMPT =
-  /^\/(manutencao|suspenso|login|register|api\/auth|api\/platform)(\/|$)/;
+  /^\/(manutencao|suspenso|login|register|recuperar-senha|redefinir-senha)(\/|$)/;
 
 const MAINTENANCE_CACHE_TTL_MS = 30_000;
+const MAINTENANCE_FETCH_TIMEOUT_MS = 2_000;
 let maintenanceCache: { enabled: boolean; at: number } | null = null;
 
-function clearStaleSessionCookies(req: {
-  auth: unknown;
-  cookies: { get: (name: string) => { value: string } | undefined };
-}) {
-  const hasSessionCookie = AUTH_SESSION_COOKIE_NAMES.some((name) => req.cookies.get(name));
-  if (!hasSessionCookie || req.auth) return null;
+function getInternalOrigin(publicOrigin: string): string {
+  const configured = process.env.INTERNAL_APP_URL?.trim();
+  if (configured) return configured.replace(/\/$/, "");
 
-  const res = NextResponse.next();
-  for (const name of AUTH_SESSION_COOKIE_NAMES) {
-    res.cookies.delete(name);
+  // Evita round-trip pelo Cloudflare Tunnel em cada request do middleware.
+  if (publicOrigin.includes("localhost") || publicOrigin.includes("127.0.0.1")) {
+    return publicOrigin.replace(/\/$/, "");
   }
-  return res;
+
+  return "http://127.0.0.1:3000";
 }
 
-function clearSessionCookies(response: NextResponse) {
-  for (const name of AUTH_SESSION_COOKIE_NAMES) {
-    response.cookies.delete(name);
-  }
-  return response;
+function clearSessionCookies(response: NextResponse, cookieHeader?: string | null) {
+  return clearAllSessionCookies(response, cookieHeader);
 }
 
-async function isMaintenanceEnabled(origin: string): Promise<boolean> {
+function cacheMaintenance(enabled: boolean) {
+  maintenanceCache = { enabled, at: Date.now() };
+  return enabled;
+}
+
+async function isMaintenanceEnabled(publicOrigin: string): Promise<boolean> {
   if (maintenanceCache && Date.now() - maintenanceCache.at < MAINTENANCE_CACHE_TTL_MS) {
     return maintenanceCache.enabled;
   }
 
+  const origin = getInternalOrigin(publicOrigin);
+
   try {
-    const res = await fetch(`${origin}/api/platform/status`, { cache: "no-store" });
-    if (!res.ok) return false;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), MAINTENANCE_FETCH_TIMEOUT_MS);
+    const res = await fetch(`${origin}/api/platform/status`, {
+      cache: "no-store",
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (!res.ok) return cacheMaintenance(false);
+
     const data = (await res.json()) as { maintenance?: { enabled?: boolean } };
-    const enabled = Boolean(data.maintenance?.enabled);
-    maintenanceCache = { enabled, at: Date.now() };
-    return enabled;
+    return cacheMaintenance(Boolean(data.maintenance?.enabled));
   } catch {
-    return false;
+    return cacheMaintenance(false);
   }
 }
 
 export default auth(async (req) => {
-  const { pathname } = req.nextUrl;
-  const staleSessionResponse = clearStaleSessionCookies(req);
-  if (staleSessionResponse) return staleSessionResponse;
+  const cookieHeader = req.headers.get("cookie");
+  if (isSessionCookieTooLarge(cookieHeader)) {
+    const login = new URL("/login", req.nextUrl.origin);
+    login.searchParams.set("error", "cookies_cleared");
+    return clearSessionCookies(NextResponse.redirect(login), cookieHeader);
+  }
 
+  const { pathname } = req.nextUrl;
   const user = req.auth?.user;
 
   if (user?.isBanned) {
     const suspended = new URL("/suspenso", req.nextUrl.origin);
     if (user.banReason) suspended.searchParams.set("motivo", user.banReason);
-    return clearSessionCookies(NextResponse.redirect(suspended));
+    return clearSessionCookies(NextResponse.redirect(suspended), cookieHeader);
   }
 
   if (!MAINTENANCE_EXEMPT.test(pathname)) {
@@ -69,31 +82,16 @@ export default auth(async (req) => {
     }
   }
 
-  if (!MODERATOR_REQUIRED.test(pathname)) {
-    return NextResponse.next();
-  }
-
-  if (!req.auth) {
-    const login = new URL("/login", req.nextUrl.origin);
-    login.searchParams.set("callbackUrl", pathname);
-    return NextResponse.redirect(login);
-  }
-
-  const roles = req.auth.user?.roles ?? [];
-  if (!isStaff(roles)) {
-    return NextResponse.redirect(new URL("/", req.nextUrl.origin));
+  if (MODERATOR_REQUIRED.test(pathname)) {
+    const roles = user?.roles ?? [];
+    if (!isStaff(roles)) {
+      return NextResponse.redirect(new URL("/", req.nextUrl.origin));
+    }
   }
 
   return NextResponse.next();
 });
 
 export const config = {
-  matcher: [
-    "/moderacao/:path*",
-    "/login",
-    "/register",
-    "/manutencao",
-    "/suspenso",
-    "/((?!api|_next/static|_next/image|favicon.ico|.*\\..*).*)",
-  ],
+  matcher: ["/((?!api|_next/static|_next/image|favicon.ico|limpar-sessao|.*\\..*).*)"],
 };

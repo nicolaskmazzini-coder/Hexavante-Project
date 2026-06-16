@@ -1,8 +1,11 @@
 import { AppLink } from "@/components/ui/app-link";
 import { AuthForm } from "@/components/auth/auth-form";
+import { AuthPageShell } from "@/components/auth/auth-page-shell";
 import { OAuthButtons } from "@/components/auth/oauth-buttons";
 import { loginAction } from "@/app/actions/auth";
+import { getSafeCallbackUrl } from "@/lib/auth-routes";
 import { oauthErrorMessages, oauthProviders } from "@/lib/oauth";
+import { Alert } from "@/components/ui/alert";
 
 type Props = {
   searchParams: Promise<{ callbackUrl?: string; error?: string }>;
@@ -10,39 +13,44 @@ type Props = {
 
 export default async function LoginPage({ searchParams }: Props) {
   const { callbackUrl, error } = await searchParams;
-  const safeCallback =
-    callbackUrl && callbackUrl.startsWith("/") && !callbackUrl.startsWith("//")
-      ? callbackUrl
-      : "/";
+  const safeCallback = getSafeCallbackUrl(callbackUrl);
 
-  const oauthError = error ? oauthErrorMessages[error] ?? "Não foi possível entrar com a conta social." : null;
+  const oauthError = error
+    ? error === "cookies_cleared"
+      ? "Sua sessão expirou ou ficou muito grande. Faça login novamente."
+      : (oauthErrorMessages[error] ?? "Não foi possível entrar com a conta social.")
+    : null;
 
   return (
-    <div className="flex w-full max-w-md flex-col items-center gap-4">
+    <AuthPageShell>
       <OAuthButtons callbackUrl={safeCallback} providers={oauthProviders} />
 
       {oauthError && (
-        <p className="w-full rounded-lg border border-red-400/20 bg-red-500/10 px-3 py-2 text-sm text-red-200">
+        <Alert variant="danger" className="mt-4">
           {oauthError}
-        </p>
+          {error === "cookies_cleared" ? (
+            <>
+              {" "}
+              <AppLink href="/limpar-sessao">Limpar sessão</AppLink>
+            </>
+          ) : null}
+        </Alert>
       )}
 
-      <AuthForm
-        title="ENTRAR"
-        subtitle="Acesse sua conta Hexavante"
-        submitLabel="Entrar"
-        action={loginAction}
-        callbackUrl={safeCallback}
-        formKind="login"
-        fields={[
-          { name: "email", label: "E-mail", type: "email" },
-          { name: "password", label: "Senha", type: "password" },
-        ]}
-        footer={
-          <div className="space-y-2">
-            <p>
-              <AppLink href="/recuperar-senha">Esqueci minha senha</AppLink>
-            </p>
+      <div className="mt-6">
+        <AuthForm
+          embedded
+          title="ENTRAR"
+          subtitle="Acesse sua conta Hexavante"
+          submitLabel="Entrar"
+          action={loginAction}
+          callbackUrl={safeCallback}
+          formKind="login"
+          fields={[
+            { name: "email", label: "E-mail", type: "email" },
+            { name: "password", label: "Senha", type: "password" },
+          ]}
+          footer={
             <p>
               Não tem conta?{" "}
               <AppLink
@@ -55,9 +63,9 @@ export default async function LoginPage({ searchParams }: Props) {
                 Cadastre-se
               </AppLink>
             </p>
-          </div>
-        }
-      />
-    </div>
+          }
+        />
+      </div>
+    </AuthPageShell>
   );
 }

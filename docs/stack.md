@@ -136,6 +136,39 @@ Exemplo — questões de múltipla escolha aceitam **2 a 6 alternativas** dinâm
 
 ---
 
+## Economia, loja e premium
+
+| Recurso | Detalhe técnico |
+|---------|-----------------|
+| Moedas | `User.coins`, transações em `CoinTransaction` |
+| Loja | `StoreItem`, `UserInventory`, catálogo em `src/lib/shop-catalog.ts` |
+| Categorias | Títulos, molduras, temas, cosméticos, boosters, passes, pacotes de revisão |
+| Premium trial | `User.isPremium`, `premiumExpiresAt`; ativação demonstrativa |
+| Boosters | `boosterMultiplier` + `boosterExpiresAt` no usuário |
+
+---
+
+## Social e mensagens
+
+| Recurso | Detalhe técnico |
+|---------|-----------------|
+| Seguidores | `UserFollow` |
+| Feed | `SocialActivity` gerado por XP, matrícula, simulados |
+| Curtidas | `ActivityLike` |
+| DMs | `DirectConversation`, `DirectMessage`; polling 4s |
+| Notificações | `Notification` com tipo `NEW_MESSAGE` |
+
+---
+
+## Salas ao vivo
+
+| Recurso | Detalhe técnico |
+|---------|-----------------|
+| Salas | `LiveRoom`, status `SCHEDULED` / `LIVE` / `ENDED` |
+| Chat | `LiveChatMessage` — polling, não WebSocket |
+
+---
+
 ## Variáveis de ambiente
 
 ```env
@@ -160,7 +193,7 @@ Template completo: `.env.example` na raiz do projeto.
 | Item | Fase |
 |------|------|
 | Redis / filas | Fase 2 |
-| WebSocket (chat ao vivo) | Fase 2 |
+| WebSocket (chat/DMs em tempo real) | Fase 2 — hoje usa polling |
 | Upload de vídeo próprio | — (vídeos externos: YouTube/Vimeo) |
 | Pagamentos (Stripe) | Fase 2 |
 | App mobile nativo | Fase 3 |

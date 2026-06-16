@@ -1,11 +1,7 @@
 "use server";
 
+import { getSafeCallbackUrl } from "@/lib/auth-routes";
 import { signIn } from "@/auth";
-
-function getSafeCallbackUrl(callbackUrl: string) {
-  if (!callbackUrl.startsWith("/") || callbackUrl.startsWith("//")) return "/";
-  return callbackUrl;
-}
 
 export async function signInWithGoogle(callbackUrl: string) {
   await signIn("google", { redirectTo: getSafeCallbackUrl(callbackUrl) });

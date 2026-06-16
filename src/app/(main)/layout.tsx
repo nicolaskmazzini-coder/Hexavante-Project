@@ -1,11 +1,10 @@
 import { HeaderBar } from "@/components/layout/header-bar";
 import { ImpersonationBanner } from "@/components/layout/impersonation-banner";
-import { MainShell } from "@/components/layout/main-shell";
-import { SidebarToggle } from "@/components/layout/sidebar-toggle";
 import { EquippedTheme } from "@/components/shop/equipped-theme";
 import { ThemeStyles } from "@/components/shop/theme-styles";
 import { PageTransition } from "@/components/ui/page-transition";
 import { getLayoutSessionAndCosmetics } from "@/lib/layout-cosmetics";
+import { getNavAvatarUrl } from "@/lib/nav-avatar";
 import { isStaff } from "@/lib/permissions";
 import { toNavSession } from "@/lib/nav-session";
 import { getMaintenanceMode } from "@/services/platform-settings.service";
@@ -13,7 +12,8 @@ import { redirect } from "next/navigation";
 
 export default async function MainLayout({ children }: { children: React.ReactNode }) {
   const { session, cosmetics } = await getLayoutSessionAndCosmetics();
-  const navSession = toNavSession(session);
+  const avatarUrl = session?.user?.id ? await getNavAvatarUrl(session.user.id) : null;
+  const navSession = toNavSession(session, avatarUrl);
 
   const maintenance = await getMaintenanceMode();
   if (maintenance.enabled && !isStaff(session?.user?.roles)) {
@@ -37,12 +37,10 @@ export default async function MainLayout({ children }: { children: React.ReactNo
           impersonatorUsername={session.user.impersonatorUsername}
         />
       ) : null}
-      <MainShell session={navSession}>
-        <HeaderBar session={navSession} menuToggle={<SidebarToggle />} />
-        <main className={session?.user?.isImpersonating ? "pt-10" : undefined}>
-          <PageTransition>{children}</PageTransition>
-        </main>
-      </MainShell>
+      <HeaderBar session={navSession} />
+      <div className={session?.user?.isImpersonating ? "pt-10" : undefined}>
+        <PageTransition>{children}</PageTransition>
+      </div>
     </>
   );
 }

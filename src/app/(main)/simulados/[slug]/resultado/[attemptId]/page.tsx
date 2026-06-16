@@ -9,6 +9,7 @@ import { LinkButton } from "@/components/ui/button";
 import { PageShell } from "@/components/ui/page-shell";
 import { ExamQuestionImage } from "@/components/exams/exam-question-image";
 import { EXAM_PASS_SCORE } from "@/lib/gamification";
+import { getDailyRewardTierLabel } from "@/lib/exam-daily-rewards";
 import { notFound, redirect } from "next/navigation";
 
 const ESSAY_STATUS_LABELS: Record<string, string> = {
@@ -47,6 +48,10 @@ export default async function ExamResultPage({ params }: Props) {
     getXpForSource(session.user.id, "EXAM", `${attemptId}-pass`),
   ]);
   const totalXpEarned = (baseXp?.amount ?? 0) + (passXp?.amount ?? 0);
+  const dailyTierLabel =
+    attempt.dailyAttemptIndex != null
+      ? getDailyRewardTierLabel(attempt.dailyAttemptIndex)
+      : null;
 
   const answeredQuestionIds = new Set(attempt.answers.map((a) => a.questionId));
   const unanswered = attempt.exam.questions.filter((q) => !answeredQuestionIds.has(q.id));
@@ -74,6 +79,13 @@ export default async function ExamResultPage({ params }: Props) {
         )}
         {(totalXpEarned > 0 || totalCoinsEarned > 0) && (
           <div className="mt-3 space-y-1 text-sm font-medium">
+            {dailyTierLabel && attempt.dailyRewardMultiplier != null && attempt.dailyRewardMultiplier < 1 && (
+              <p className="text-amber-200">
+                Recompensa diária {dailyTierLabel.toLowerCase()} (
+                {Math.round(attempt.dailyRewardMultiplier * 100)}% do valor cheio —{" "}
+                {attempt.dailyAttemptIndex}º simulado do dia)
+              </p>
+            )}
             {totalXpEarned > 0 && <p className="text-sky-200">+{totalXpEarned} XP ganhos neste simulado</p>}
             {totalCoinsEarned > 0 && (
               <p className="text-amber-200">+{totalCoinsEarned} moedas por questões corretas</p>

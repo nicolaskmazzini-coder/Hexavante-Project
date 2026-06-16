@@ -1,7 +1,9 @@
 // Importações necessárias para o serviço de simulados
 import type { Prisma } from "@prisma/client";
+import { applyDailyRewardAmount } from "@/lib/exam-daily-rewards";
 import { COIN_REWARDS, EXAM_PASS_SCORE } from "@/lib/gamification";
 import { prisma } from "@/lib/prisma";
+import { resolveNextDailyAttemptIndex } from "@/services/exam-daily-rewards.service";
 import { canAccessPremiumExam } from "@/services/premium.service";
 import { awardCoins } from "@/services/wallet.service";
 import { awardXp, XP_REWARDS } from "@/services/xp.service";
@@ -290,6 +292,17 @@ export async function submitAttempt(
   const mcTotal = mcQuestions.length;
   const score = mcTotal > 0 ? Math.round((correct / mcTotal) * 100) : 0;
 
+  const { dailyAttemptIndex, dailyRewardMultiplier } = await resolveNextDailyAttemptIndex(userId);
+  const xpBaseAmount = applyDailyRewardAmount(XP_REWARDS.EXAM, dailyRewardMultiplier);
+  const xpPassBonusAmount = applyDailyRewardAmount(
+    XP_REWARDS.EXAM_PASS_BONUS,
+    dailyRewardMultiplier,
+  );
+  const coinPerCorrectAmount = applyDailyRewardAmount(
+    COIN_REWARDS.EXAM_CORRECT,
+    dailyRewardMultiplier,
+  );
+
   const submitResult = await prisma.$transaction(async (tx) => {
     const current = await tx.examAttempt.findUnique({
       where: { id: attemptId },
@@ -319,6 +332,8 @@ export async function submitAttempt(
         correctAnswers: correct,
         score,
         finishedAt: new Date(),
+        dailyAttemptIndex,
+        dailyRewardMultiplier,
       },
     });
 
@@ -334,7 +349,7 @@ export async function submitAttempt(
     if (!record.isCorrect || !record.alternativeId) continue;
     const coinAward = await awardCoins(
       userId,
-      COIN_REWARDS.EXAM_CORRECT,
+      coinPerCorrectAmount,
       "EXAM_CORRECT",
       `${attemptId}-q-${record.questionId}`,
       `Questão correta: ${examTitle}`,
@@ -342,21 +357,19 @@ export async function submitAttempt(
     if (coinAward) coinsEarned += coinAward.amount;
   }
 
-  // Concede XP por finalizar simulado
   const baseAward = await awardXp(
     userId,
-    XP_REWARDS.EXAM,
+    xpBaseAmount,
     "EXAM",
     attemptId,
     `Simulado finalizado: ${examTitle}`,
   );
   if (baseAward) xpEarned += baseAward.amount;
 
-  // Concede bônus de XP se aprovado
   if (score >= EXAM_PASS_SCORE) {
     const passAward = await awardXp(
       userId,
-      XP_REWARDS.EXAM_PASS_BONUS,
+      xpPassBonusAmount,
       "EXAM",
       `${attemptId}-pass`,
       `Aprovado no simulado: ${examTitle}`,
@@ -385,6 +398,8 @@ export async function submitAttempt(
     pendingEssays: essayQuestions.length,
     xpEarned,
     coinsEarned,
+    dailyAttemptIndex,
+    dailyRewardMultiplier,
   };
 }
 

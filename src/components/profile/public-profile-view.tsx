@@ -1,3 +1,5 @@
+import { ProfileIconBadge } from "@/components/profile/profile-icon-badge";
+import { StartMessageButton } from "@/components/messages/start-message-button";
 import Link from "next/link";
 import {
   Award,
@@ -50,7 +52,12 @@ export function PublicProfileView({ profile, viewerId }: Props) {
           <div className="min-w-0">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div>
-                <h1 className="text-3xl font-black tracking-tight text-white">{user.fullName}</h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="text-3xl font-black tracking-tight text-white">{user.fullName}</h1>
+                  {cosmetics?.profileIconId && (
+                    <ProfileIconBadge iconId={cosmetics.profileIconId} />
+                  )}
+                </div>
                 <p className="mt-1 text-slate-400">@{user.username}</p>
                 {user.bio && (
                   <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">{user.bio}</p>
@@ -90,14 +97,11 @@ export function PublicProfileView({ profile, viewerId }: Props) {
                 ) : viewerId ? (
                   <>
                     <FollowButton userId={user.id} initialFollowing={isFollowing} />
-                    <button
-                      type="button"
-                      disabled
-                      className="rounded-full border border-white/15 px-4 py-1.5 text-sm font-semibold text-slate-500"
-                      title="Em breve"
-                    >
-                      Mensagem
-                    </button>
+                    <StartMessageButton
+                      recipientUserId={user.id}
+                      recipientName={user.fullName}
+                      className="rounded-full px-4 py-1.5"
+                    />
                   </>
                 ) : (
                   <Link href={`/login?callbackUrl=/perfil/${user.username}`} className="hx-btn-primary">

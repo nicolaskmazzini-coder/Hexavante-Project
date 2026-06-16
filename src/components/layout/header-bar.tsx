@@ -2,8 +2,10 @@ import Link from "next/link";
 import { Hexagon } from "lucide-react";
 import { HeaderWalletBadge } from "@/components/gamification/header-wallet-badge";
 import { HeaderXpBadge } from "@/components/gamification/header-xp-badge";
+import { MessagesNavBadge } from "@/components/messages/messages-nav-badge";
 import { NotificationBell } from "@/components/notifications/notification-bell";
 import { Avatar } from "@/components/ui/avatar";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { NavSession } from "@/lib/nav-session";
 import { HeaderAuthActions } from "./header-auth-actions";
 import { HeaderSignOut } from "./header-sign-out";
@@ -11,14 +13,13 @@ import { SearchBar } from "./search-bar";
 
 type Props = {
   session: NavSession;
-  menuToggle: React.ReactNode;
 };
 
-export function HeaderBar({ session, menuToggle }: Props) {
+export function HeaderBar({ session }: Props) {
   return (
-    <header className="hx-header-bar sticky top-0 border-b border-white/10 bg-[#06080f]/82 backdrop-blur-xl">
-      <div className="mx-auto flex w-full max-w-7xl items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
-        {menuToggle}
+    <header className="hx-header-bar sticky top-0 z-20 border-b border-white/10 bg-[#06080f]/82 backdrop-blur-xl">
+      <div className="flex w-full items-center gap-2 px-3 py-3 sm:gap-3 sm:px-4">
+        <SidebarTrigger className="md:hidden" />
 
         <Link
           href="/"
@@ -42,6 +43,7 @@ export function HeaderBar({ session, menuToggle }: Props) {
             <>
               <HeaderWalletBadge userId={session.user.id} />
               <HeaderXpBadge userId={session.user.id} />
+              <MessagesNavBadge />
               <NotificationBell />
               <Link
                 href={`/perfil/${session.user.username}`}

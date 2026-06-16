@@ -1,4 +1,6 @@
+import { listSessionCookieNames } from "@/lib/auth-cookies";
 import { getAuthSecret } from "@/lib/auth-env";
+import { slimJwtToken } from "@/lib/jwt-slim";
 import { isSuperAdmin } from "@/lib/moderation/permissions";
 import { prisma } from "@/lib/prisma";
 import { writeModerationLog } from "@/services/moderation-admin.service";
@@ -57,16 +59,13 @@ export async function buildImpersonationToken(
     ? (currentToken.impersonatorRoles as string[])
     : ((currentToken.roles as string[]) ?? []);
 
-  return {
-    ...currentToken,
+  return slimJwtToken({
     sub: target.id,
     id: target.id,
     email: target.email,
     username: target.username,
     name: target.fullName,
     roles: target.roles.map((r) => r.role.name),
-    picture: target.avatarUrl ?? undefined,
-    image: target.avatarUrl ?? undefined,
     impersonatorId,
     impersonatorUsername,
     impersonatorRoles,
@@ -74,7 +73,7 @@ export async function buildImpersonationToken(
     isBanned: false,
     banReason: undefined,
     isMuted: false,
-  };
+  });
 }
 
 export async function buildStopImpersonationToken(currentToken: JWT): Promise<JWT> {
@@ -88,33 +87,34 @@ export async function buildStopImpersonationToken(currentToken: JWT): Promise<JW
   });
   if (!admin) throw new Error("Sessão de impersonação inválida.");
 
-  return {
-    ...currentToken,
+  return slimJwtToken({
     sub: admin.id,
     id: admin.id,
     email: admin.email,
     username: admin.username,
     name: admin.fullName,
     roles: admin.roles.map((r) => r.role.name),
-    picture: admin.avatarUrl ?? undefined,
-    image: admin.avatarUrl ?? undefined,
+    isImpersonating: false,
     impersonatorId: undefined,
     impersonatorUsername: undefined,
     impersonatorRoles: undefined,
-    isImpersonating: false,
-  };
+  });
 }
 
 export async function setAuthToken(token: JWT): Promise<void> {
   const cookieName = getSessionCookieName();
   const encoded = await encode({
-    token,
+    token: slimJwtToken(token),
     secret: getAuthSecret(),
     salt: cookieName,
     maxAge: 30 * 24 * 60 * 60,
   });
 
   const cookieStore = await cookies();
+  for (const name of listSessionCookieNames()) {
+    cookieStore.delete(name);
+  }
+
   cookieStore.set(cookieName, encoded, {
     httpOnly: true,
     sameSite: "lax",

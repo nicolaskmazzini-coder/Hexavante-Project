@@ -7,7 +7,9 @@ import type { ZodError } from "zod";
 import { registerUser } from "@/services/auth.service"; // Serviço de registro
 import { signIn } from "@/auth"; // Função de login do NextAuth
 import { AuthError } from "next-auth"; // Tipo de erro do NextAuth
-import { AUTH_SESSION_COOKIE_NAMES, isSignInFailureResult } from "@/lib/auth-env";
+import { listSessionCookieNames } from "@/lib/auth-cookies";
+import { isSignInFailureResult } from "@/lib/auth-env";
+import { getSafeCallbackUrl } from "@/lib/auth-routes";
 import { rateLimitAuthAction } from "@/lib/rate-limit"; // Rate limiting
 import { Prisma } from "@prisma/client";
 
@@ -28,15 +30,13 @@ function mapZodErrors(error: ZodError) {
   return fieldErrors;
 }
 
-function getSafeCallbackUrl(value: FormDataEntryValue | null): string {
-  const url = typeof value === "string" ? value : "/";
-  if (!url.startsWith("/") || url.startsWith("//")) return "/";
-  return url;
+function getSafeCallbackUrlFromForm(value: FormDataEntryValue | null): string {
+  return getSafeCallbackUrl(typeof value === "string" ? value : null);
 }
 
 async function clearStaleSessionCookies() {
   const cookieStore = await cookies();
-  for (const name of AUTH_SESSION_COOKIE_NAMES) {
+  for (const name of listSessionCookieNames()) {
     cookieStore.delete(name);
   }
 }
@@ -91,7 +91,7 @@ export async function registerAction(
     };
   }
 
-  const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
+  const callbackUrl = getSafeCallbackUrlFromForm(formData.get("callbackUrl"));
 
   await clearStaleSessionCookies();
 
@@ -148,7 +148,7 @@ export async function loginAction(
     };
   }
 
-  const callbackUrl = getSafeCallbackUrl(formData.get("callbackUrl"));
+  const callbackUrl = getSafeCallbackUrlFromForm(formData.get("callbackUrl"));
 
   await clearStaleSessionCookies();
 

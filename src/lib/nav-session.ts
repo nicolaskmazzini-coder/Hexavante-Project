@@ -7,14 +7,17 @@ export type NavSession = {
   };
 } | null;
 
-export function toNavSession(session: {
-  user?: {
-    id?: string;
-    username?: string;
-    roles?: string[];
-    image?: string | null;
-  } | null;
-} | null): NavSession {
+export function toNavSession(
+  session: {
+    user?: {
+      id?: string;
+      username?: string;
+      roles?: string[];
+      image?: string | null;
+    } | null;
+  } | null,
+  avatarUrl?: string | null,
+): NavSession {
   if (!session?.user?.id || !session.user.username) return null;
 
   return {
@@ -22,7 +25,7 @@ export function toNavSession(session: {
       id: session.user.id,
       username: session.user.username,
       roles: session.user.roles ?? [],
-      image: session.user.image,
+      image: avatarUrl ?? null,
     },
   };
 }

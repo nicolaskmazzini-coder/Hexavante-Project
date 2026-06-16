@@ -18,7 +18,7 @@ export default async function ShopPage() {
         badge="Economia"
         icon={Store}
         title="Loja Hexavante"
-        description="Gaste moedas conquistadas nos simulados em títulos, cosméticos e boosters. Assinantes Premium têm benefícios exclusivos."
+        description="Gaste moedas em títulos, cosméticos, boosters de XP, passes de acesso antecipado e pacotes de revisão por tema."
       />
 
       <ShopTabs

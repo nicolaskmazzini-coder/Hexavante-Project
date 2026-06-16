@@ -123,7 +123,6 @@ export async function validateCredentials(data: LoginInput) {
     id: user.id,
     name: user.fullName,
     email: user.email,
-    image: user.avatarUrl ?? undefined,
     username: user.username,
     roles: user.roles.map((r) => r.role.name),
   };

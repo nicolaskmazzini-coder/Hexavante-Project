@@ -64,3 +64,39 @@ Evita ambiguidade entre documentação, banco de dados e código TypeScript/Pris
 | `/uploads/exam-questions/` | Imagem de questão |
 
 Validação de URL nos schemas Zod restringe caminhos a esses prefixos (segurança).
+
+---
+
+## Loja e economia
+
+| Termo | Significado |
+|-------|-------------|
+| `StoreItem` | Item vendido na loja (`/shop`) |
+| `StoreItemCategory` | `TITLE`, `AVATAR_BORDER`, `THEME`, `COSMETIC`, `BOOSTER`, `PASS`, `REVIEW_PACK` |
+| `isPermanent` | Item permanente vs temporário (expira no inventário) |
+| `UserInventory` | Itens comprados; `expiresAt` para temporários |
+| `CoinTransaction` | Histórico de moedas (`EARN` / `SPEND`) |
+| `boosterMultiplier` | Multiplicador ativo no usuário até `boosterExpiresAt` |
+
+---
+
+## Social e mensagens
+
+| Termo | Significado |
+|-------|-------------|
+| `UserFollow` | Relação seguidor → seguido |
+| `SocialActivity` | Evento automático no feed (nível, curso, simulado) |
+| `ActivityLike` | Curtida em atividade |
+| `DirectConversation` | Conversa privada 1:1 entre dois usuários |
+| `DirectMessage` | Mensagem na conversa; `readAt` para leitura |
+| `NotificationType.NEW_MESSAGE` | Notificação de nova DM |
+
+---
+
+## Moderação
+
+| Termo | Significado |
+|-------|-------------|
+| `UserBan` | Suspensão da conta |
+| `UserMute` | Silenciamento (sem interagir) |
+| `ModerationLog` | Auditoria de ações admin |

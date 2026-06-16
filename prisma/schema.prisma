@@ -59,6 +59,9 @@ model User {
   socialActivities       SocialActivity[]
   activityLikes          ActivityLike[]
   activityComments       ActivityComment[]
+  directConversationsA   DirectConversation[] @relation("ConversationParticipantA")
+  directConversationsB   DirectConversation[] @relation("ConversationParticipantB")
+  sentDirectMessages     DirectMessage[]      @relation("SentDirectMessages")
 
   bansReceived           UserBan[]         @relation("BannedUser")
   bansIssued             UserBan[]         @relation("BanModerator")
@@ -138,6 +141,39 @@ model ActivityComment {
 
   @@index([activityId])
   @@map("activity_comments")
+}
+
+model DirectConversation {
+  id             String    @id @default(cuid())
+  participantAId String    @map("participant_a_id")
+  participantBId String    @map("participant_b_id")
+  lastMessageAt  DateTime? @map("last_message_at")
+  createdAt      DateTime  @default(now()) @map("created_at")
+
+  participantA User            @relation("ConversationParticipantA", fields: [participantAId], references: [id], onDelete: Cascade)
+  participantB User            @relation("ConversationParticipantB", fields: [participantBId], references: [id], onDelete: Cascade)
+  messages     DirectMessage[]
+
+  @@unique([participantAId, participantBId])
+  @@index([participantAId, lastMessageAt])
+  @@index([participantBId, lastMessageAt])
+  @@map("direct_conversations")
+}
+
+model DirectMessage {
+  id             String    @id @default(cuid())
+  conversationId String    @map("conversation_id")
+  senderId       String    @map("sender_id")
+  body           String    @db.VarChar(2000)
+  createdAt      DateTime  @default(now()) @map("created_at")
+  readAt         DateTime? @map("read_at")
+
+  conversation DirectConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade)
+  sender       User               @relation("SentDirectMessages", fields: [senderId], references: [id], onDelete: Cascade)
+
+  @@index([conversationId, createdAt])
+  @@index([senderId])
+  @@map("direct_messages")
 }
 
 enum CourseLevel {
@@ -425,6 +461,8 @@ model ExamAttempt {
   totalQuestions Int       @default(0) @map("total_questions")
   startedAt      DateTime  @default(now()) @map("started_at")
   finishedAt     DateTime? @map("finished_at")
+  dailyAttemptIndex     Int?   @map("daily_attempt_index")
+  dailyRewardMultiplier Float? @map("daily_reward_multiplier")
 
   exam    Exam         @relation(fields: [examId], references: [id], onDelete: Cascade)
   user    User         @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -432,6 +470,7 @@ model ExamAttempt {
 
   @@index([userId])
   @@index([examId])
+  @@index([userId, finishedAt])
   @@map("exam_attempts")
 }
 
@@ -543,6 +582,8 @@ enum StoreItemCategory {
   THEME
   COSMETIC
   BOOSTER
+  PASS
+  REVIEW_PACK
 }
 
 model StoreItem {
@@ -554,6 +595,7 @@ model StoreItem {
   category      StoreItemCategory
   imageUrl      String?           @map("image_url") @db.VarChar(500)
   isPremiumOnly Boolean           @default(false) @map("is_premium_only")
+  isPermanent   Boolean           @default(true) @map("is_permanent")
   metadata      Json?
   isActive      Boolean           @default(true) @map("is_active")
   createdAt     DateTime          @default(now()) @map("created_at")
@@ -649,6 +691,7 @@ enum NotificationType {
   CERTIFICATE_ISSUED
   SYSTEM_ANNOUNCEMENT
   MODERATION_ACTION
+  NEW_MESSAGE
 }
 
 enum ModerationLogType {

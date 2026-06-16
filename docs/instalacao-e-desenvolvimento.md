@@ -93,7 +93,17 @@ O projeto mantém migrations SQL em `prisma/sql/`. Use quando o banco já existe
 | `npm run db:sync` | `add-course-level-columns.sql` | `level`, `estimated_hours` em cursos |
 | `npm run db:features` | `course-cover-exam-essay.sql` | Capa de curso, dissertativas, timer |
 | `npm run db:exam-cover` | `exam-cover-image.sql` | Capa de simulado |
-| `npm run db:exam-questions` | `exam-question-image.sql` + `exam-question-image-size.sql` | Imagem de questão e dimensões |
+| `npm run db:exam-questions` | `exam-question-image.sql` + `exam-question-image-size.sql` | Imagem de questão |
+| `npm run db:economy` | `economy-shop-premium.sql` | Loja, moedas, premium |
+| `npm run db:booster` | `user-booster-fields.sql` | Boosters temporários no usuário |
+| `npm run db:social` | `social-features.sql` | Seguidores, feed, curtidas |
+| `npm run db:moderation` | `moderation-admin.sql` | Ban, mute, logs admin |
+| `npm run db:superadmin` | `superadmin-role.sql` | Papel superadmin |
+| `npm run db:exam-daily-rewards` | `exam-daily-reward-fields.sql` | Recompensas diárias de simulado |
+| `npm run db:shop-expand` | `shop-expand-categories.sql` | Passes, pacotes de revisão, `isPermanent` |
+| `npm run db:direct-messages` | `direct-messages.sql` | Mensagens privadas (DMs) |
+| `npm run db:avatar` | `avatar-url-longtext.sql` | Avatar em LONGTEXT |
+| `npm run db:certificates` | `certificate-user-course-unique.sql` | Unique certificado por curso |
 
 Execução individual:
 

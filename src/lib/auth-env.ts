@@ -66,6 +66,7 @@ const PLACEHOLDER_SECRETS = new Set([
   "gere-um-secret-aleatorio-aqui",
   "change-me",
   "your-secret-here",
+  'node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"',
 ]);
 
 export function getAuthSecret(): string {

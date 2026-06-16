@@ -1,6 +1,6 @@
 "use client";
 
-import { useActionState, useCallback, useEffect, useRef, useState } from "react";
+import { useActionState, useCallback, useRef, useState } from "react";
 import {
   submitExamAction,
   submitExamTimeoutAction,
@@ -49,22 +49,26 @@ export function ExamForm({
   const formRef = useRef<HTMLFormElement>(null);
   const timeoutFormRef = useRef<HTMLFormElement>(null);
   const [activeQuestionId, setActiveQuestionId] = useState(questions[0]?.id ?? "");
-  const [answered, setAnswered] = useState<Record<string, boolean>>({});
-  const [essayDrafts, setEssayDrafts] = useState<Record<string, string>>({});
-
-  useEffect(() => {
+  const [essayDrafts, setEssayDrafts] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {};
     const drafts: Record<string, string> = {};
     for (const question of questions) {
       if (question.type !== "ESSAY") continue;
-      const key = `exam-essay-${attemptId}-${question.id}`;
-      const saved = sessionStorage.getItem(key);
-      if (saved) {
-        drafts[question.id] = saved;
-        setAnswered((prev) => ({ ...prev, [question.id]: saved.trim().length > 0 }));
-      }
+      const saved = sessionStorage.getItem(`exam-essay-${attemptId}-${question.id}`);
+      if (saved) drafts[question.id] = saved;
     }
-    setEssayDrafts(drafts);
-  }, [attemptId, questions]);
+    return drafts;
+  });
+  const [answered, setAnswered] = useState<Record<string, boolean>>(() => {
+    if (typeof window === "undefined") return {};
+    const map: Record<string, boolean> = {};
+    for (const question of questions) {
+      if (question.type !== "ESSAY") continue;
+      const saved = sessionStorage.getItem(`exam-essay-${attemptId}-${question.id}`);
+      if (saved) map[question.id] = saved.trim().length > 0;
+    }
+    return map;
+  });
 
   const syncTimeoutForm = useCallback(() => {
     const main = formRef.current;

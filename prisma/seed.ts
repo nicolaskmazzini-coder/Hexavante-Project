@@ -340,6 +340,7 @@ async function main() {
         category: item.category,
         imageUrl: item.imageUrl ?? null,
         isPremiumOnly: item.isPremiumOnly ?? false,
+        isPermanent: item.isPermanent ?? true,
         metadata: item.metadata ?? undefined,
         isActive: true,
       },
@@ -351,6 +352,7 @@ async function main() {
         category: item.category,
         imageUrl: item.imageUrl ?? null,
         isPremiumOnly: item.isPremiumOnly ?? false,
+        isPermanent: item.isPermanent ?? true,
         metadata: item.metadata ?? undefined,
       },
     });

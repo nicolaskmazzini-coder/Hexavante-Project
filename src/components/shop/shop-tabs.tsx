@@ -1,32 +1,34 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Crown, Gem, Palette, Sparkles, Tag } from "lucide-react";
+import {
+  BookOpen,
+  Crown,
+  Gem,
+  Palette,
+  Sparkles,
+  Tag,
+  Ticket,
+  Zap,
+} from "lucide-react";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { PremiumPanel } from "@/components/shop/premium-panel";
+import { SHOP_TAB_CATEGORIES } from "@/lib/shop-catalog";
 import type { PremiumStatus } from "@/lib/premium";
+import type { ShopItemView } from "@/services/shop.service";
 import type { StoreItemCategory } from "@prisma/client";
-
-type ShopItem = {
-  id: string;
-  name: string;
-  description: string;
-  cost: number;
-  category: StoreItemCategory;
-  isPremiumOnly: boolean;
-};
 
 type InventoryEntry = {
   id: string;
   storeItemId: string;
   isEquipped: boolean;
-  storeItem: ShopItem;
+  expiresAt: Date | string | null;
 };
 
-type TabId = "titles" | "cosmetics" | "premium";
+type TabId = keyof typeof SHOP_TAB_CATEGORIES;
 
 type Props = {
-  items: ShopItem[];
+  items: ShopItemView[];
   inventory: InventoryEntry[];
   coins: number;
   premium: PremiumStatus | null;
@@ -37,6 +39,9 @@ type Props = {
 const TABS: { id: TabId; label: string; icon: typeof Tag }[] = [
   { id: "titles", label: "Títulos", icon: Tag },
   { id: "cosmetics", label: "Cosméticos", icon: Palette },
+  { id: "boosters", label: "Boosters", icon: Zap },
+  { id: "passes", label: "Passes", icon: Ticket },
+  { id: "review_packs", label: "Pacotes", icon: BookOpen },
   { id: "premium", label: "Premium", icon: Crown },
 ];
 
@@ -49,16 +54,9 @@ export function ShopTabs({ items, inventory, coins, premium, coinMultiplier, act
   );
 
   const filteredItems = useMemo(() => {
-    if (tab === "premium") return [];
-    if (tab === "titles") {
-      return items.filter((item) => item.category === "TITLE" || item.category === "BOOSTER");
-    }
-    return items.filter(
-      (item) =>
-        item.category === "AVATAR_BORDER" ||
-        item.category === "THEME" ||
-        item.category === "COSMETIC",
-    );
+    const categories = SHOP_TAB_CATEGORIES[tab];
+    if (categories === "premium") return [];
+    return items.filter((item) => categories.includes(item.category) && !item.isPremiumOnly);
   }, [items, tab]);
 
   return (
@@ -98,7 +96,7 @@ export function ShopTabs({ items, inventory, coins, premium, coinMultiplier, act
         )}
         {activeBooster && (
           <span className="rounded-full border border-violet-400/20 bg-violet-400/10 px-3 py-1 text-violet-100">
-            Booster de moedas ativo
+            Booster ativo
           </span>
         )}
       </div>
@@ -115,15 +113,15 @@ export function ShopTabs({ items, inventory, coins, premium, coinMultiplier, act
       ) : (
         <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
           {filteredItems.map((item) => {
-            const owned = inventoryByItem.has(item.id);
             const entry = inventoryByItem.get(item.id);
             return (
               <ShopItemCard
                 key={item.id}
-                item={item}
-                owned={owned}
-                equipped={entry?.isEquipped ?? false}
-                inventoryId={entry?.id}
+                item={toCardItem(item)}
+                ownershipStatus={item.ownershipStatus}
+                equipped={entry?.isEquipped ?? item.isEquipped}
+                inventoryId={entry?.id ?? item.inventoryId}
+                expiresAt={entry?.expiresAt ?? item.expiresAt}
                 userCoins={coins}
                 isPremium={premium?.isActive ?? false}
               />
@@ -133,4 +131,23 @@ export function ShopTabs({ items, inventory, coins, premium, coinMultiplier, act
       )}
     </div>
   );
+}
+
+function toCardItem(item: ShopItemView) {
+  const metadata =
+    item.metadata && typeof item.metadata === "object" && !Array.isArray(item.metadata)
+      ? (item.metadata as Record<string, unknown>)
+      : null;
+
+  return {
+    id: item.id,
+    slug: item.slug,
+    name: item.name,
+    description: item.description,
+    cost: item.cost,
+    category: item.category as StoreItemCategory,
+    isPremiumOnly: item.isPremiumOnly,
+    isPermanent: item.isPermanent,
+    metadata,
+  };
 }

@@ -22,11 +22,7 @@ export function SearchBar() {
 
   useEffect(() => {
     const trimmed = query.trim();
-    if (trimmed.length < 2) {
-      setSuggestions([]);
-      setIsOpen(false);
-      return;
-    }
+    if (trimmed.length < 2) return;
 
     const controller = new AbortController();
     const timeout = window.setTimeout(async () => {
@@ -90,7 +86,14 @@ export function SearchBar() {
         <input
           type="search"
           value={query}
-          onChange={(event) => setQuery(event.target.value)}
+          onChange={(event) => {
+            const next = event.target.value;
+            setQuery(next);
+            if (next.trim().length < 2) {
+              setSuggestions([]);
+              setIsOpen(false);
+            }
+          }}
           onFocus={() => {
             if (suggestions.length > 0) setIsOpen(true);
           }}
