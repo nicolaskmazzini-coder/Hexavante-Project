@@ -1,16 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import {
-  BookOpen,
-  Crown,
-  Gem,
-  Palette,
-  Sparkles,
-  Tag,
-  Ticket,
-  Zap,
-} from "lucide-react";
+import { BookOpen, Crown, Gem, Palette, Sparkles, Tag, Ticket, Zap } from "lucide-react";
 import { ShopItemCard } from "@/components/shop/shop-item-card";
 import { PremiumPanel } from "@/components/shop/premium-panel";
 import { SHOP_TAB_CATEGORIES } from "@/lib/shop-catalog";
@@ -45,7 +36,14 @@ const TABS: { id: TabId; label: string; icon: typeof Tag }[] = [
   { id: "premium", label: "Premium", icon: Crown },
 ];
 
-export function ShopTabs({ items, inventory, coins, premium, coinMultiplier, activeBooster }: Props) {
+export function ShopTabs({
+  items,
+  inventory,
+  coins,
+  premium,
+  coinMultiplier,
+  activeBooster,
+}: Props) {
   const [tab, setTab] = useState<TabId>("titles");
 
   const inventoryByItem = useMemo(

@@ -7,10 +7,7 @@ import { LinkButton } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
 import { Alert } from "@/components/ui/alert";
-import {
-  APPLICATION_STATUS_LABELS,
-  isInstructor,
-} from "@/lib/permissions";
+import { APPLICATION_STATUS_LABELS, isInstructor } from "@/lib/permissions";
 import { getLatestInstructorApplication } from "@/services/moderation.service";
 import { listInstructorCourses } from "@/services/course.service";
 import { redirect } from "next/navigation";

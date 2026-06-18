@@ -115,9 +115,7 @@ export default async function EditExamPage({ params }: Props) {
                         ))}
                       </ul>
                       {correct && (
-                        <p className="mt-2 text-xs text-slate-500">
-                          Gabarito: {correct.text}
-                        </p>
+                        <p className="mt-2 text-xs text-slate-500">Gabarito: {correct.text}</p>
                       )}
                     </>
                   )}

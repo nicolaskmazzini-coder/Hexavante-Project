@@ -22,11 +22,7 @@ import { getVideoEmbedUrl } from "@/lib/video";
 import { LIVE_ROOM_STATUS_LABELS } from "@/lib/validations/live-room";
 import { getLiveChatMessages, getLiveRoom, joinLiveRoom } from "@/services/live-room.service";
 
-export default async function LiveRoomPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+export default async function LiveRoomPage({ params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   const { id } = await params;
   if (!session?.user?.id) redirect(`/login?callbackUrl=/live-rooms/${id}`);
@@ -48,9 +44,7 @@ export default async function LiveRoomPage({
     );
   }
 
-  const isParticipant = room.participants.some(
-    (p) => p.userId === session.user.id && !p.leftAt,
-  );
+  const isParticipant = room.participants.some((p) => p.userId === session.user.id && !p.leftAt);
 
   if (!isParticipant && room.status === "LIVE") {
     try {
@@ -75,9 +69,7 @@ export default async function LiveRoomPage({
   }
 
   const messages = await getLiveChatMessages(id);
-  const embedUrl = room.videoUrl
-    ? getVideoEmbedUrl(room.videoUrl, room.videoProvider)
-    : null;
+  const embedUrl = room.videoUrl ? getVideoEmbedUrl(room.videoUrl, room.videoProvider) : null;
 
   const isLive = room.status === "LIVE";
   const isScheduled = room.status === "SCHEDULED";
@@ -108,7 +100,11 @@ export default async function LiveRoomPage({
                     : "border-white/10 bg-white/[0.05] text-slate-300"
               }`}
             >
-              {isLive ? <Radio className="h-3.5 w-3.5" /> : <CalendarClock className="h-3.5 w-3.5" />}
+              {isLive ? (
+                <Radio className="h-3.5 w-3.5" />
+              ) : (
+                <CalendarClock className="h-3.5 w-3.5" />
+              )}
               {LIVE_ROOM_STATUS_LABELS[room.status] || room.status}
             </span>
             {isScheduled && (

@@ -19,9 +19,7 @@ type Props = {
 export default async function CoursesPage({ searchParams }: Props) {
   const params = await searchParams;
   const level =
-    params.level === "BEGINNER" ||
-    params.level === "INTERMEDIATE" ||
-    params.level === "ADVANCED"
+    params.level === "BEGINNER" || params.level === "INTERMEDIATE" || params.level === "ADVANCED"
       ? params.level
       : undefined;
   const sort = params.sort === "popular" ? "popular" : "recent";

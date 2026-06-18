@@ -36,7 +36,8 @@ export default async function InstructorApplyPage() {
         <Alert variant="warning" className="mt-2">
           <StatusBadge status="PENDING" label={APPLICATION_STATUS_LABELS.PENDING} />
           <p className="mt-3">
-            Sua solicitação está em análise. Você receberá acesso à área de instrutor após aprovação.
+            Sua solicitação está em análise. Você receberá acesso à área de instrutor após
+            aprovação.
           </p>
         </Alert>
       ) : application?.status === "REJECTED" ? (

@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { listInboxConversations, getUnreadDirectMessageCount } from "@/services/direct-message.service";
+import {
+  listInboxConversations,
+  getUnreadDirectMessageCount,
+} from "@/services/direct-message.service";
 
 export async function GET() {
   const session = await auth();

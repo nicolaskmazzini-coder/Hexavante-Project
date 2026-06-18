@@ -23,14 +23,16 @@ export const forgotPasswordSchema = z.object({
   email: z.email("E-mail inválido"),
 });
 
-export const resetPasswordSchema = z.object({
-  token: z.string().min(1, "Token inválido"),
-  password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
-  confirmPassword: z.string().min(8, "Confirme a senha"),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"],
-});
+export const resetPasswordSchema = z
+  .object({
+    token: z.string().min(1, "Token inválido"),
+    password: z.string().min(8, "Senha deve ter no mínimo 8 caracteres"),
+    confirmPassword: z.string().min(8, "Confirme a senha"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
 
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;

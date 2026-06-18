@@ -137,8 +137,13 @@ export function UserTable() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex gap-1">
-                      <ActionBtn icon={Eye} label="Perfil" onClick={() => window.open(`/perfil/${user.username}`, "_blank")} />
-                      {canImpersonate && !user.roles.some((r) => ["MODERATOR", "ADMIN", "SUPERADMIN"].includes(r)) ? (
+                      <ActionBtn
+                        icon={Eye}
+                        label="Perfil"
+                        onClick={() => window.open(`/perfil/${user.username}`, "_blank")}
+                      />
+                      {canImpersonate &&
+                      !user.roles.some((r) => ["MODERATOR", "ADMIN", "SUPERADMIN"].includes(r)) ? (
                         <ActionBtn
                           icon={UserRound}
                           label="Ver como"
@@ -146,8 +151,16 @@ export function UserTable() {
                         />
                       ) : null}
                       <ActionBtn icon={Plus} label="XP" onClick={() => openModal(user, "addxp")} />
-                      <ActionBtn icon={Shield} label="Cargo" onClick={() => openModal(user, "cargo")} />
-                      <ActionBtn icon={VolumeX} label="Mute" onClick={() => openModal(user, "mute")} />
+                      <ActionBtn
+                        icon={Shield}
+                        label="Cargo"
+                        onClick={() => openModal(user, "cargo")}
+                      />
+                      <ActionBtn
+                        icon={VolumeX}
+                        label="Mute"
+                        onClick={() => openModal(user, "mute")}
+                      />
                       <ActionBtn icon={Ban} label="Ban" onClick={() => openModal(user, "ban")} />
                     </div>
                   </td>

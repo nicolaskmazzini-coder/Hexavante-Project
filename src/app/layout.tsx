@@ -3,6 +3,7 @@ import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
+import { CookieBanner } from "@/components/ui/cookie-banner";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { ToastProvider } from "@/components/ui/toast";
 import { getNavAvatarUrl } from "@/lib/nav-avatar";
@@ -35,6 +36,7 @@ export default async function RootLayout({
           <ToastProvider>
             <AppShell session={navSession}>{children}</AppShell>
           </ToastProvider>
+          <CookieBanner />
         </ErrorBoundary>
       </body>
     </html>

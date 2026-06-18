@@ -15,11 +15,7 @@ export type ExamSearchParams = {
 };
 
 export async function searchPublishedExams(
-  {
-    examType,
-    q,
-    sort = "recent",
-  }: ExamSearchParams = {},
+  { examType, q, sort = "recent" }: ExamSearchParams = {},
   userId?: string,
 ) {
   let includePremiumOnly = false;
@@ -44,20 +40,14 @@ export async function searchPublishedExams(
       ...(type ? { examType: type } : {}),
       ...(query
         ? {
-            OR: [
-              { title: { contains: query } },
-              { description: { contains: query } },
-            ],
+            OR: [{ title: { contains: query } }, { description: { contains: query } }],
           }
         : {}),
     },
     include: {
       _count: { select: { questions: true, attempts: true } },
     },
-    orderBy:
-      sort === "popular"
-        ? { attempts: { _count: "desc" } }
-        : { createdAt: "desc" },
+    orderBy: sort === "popular" ? { attempts: { _count: "desc" } } : { createdAt: "desc" },
   });
 }
 
@@ -489,9 +479,7 @@ export async function getUserExamStats(userId: string) {
 
   // Calcula média e melhor pontuação
   const scores = attempts.map((a) => a.score);
-  const averageScore = Math.round(
-    scores.reduce((sum, s) => sum + s, 0) / scores.length,
-  );
+  const averageScore = Math.round(scores.reduce((sum, s) => sum + s, 0) / scores.length);
   const bestScore = Math.max(...scores);
 
   return { totalAttempts: attempts.length, averageScore, bestScore };

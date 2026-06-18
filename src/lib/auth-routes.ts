@@ -6,6 +6,7 @@ export const AUTH_PUBLIC_EXACT = new Set([
   "/redefinir-senha",
   "/manutencao",
   "/suspenso",
+  "/privacidade",
 ]);
 
 export const AUTH_PUBLIC_PREFIXES = [

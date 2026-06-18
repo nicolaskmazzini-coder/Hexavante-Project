@@ -19,9 +19,7 @@ export async function issueCertificateAction(courseId: string) {
   try {
     await issueCertificate(session.user.id, courseId);
   } catch (error) {
-    throw new Error(
-      error instanceof Error ? error.message : "Erro ao emitir certificado",
-    );
+    throw new Error(error instanceof Error ? error.message : "Erro ao emitir certificado");
   }
 
   revalidatePath("/certificados");

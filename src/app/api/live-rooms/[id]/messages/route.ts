@@ -22,14 +22,14 @@ export async function GET(request: Request, { params }: Props) {
     const messages = await getLiveChatMessagesSince(id, session.user.id, since);
 
     return NextResponse.json(
-    messages.map((msg) => ({
-      id: msg.id,
-      userId: msg.userId,
-      username: msg.user.username,
-      fullName: msg.user.fullName,
-      message: msg.message,
-      createdAt: msg.createdAt.toISOString(),
-    })),
+      messages.map((msg) => ({
+        id: msg.id,
+        userId: msg.userId,
+        username: msg.user.username,
+        fullName: msg.user.fullName,
+        message: msg.message,
+        createdAt: msg.createdAt.toISOString(),
+      })),
     );
   } catch (error) {
     const message = error instanceof Error ? error.message : "Erro ao buscar mensagens";

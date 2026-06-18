@@ -67,10 +67,6 @@ export function InboxList({ initialConversations, activeConversationId, currentU
   }, []);
 
   useEffect(() => {
-    setConversations(initialConversations);
-  }, [initialConversations]);
-
-  useEffect(() => {
     const interval = setInterval(() => void refresh(), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
   }, [refresh]);
@@ -93,9 +89,7 @@ export function InboxList({ initialConversations, activeConversationId, currentU
         const isActive =
           activeConversationId === conversation.id || pathname === `/mensagens/${conversation.id}`;
         const preview = conversation.lastMessage?.body ?? "Inicie a conversa";
-        const previewTime = formatPreviewTime(
-          conversation.lastMessageAt ?? conversation.createdAt,
-        );
+        const previewTime = formatPreviewTime(conversation.lastMessageAt ?? conversation.createdAt);
         const youSentLast = conversation.lastMessage?.senderId === currentUserId;
 
         return (

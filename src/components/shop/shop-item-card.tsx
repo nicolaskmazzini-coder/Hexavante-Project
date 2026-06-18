@@ -2,11 +2,7 @@
 
 import { useActionState } from "react";
 import { BookOpen, Coins, Crown, Sparkles, Ticket, Zap } from "lucide-react";
-import {
-  equipItemAction,
-  purchaseItemAction,
-  type ShopActionResult,
-} from "@/app/actions/shop";
+import { equipItemAction, purchaseItemAction, type ShopActionResult } from "@/app/actions/shop";
 import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -91,8 +87,7 @@ export function ShopItemCard({
   const canAfford = isFreePremium || item.cost <= userCoins;
   const error = purchaseState.error || equipState.error;
 
-  const isOwned =
-    ownershipStatus === "owned_permanent" || ownershipStatus === "active_temporary";
+  const isOwned = ownershipStatus === "owned_permanent" || ownershipStatus === "active_temporary";
   const canBuy =
     ownershipStatus === "available" ||
     ownershipStatus === "expired_temporary" ||
@@ -164,9 +159,7 @@ export function ShopItemCard({
       <p className="mt-2 flex-1 text-sm leading-6 text-slate-400">{item.description}</p>
 
       {ownershipStatus === "active_temporary" && expiresAt && (
-        <p className="mt-2 text-xs text-violet-200">
-          Válido até {formatExpirationDate(expiresAt)}
-        </p>
+        <p className="mt-2 text-xs text-violet-200">Válido até {formatExpirationDate(expiresAt)}</p>
       )}
       {ownershipStatus === "expired_temporary" && (
         <p className="mt-2 text-xs text-amber-300">Expirado — você pode renovar a compra.</p>

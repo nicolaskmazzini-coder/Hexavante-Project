@@ -2,11 +2,7 @@ import { randomUUID } from "crypto";
 import path from "path";
 
 export const COURSE_COVER_MAX_BYTES = 5 * 1024 * 1024;
-export const COURSE_COVER_MIME_TYPES = new Set([
-  "image/jpeg",
-  "image/png",
-  "image/webp",
-]);
+export const COURSE_COVER_MIME_TYPES = new Set(["image/jpeg", "image/png", "image/webp"]);
 
 export function getCourseCoverExtension(mime: string): string | null {
   switch (mime) {

@@ -2,10 +2,7 @@
 
 import { auth } from "@/auth";
 import { canModerate, isInstructor } from "@/lib/permissions";
-import {
-  courseModerationSchema,
-  instructorApplicationSchema,
-} from "@/lib/validations/moderation";
+import { courseModerationSchema, instructorApplicationSchema } from "@/lib/validations/moderation";
 import {
   moderateCourse,
   reviewInstructorApplication,

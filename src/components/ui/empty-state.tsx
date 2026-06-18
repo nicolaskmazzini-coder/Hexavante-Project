@@ -9,7 +9,13 @@ type EmptyStateProps = {
   children?: React.ReactNode;
 };
 
-export function EmptyState({ icon: Icon, title, description, className, children }: EmptyStateProps) {
+export function EmptyState({
+  icon: Icon,
+  title,
+  description,
+  className,
+  children,
+}: EmptyStateProps) {
   return (
     <div className={cn("hx-empty", className)}>
       <Icon className="mx-auto h-8 w-8 text-slate-500" />

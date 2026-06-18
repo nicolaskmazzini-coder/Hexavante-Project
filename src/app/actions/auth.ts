@@ -10,7 +10,7 @@ import { AuthError } from "next-auth"; // Tipo de erro do NextAuth
 import { listSessionCookieNames } from "@/lib/auth-cookies";
 import { isSignInFailureResult } from "@/lib/auth-env";
 import { getSafeCallbackUrl } from "@/lib/auth-routes";
-import { rateLimitAuthAction } from "@/lib/rate-limit"; // Rate limiting
+import { extractClientIp, rateLimitAuthAction } from "@/lib/rate-limit";
 import { Prisma } from "@prisma/client";
 
 // Tipo para resultado de ações (sucesso ou erro)
@@ -47,11 +47,8 @@ export async function registerAction(
   _prev: ActionResult,
   formData: FormData,
 ): Promise<ActionResult> {
-  // Obtém IP do usuário para rate limiting
   const headersList = await headers();
-  const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
-  
-  // Verifica rate limiting (5 tentativas por minuto)
+  const ip = extractClientIp(headersList.get("x-forwarded-for"), headersList.get("x-real-ip"));
   if (!rateLimitAuthAction(ip)) {
     return { success: false, error: "Muitas tentativas. Tente novamente em alguns minutos." };
   }
@@ -79,10 +76,7 @@ export async function registerAction(
   try {
     await registerUser(parsed.data);
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2002"
-    ) {
+    if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === "P2002") {
       return { success: false, error: "E-mail ou nome de usuário já está em uso." };
     }
     return {
@@ -122,15 +116,9 @@ export async function registerAction(
 
 // Action de login de usuário
 // Valida credenciais, aplica rate limiting e faz login
-export async function loginAction(
-  _prev: ActionResult,
-  formData: FormData,
-): Promise<ActionResult> {
-  // Obtém IP do usuário para rate limiting
+export async function loginAction(_prev: ActionResult, formData: FormData): Promise<ActionResult> {
   const headersList = await headers();
-  const ip = headersList.get('x-forwarded-for') || headersList.get('x-real-ip') || 'unknown';
-  
-  // Verifica rate limiting (5 tentativas por minuto)
+  const ip = extractClientIp(headersList.get("x-forwarded-for"), headersList.get("x-real-ip"));
   if (!rateLimitAuthAction(ip)) {
     return { success: false, error: "Muitas tentativas. Tente novamente em alguns minutos." };
   }

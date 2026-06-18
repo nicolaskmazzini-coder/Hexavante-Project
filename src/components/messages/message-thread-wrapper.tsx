@@ -17,16 +17,20 @@ const POLL_INTERVAL_MS = 4000;
 export function MessageThreadWrapper({ conversationId, currentUserId, initialMessages }: Props) {
   const [messages, setMessages] = useState(initialMessages);
   const [isSending, setIsSending] = useState(false);
+  const [activeConversationId, setActiveConversationId] = useState(conversationId);
   const messagesRef = useRef(messages);
   const { toast } = useToast();
+
+  // Reset state during render when the conversation changes (React-recommended pattern for
+  // derived state — avoids a useEffect that calls setState, which causes double renders).
+  if (activeConversationId !== conversationId) {
+    setActiveConversationId(conversationId);
+    setMessages(initialMessages);
+  }
 
   useEffect(() => {
     messagesRef.current = messages;
   }, [messages]);
-
-  useEffect(() => {
-    setMessages(initialMessages);
-  }, [initialMessages, conversationId]);
 
   const mergeMessages = useCallback((incoming: SerializedDirectMessage[]) => {
     if (incoming.length === 0) return;

@@ -29,7 +29,11 @@ type InteractiveCardProps = {
 
 export function InteractiveCard({ href, className, children, ariaLabel }: InteractiveCardProps) {
   return (
-    <Link href={href} className={cn("group hx-card-interactive block", className)} aria-label={ariaLabel}>
+    <Link
+      href={href}
+      className={cn("group hx-card-interactive block", className)}
+      aria-label={ariaLabel}
+    >
       <div className="hx-card-accent" />
       {children}
     </Link>
@@ -43,10 +47,18 @@ export function CardHeader({
   className?: string;
   children: React.ReactNode;
 }) {
-  return <div className={cn("mb-4 flex items-start justify-between gap-3", className)}>{children}</div>;
+  return (
+    <div className={cn("mb-4 flex items-start justify-between gap-3", className)}>{children}</div>
+  );
 }
 
-export function CardTitle({ className, children }: { className?: string; children: React.ReactNode }) {
+export function CardTitle({
+  className,
+  children,
+}: {
+  className?: string;
+  children: React.ReactNode;
+}) {
   return <h3 className={cn("text-lg font-bold leading-snug text-white", className)}>{children}</h3>;
 }
 
@@ -68,7 +80,12 @@ export function CardFooter({
   children: React.ReactNode;
 }) {
   return (
-    <div className={cn("mt-5 flex flex-wrap items-center gap-4 border-t border-white/10 pt-4", className)}>
+    <div
+      className={cn(
+        "mt-5 flex flex-wrap items-center gap-4 border-t border-white/10 pt-4",
+        className,
+      )}
+    >
       {children}
     </div>
   );

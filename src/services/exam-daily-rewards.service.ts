@@ -6,7 +6,10 @@ import {
 } from "@/lib/exam-daily-rewards";
 import { prisma } from "@/lib/prisma";
 
-export async function countUserFinishedExamsToday(userId: string, reference = new Date()): Promise<number> {
+export async function countUserFinishedExamsToday(
+  userId: string,
+  reference = new Date(),
+): Promise<number> {
   const { start, end } = getSaoPauloDayBounds(reference);
 
   return prisma.examAttempt.count({

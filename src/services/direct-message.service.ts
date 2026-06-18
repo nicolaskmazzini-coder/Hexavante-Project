@@ -16,7 +16,10 @@ export function normalizeParticipantPair(userIdA: string, userIdB: string) {
     : { participantAId: userIdB, participantBId: userIdA };
 }
 
-export async function canMessageUser(senderId: string, recipientId: string): Promise<{
+export async function canMessageUser(
+  senderId: string,
+  recipientId: string,
+): Promise<{
   allowed: boolean;
   reason?: string;
 }> {

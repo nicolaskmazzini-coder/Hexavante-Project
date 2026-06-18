@@ -2,11 +2,7 @@
 
 import { auth } from "@/auth";
 import { submitExamSchema } from "@/lib/validations/exam";
-import {
-  getActiveAttempt,
-  startAttempt,
-  submitAttempt,
-} from "@/services/exam.service";
+import { getActiveAttempt, startAttempt, submitAttempt } from "@/services/exam.service";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -94,12 +90,7 @@ export async function submitExamTimeoutAction(
   const { answers, essays } = parseExamSubmission(formData);
 
   try {
-    await submitAttempt(
-      session.user.id,
-      attemptId,
-      { answers, essays },
-      { allowPartial: true },
-    );
+    await submitAttempt(session.user.id, attemptId, { answers, essays }, { allowPartial: true });
   } catch (error) {
     return {
       success: false,

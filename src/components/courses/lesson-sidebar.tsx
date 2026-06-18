@@ -38,21 +38,14 @@ export function LessonSidebar({
     (state, lesson, index) => {
       const completed = completedLessonIds.has(lesson.id);
       const isCurrent = lesson.id === currentLessonId;
-      const showModuleTitle =
-        index === 0 || lessons[index - 1].moduleId !== lesson.moduleId;
+      const showModuleTitle = index === 0 || lessons[index - 1].moduleId !== lesson.moduleId;
       const locked =
-        progressionType === "PROGRESSIVE" &&
-        !state.previousCompleted &&
-        !completed &&
-        !isCurrent;
+        progressionType === "PROGRESSIVE" && !state.previousCompleted && !completed && !isCurrent;
       const previousCompleted = completed ? true : isCurrent ? state.previousCompleted : false;
 
       return {
         previousCompleted,
-        items: [
-          ...state.items,
-          { lesson, completed, isCurrent, showModuleTitle, locked },
-        ],
+        items: [...state.items, { lesson, completed, isCurrent, showModuleTitle, locked }],
       };
     },
     { previousCompleted: true, items: [] },

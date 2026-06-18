@@ -26,11 +26,7 @@ export function RankingRow({ entry, position, isCurrentUser, showTotalXp }: Prop
           {position}
         </div>
 
-        <Avatar
-          src={entry.user.avatarUrl}
-          alt={entry.user.username}
-          size="sm"
-        />
+        <Avatar src={entry.user.avatarUrl} alt={entry.user.username} size="sm" />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -45,13 +41,9 @@ export function RankingRow({ entry, position, isCurrentUser, showTotalXp }: Prop
         </div>
 
         <div className="text-right">
-          <p className="font-semibold text-sky-200">
-            {entry.periodXp.toLocaleString("pt-BR")} XP
-          </p>
+          <p className="font-semibold text-sky-200">{entry.periodXp.toLocaleString("pt-BR")} XP</p>
           {showTotalXp && (
-            <p className="text-xs text-slate-500">
-              Total: {entry.totalXp.toLocaleString("pt-BR")}
-            </p>
+            <p className="text-xs text-slate-500">Total: {entry.totalXp.toLocaleString("pt-BR")}</p>
           )}
         </div>
       </Link>

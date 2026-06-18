@@ -17,8 +17,7 @@ export function ProfileIconBadge({ iconId, className = "", size = "md" }: Props)
   const icon = resolveProfileIcon(iconId);
   if (!icon) return null;
 
-  const Icon =
-    ICON_COMPONENTS[icon.lucideName as keyof typeof ICON_COMPONENTS] ?? Flame;
+  const Icon = ICON_COMPONENTS[icon.lucideName as keyof typeof ICON_COMPONENTS] ?? Flame;
   const sizeClass = size === "sm" ? "h-4 w-4" : "h-5 w-5";
 
   return (

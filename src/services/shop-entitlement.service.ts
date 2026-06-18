@@ -8,15 +8,14 @@ type PassMetadata = {
   durationDays?: number;
 };
 
-export async function getActiveInventoryEntries(
-  userId: string,
-  category?: StoreItemCategory,
-) {
+export async function getActiveInventoryEntries(userId: string, category?: StoreItemCategory) {
   const now = new Date();
   return prisma.userInventory.findMany({
     where: {
       userId,
-      ...(category ? { storeItem: { category, isActive: true } } : { storeItem: { isActive: true } }),
+      ...(category
+        ? { storeItem: { category, isActive: true } }
+        : { storeItem: { isActive: true } }),
       OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
     },
     include: { storeItem: true },

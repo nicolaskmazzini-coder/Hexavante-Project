@@ -38,7 +38,10 @@ export function SocialFeed({ exploreActivities, followingActivities, canInteract
 
       {!canInteract && (
         <p className="mt-4 rounded-lg border border-white/10 bg-white/[0.03] px-4 py-3 text-sm text-slate-400">
-          <Link href="/login?callbackUrl=/social" className="font-semibold text-sky-300 hover:underline">
+          <Link
+            href="/login?callbackUrl=/social"
+            className="font-semibold text-sky-300 hover:underline"
+          >
             Entre na sua conta
           </Link>{" "}
           para curtir atividades e ver o feed de quem você segue.
@@ -49,7 +52,9 @@ export function SocialFeed({ exploreActivities, followingActivities, canInteract
         {activities.length === 0 ? (
           <div className="rounded-xl border border-dashed border-white/15 bg-[#111120] p-10 text-center">
             <p className="font-semibold text-slate-200">
-              {tab === "following" ? "Nenhuma atividade de quem você segue." : "Nenhuma atividade ainda."}
+              {tab === "following"
+                ? "Nenhuma atividade de quem você segue."
+                : "Nenhuma atividade ainda."}
             </p>
             <p className="mt-1 text-sm text-slate-500">
               {tab === "following"

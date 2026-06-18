@@ -24,11 +24,7 @@ export interface SelectProps {
 const Select = ({ value, onValueChange, children, className = "" }: SelectProps) => {
   return (
     <div className={cn("relative", className)}>
-      <select
-        value={value}
-        onChange={(e) => onValueChange?.(e.target.value)}
-        className="hx-select"
-      >
+      <select value={value} onChange={(e) => onValueChange?.(e.target.value)} className="hx-select">
         {children}
       </select>
     </div>
@@ -41,7 +37,11 @@ export { Select };
 
 export const SelectTrigger = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
   ({ className = "", children, ...props }, ref) => (
-    <div ref={ref} className={cn("hx-input flex items-center justify-between", className)} {...props}>
+    <div
+      ref={ref}
+      className={cn("hx-input flex items-center justify-between", className)}
+      {...props}
+    >
       {children}
     </div>
   ),
@@ -78,7 +78,12 @@ export const SelectItem = React.forwardRef<
   HTMLOptionElement,
   React.OptionHTMLAttributes<HTMLOptionElement> & { value: string }
 >(({ className = "", children, value, ...props }, ref) => (
-  <option ref={ref} value={value} className={cn("rounded-sm px-2 py-1.5 text-sm", className)} {...props}>
+  <option
+    ref={ref}
+    value={value}
+    className={cn("rounded-sm px-2 py-1.5 text-sm", className)}
+    {...props}
+  >
     {children}
   </option>
 ));

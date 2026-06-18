@@ -182,9 +182,7 @@ export async function markLessonComplete(
     );
 
     // Busca módulo da aula
-    const lessonModule = course.modules.find((m) =>
-      m.lessons.some((l) => l.id === lessonId),
-    );
+    const lessonModule = course.modules.find((m) => m.lessons.some((l) => l.id === lessonId));
 
     // Verifica se módulo foi concluído e concede XP
     if (lessonModule && lessonModule.lessons.length > 0) {
@@ -263,11 +261,7 @@ export async function markLessonComplete(
 
 // Função para obter aula com verificação de acesso
 // Verifica matrícula e progressão progressiva
-export async function getLessonWithAccess(
-  userId: string,
-  courseSlug: string,
-  lessonId: string,
-) {
+export async function getLessonWithAccess(userId: string, courseSlug: string, lessonId: string) {
   // Busca curso pelo slug com módulos, aulas e materiais
   const course = await prisma.course.findUnique({
     where: { slug: courseSlug },

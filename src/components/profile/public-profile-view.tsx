@@ -1,15 +1,7 @@
 import { ProfileIconBadge } from "@/components/profile/profile-icon-badge";
 import { StartMessageButton } from "@/components/messages/start-message-button";
 import Link from "next/link";
-import {
-  Award,
-  BarChart3,
-  Pencil,
-  Settings,
-  Sparkles,
-  Store,
-  Trophy,
-} from "lucide-react";
+import { Award, BarChart3, Pencil, Settings, Sparkles, Store, Trophy } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { FollowButton } from "@/components/social/follow-button";
 import { ProfileTabs } from "./profile-tabs";
@@ -23,14 +15,27 @@ type Props = {
 };
 
 export function PublicProfileView({ profile, viewerId }: Props) {
-  const { user, isOwner, isPrivate, xp, rank, followCounts, isFollowing, completedCourses, cosmetics, enrollments, activities } =
-    profile;
+  const {
+    user,
+    isOwner,
+    isPrivate,
+    xp,
+    rank,
+    followCounts,
+    isFollowing,
+    completedCourses,
+    cosmetics,
+    enrollments,
+    activities,
+  } = profile;
 
   if (isPrivate) {
     return (
       <div className="rounded-xl border border-white/10 bg-[#111120] p-10 text-center">
         <p className="text-lg font-semibold text-white">Este perfil é privado</p>
-        <p className="mt-2 text-sm text-slate-400">@{user.username} restringiu a visualização do perfil.</p>
+        <p className="mt-2 text-sm text-slate-400">
+          @{user.username} restringiu a visualização do perfil.
+        </p>
       </div>
     );
   }
@@ -104,7 +109,10 @@ export function PublicProfileView({ profile, viewerId }: Props) {
                     />
                   </>
                 ) : (
-                  <Link href={`/login?callbackUrl=/perfil/${user.username}`} className="hx-btn-primary">
+                  <Link
+                    href={`/login?callbackUrl=/perfil/${user.username}`}
+                    className="hx-btn-primary"
+                  >
                     Entrar para seguir
                   </Link>
                 )}
@@ -152,7 +160,9 @@ export function PublicProfileView({ profile, viewerId }: Props) {
                       <Award className="h-4 w-4 text-teal-300" />
                       <span className="text-xs font-semibold uppercase">Título</span>
                     </div>
-                    <p className="mt-2 text-sm font-semibold text-white">{cosmetics.equippedTitle}</p>
+                    <p className="mt-2 text-sm font-semibold text-white">
+                      {cosmetics.equippedTitle}
+                    </p>
                   </div>
                 )}
               </div>

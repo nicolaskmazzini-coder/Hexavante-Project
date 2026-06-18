@@ -7,8 +7,8 @@ const variantClasses = {
   outline: "hx-btn-secondary",
   ghost: "hx-btn-ghost",
   danger: "hx-btn-danger",
-      accent:
-        "hx-btn-primary bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-teal-600",
+  accent:
+    "hx-btn-primary bg-gradient-to-r from-primary to-accent hover:from-primary-hover hover:to-teal-600",
 };
 
 const sizeClasses = {
@@ -47,9 +47,7 @@ export function LinkButton({
   size = "default",
   ...props
 }: LinkButtonProps) {
-  return (
-    <Link className={cn(variantClasses[variant], sizeClasses[size], className)} {...props} />
-  );
+  return <Link className={cn(variantClasses[variant], sizeClasses[size], className)} {...props} />;
 }
 
 export { Button };

@@ -32,9 +32,30 @@ export function ActivityChart({ data }: { data: Point[] }) {
             labelStyle={{ color: "#e2e8f0" }}
           />
           <Legend />
-          <Line type="monotone" dataKey="usuarios" name="Usuários" stroke="#3b82f6" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="simulados" name="Simulados" stroke="#10b981" strokeWidth={2} dot={false} />
-          <Line type="monotone" dataKey="xpGanho" name="XP ganho" stroke="#f59e0b" strokeWidth={2} dot={false} />
+          <Line
+            type="monotone"
+            dataKey="usuarios"
+            name="Usuários"
+            stroke="#3b82f6"
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="simulados"
+            name="Simulados"
+            stroke="#10b981"
+            strokeWidth={2}
+            dot={false}
+          />
+          <Line
+            type="monotone"
+            dataKey="xpGanho"
+            name="XP ganho"
+            stroke="#f59e0b"
+            strokeWidth={2}
+            dot={false}
+          />
         </LineChart>
       </ResponsiveContainer>
     </div>

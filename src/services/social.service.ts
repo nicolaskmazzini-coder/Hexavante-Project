@@ -134,11 +134,7 @@ export async function getUserActivities(userId: string, viewerId?: string, limit
   return mapActivities(rows, viewerId);
 }
 
-export async function getSocialFeed(
-  mode: "explore" | "following",
-  viewerId?: string,
-  limit = 30,
-) {
+export async function getSocialFeed(mode: "explore" | "following", viewerId?: string, limit = 30) {
   if (mode === "following") {
     if (!viewerId) return [];
 

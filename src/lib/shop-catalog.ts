@@ -164,7 +164,8 @@ export const SHOP_CATALOG: ShopCatalogItem[] = [
   {
     slug: "pass-early-logica",
     name: "Passe Lançamento — Lógica Avançada",
-    description: "Libera acesso antecipado ao simulado Desafio Premium — Lógica Avançada por 14 dias.",
+    description:
+      "Libera acesso antecipado ao simulado Desafio Premium — Lógica Avançada por 14 dias.",
     cost: 150,
     category: "PASS",
     isPermanent: false,
@@ -177,7 +178,8 @@ export const SHOP_CATALOG: ShopCatalogItem[] = [
   {
     slug: "pack-revisao-logica",
     name: "Pacote Revisão — Lógica de Programação",
-    description: "Conjunto de 10 questões selecionadas sobre lógica e algoritmos para revisão focada.",
+    description:
+      "Conjunto de 10 questões selecionadas sobre lógica e algoritmos para revisão focada.",
     cost: 75,
     category: "REVIEW_PACK",
     isPermanent: false,

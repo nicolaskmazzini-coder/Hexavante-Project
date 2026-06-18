@@ -30,7 +30,8 @@ export default async function ExamDetailPage({ params }: Props) {
     : null;
 
   const canAccess =
-    !exam.isPremiumOnly || (session?.user?.id && (await canAccessPremiumExam(session.user.id, exam)));
+    !exam.isPremiumOnly ||
+    (session?.user?.id && (await canAccessPremiumExam(session.user.id, exam)));
 
   const mcQuestionCount = exam.questions.filter((q) => q.type !== "ESSAY").length;
   const dailyRewardPreview =
@@ -53,9 +54,7 @@ export default async function ExamDetailPage({ params }: Props) {
         />
         <div className="border-t border-white/10 bg-white/[0.03] p-6">
           <div className="mb-4 flex flex-wrap gap-2">
-            <Badge variant="teal">
-              {EXAM_TYPE_LABELS[exam.examType] ?? exam.examType}
-            </Badge>
+            <Badge variant="teal">{EXAM_TYPE_LABELS[exam.examType] ?? exam.examType}</Badge>
             {exam.isPremiumOnly && (
               <Badge variant="violet">
                 <Crown className="h-3.5 w-3.5" />

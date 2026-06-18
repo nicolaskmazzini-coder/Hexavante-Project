@@ -1,15 +1,12 @@
 "use server";
 
 import { headers } from "next/headers";
-import { rateLimitAuthAction } from "@/lib/rate-limit";
+import { extractClientIp, rateLimitAuthAction } from "@/lib/rate-limit";
 import {
   createPasswordResetToken,
   resetPasswordWithToken,
 } from "@/services/password-reset.service";
-import {
-  forgotPasswordSchema,
-  resetPasswordSchema,
-} from "@/lib/validations/profile";
+import { forgotPasswordSchema, resetPasswordSchema } from "@/lib/validations/profile";
 import type { ZodError } from "zod";
 
 export type PasswordResetResult = {
@@ -35,7 +32,7 @@ export async function requestPasswordResetAction(
   formData: FormData,
 ): Promise<PasswordResetResult> {
   const headersList = await headers();
-  const ip = headersList.get("x-forwarded-for") || headersList.get("x-real-ip") || "unknown";
+  const ip = extractClientIp(headersList.get("x-forwarded-for"), headersList.get("x-real-ip"));
   if (!rateLimitAuthAction(ip)) {
     return { success: false, error: "Muitas tentativas. Tente novamente em alguns minutos." };
   }
@@ -64,8 +61,7 @@ export async function requestPasswordResetAction(
 
   return {
     success: true,
-    message:
-      "Se o e-mail estiver cadastrado com senha, enviaremos instruções para redefinição.",
+    message: "Se o e-mail estiver cadastrado com senha, enviaremos instruções para redefinição.",
   };
 }
 

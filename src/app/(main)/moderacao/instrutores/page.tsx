@@ -18,7 +18,11 @@ export default async function ModerateInstructorsPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <Link href="/moderacao" className="text-sm text-sky-300 hover:underline" aria-label="Voltar para moderação">
+      <Link
+        href="/moderacao"
+        className="text-sm text-sky-300 hover:underline"
+        aria-label="Voltar para moderação"
+      >
         ← Moderação
       </Link>
       <h1 className="mt-4 text-2xl font-bold text-white">Solicitações de instrutor</h1>

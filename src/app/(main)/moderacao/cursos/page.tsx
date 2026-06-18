@@ -17,7 +17,11 @@ export default async function ModerateCoursesPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <Link href="/moderacao" className="text-sm text-sky-300 hover:underline" aria-label="Voltar para moderação">
+      <Link
+        href="/moderacao"
+        className="text-sm text-sky-300 hover:underline"
+        aria-label="Voltar para moderação"
+      >
         ← Moderação
       </Link>
       <h1 className="mt-4 text-2xl font-bold text-white">Cursos pendentes</h1>
@@ -39,8 +43,8 @@ export default async function ModerateCoursesPage() {
                     <StatusBadge status="PENDING_REVIEW" label="Pendente" />
                   </div>
                   <p className="mt-1 text-sm text-slate-400">
-                    {course.category.name} · {course._count.modules} módulos ·{" "}
-                    Instrutor: {course.instructors[0]?.user.fullName ?? "—"}
+                    {course.category.name} · {course._count.modules} módulos · Instrutor:{" "}
+                    {course.instructors[0]?.user.fullName ?? "—"}
                   </p>
                 </div>
                 <span className="text-sm text-sky-300">Analisar →</span>

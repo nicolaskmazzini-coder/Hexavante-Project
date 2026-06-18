@@ -36,10 +36,7 @@ export function getVimeoEmbedUrl(url: string): string | null {
 
 // Função genérica para obter URL de embed
 // Tenta obter URL de embed baseado no provedor especificado
-export function getVideoEmbedUrl(
-  url: string,
-  provider?: string | null,
-): string | null {
+export function getVideoEmbedUrl(url: string, provider?: string | null): string | null {
   if (provider === "vimeo") return getVimeoEmbedUrl(url);
   if (provider === "youtube" || !provider) return getYoutubeEmbedUrl(url);
   // Tenta YouTube primeiro, depois Vimeo

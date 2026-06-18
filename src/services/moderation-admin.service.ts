@@ -117,7 +117,12 @@ async function adminAdjustXp(
     await tx.xpTransaction.create({
       data: {
         userId,
-        amount: action === "set" ? newTotal - userXp!.totalXp : action === "remove" ? -Math.abs(delta) : Math.abs(delta),
+        amount:
+          action === "set"
+            ? newTotal - userXp!.totalXp
+            : action === "remove"
+              ? -Math.abs(delta)
+              : Math.abs(delta),
         source: "ADMIN",
         sourceId,
         description: `Ajuste admin (${action})`,
@@ -152,7 +157,11 @@ async function adminAdjustCoins(
   if (!user) throw new Error("Usuário não encontrado.");
 
   const newCoins =
-    action === "set" ? Math.max(0, delta) : action === "remove" ? Math.max(0, user.coins - Math.abs(delta)) : user.coins + Math.abs(delta);
+    action === "set"
+      ? Math.max(0, delta)
+      : action === "remove"
+        ? Math.max(0, user.coins - Math.abs(delta))
+        : user.coins + Math.abs(delta);
 
   const sourceId = `admin-coin-${Date.now()}-${randomBytes(4).toString("hex")}`;
 
@@ -406,20 +415,53 @@ export async function executeModerationCommand(
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const amount = Number(tokens[2]);
         if (!Number.isFinite(amount) || amount <= 0) throw new Error("Valor de XP inválido.");
-        const result = await adminAdjustXp(moderatorId, roles, user.id, user.username, amount, "add", "addxp");
-        return { status: "success", message: `✅ +${amount} XP para @${user.username} (total: ${result.total} XP, nível ${result.level})` };
+        const result = await adminAdjustXp(
+          moderatorId,
+          roles,
+          user.id,
+          user.username,
+          amount,
+          "add",
+          "addxp",
+        );
+        return {
+          status: "success",
+          message: `✅ +${amount} XP para @${user.username} (total: ${result.total} XP, nível ${result.level})`,
+        };
       }
       case "/removexp": {
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const amount = Number(tokens[2]);
-        const result = await adminAdjustXp(moderatorId, roles, user.id, user.username, amount, "remove", "removexp");
-        return { status: "success", message: `✅ -${amount} XP de @${user.username} (total: ${result.total} XP)` };
+        const result = await adminAdjustXp(
+          moderatorId,
+          roles,
+          user.id,
+          user.username,
+          amount,
+          "remove",
+          "removexp",
+        );
+        return {
+          status: "success",
+          message: `✅ -${amount} XP de @${user.username} (total: ${result.total} XP)`,
+        };
       }
       case "/setxp": {
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const amount = Number(tokens[2]);
-        const result = await adminAdjustXp(moderatorId, roles, user.id, user.username, amount, "set", "setxp");
-        return { status: "success", message: `✅ XP de @${user.username} definido para ${result.total}` };
+        const result = await adminAdjustXp(
+          moderatorId,
+          roles,
+          user.id,
+          user.username,
+          amount,
+          "set",
+          "setxp",
+        );
+        return {
+          status: "success",
+          message: `✅ XP de @${user.username} definido para ${result.total}`,
+        };
       }
       case "/setlevel": {
         requireModAction("setlevel", roles);
@@ -428,7 +470,15 @@ export async function executeModerationCommand(
         if (!Number.isFinite(level) || level < 1) throw new Error("Nível inválido.");
         let total = 0;
         for (let l = 1; l < level; l++) total += xpRequiredForLevel(l);
-        const result = await adminAdjustXp(moderatorId, roles, user.id, user.username, total, "set", "setxp");
+        const result = await adminAdjustXp(
+          moderatorId,
+          roles,
+          user.id,
+          user.username,
+          total,
+          "set",
+          "setxp",
+        );
         await prisma.userXP.update({ where: { userId: user.id }, data: { level, currentXp: 0 } });
         await writeModerationLog({
           moderatorId,
@@ -436,25 +486,61 @@ export async function executeModerationCommand(
           action: "LEVEL_SET",
           description: `Definiu nível ${level} para @${user.username}`,
         });
-        return { status: "success", message: `✅ Nível de @${user.username} definido para ${level}` };
+        return {
+          status: "success",
+          message: `✅ Nível de @${user.username} definido para ${level}`,
+        };
       }
       case "/addmoedas": {
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const amount = Number(tokens[2]);
-        const result = await adminAdjustCoins(moderatorId, roles, user.id, user.username, amount, "add", "addmoedas");
-        return { status: "success", message: `✅ +${amount} moedas para @${user.username} (total: ${result.coins})` };
+        const result = await adminAdjustCoins(
+          moderatorId,
+          roles,
+          user.id,
+          user.username,
+          amount,
+          "add",
+          "addmoedas",
+        );
+        return {
+          status: "success",
+          message: `✅ +${amount} moedas para @${user.username} (total: ${result.coins})`,
+        };
       }
       case "/removemoedas": {
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const amount = Number(tokens[2]);
-        const result = await adminAdjustCoins(moderatorId, roles, user.id, user.username, amount, "remove", "removemoedas");
-        return { status: "success", message: `✅ -${amount} moedas de @${user.username} (total: ${result.coins})` };
+        const result = await adminAdjustCoins(
+          moderatorId,
+          roles,
+          user.id,
+          user.username,
+          amount,
+          "remove",
+          "removemoedas",
+        );
+        return {
+          status: "success",
+          message: `✅ -${amount} moedas de @${user.username} (total: ${result.coins})`,
+        };
       }
       case "/setmoedas": {
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const amount = Number(tokens[2]);
-        const result = await adminAdjustCoins(moderatorId, roles, user.id, user.username, amount, "set", "setmoedas");
-        return { status: "success", message: `✅ Saldo de @${user.username} definido para ${result.coins} moedas` };
+        const result = await adminAdjustCoins(
+          moderatorId,
+          roles,
+          user.id,
+          user.username,
+          amount,
+          "set",
+          "setmoedas",
+        );
+        return {
+          status: "success",
+          message: `✅ Saldo de @${user.username} definido para ${result.coins} moedas`,
+        };
       }
       case "/addcargo":
       case "/removecargo": {
@@ -479,17 +565,28 @@ export async function executeModerationCommand(
           action: isAdd ? "ROLE_ADD" : "ROLE_REMOVE",
           description: `${isAdd ? "Adicionou" : "Removeu"} cargo ${roleName} de @${user.username}`,
         });
-        return { status: "success", message: `✅ Cargo ${roleName} ${isAdd ? "atribuído a" : "removido de"} @${user.username}` };
+        return {
+          status: "success",
+          message: `✅ Cargo ${roleName} ${isAdd ? "atribuído a" : "removido de"} @${user.username}`,
+        };
       }
       case "/ban": {
         requireModAction("ban", roles);
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const reason = parseQuoted(tokens.slice(2).join(" ")) || "Sem motivo informado";
-        await prisma.userBan.updateMany({ where: { userId: user.id, isActive: true }, data: { isActive: false, liftedAt: new Date(), liftedById: moderatorId } });
+        await prisma.userBan.updateMany({
+          where: { userId: user.id, isActive: true },
+          data: { isActive: false, liftedAt: new Date(), liftedById: moderatorId },
+        });
         await prisma.userBan.create({
           data: { userId: user.id, moderatorId, reason, isActive: true },
         });
-        await writeModerationLog({ moderatorId, targetUserId: user.id, action: "BAN", description: `Baniu @${user.username}: ${reason}` });
+        await writeModerationLog({
+          moderatorId,
+          targetUserId: user.id,
+          action: "BAN",
+          description: `Baniu @${user.username}: ${reason}`,
+        });
         await createNotification({
           userId: user.id,
           type: "MODERATION_ACTION",
@@ -505,7 +602,12 @@ export async function executeModerationCommand(
           where: { userId: user.id, isActive: true },
           data: { isActive: false, liftedAt: new Date(), liftedById: moderatorId },
         });
-        await writeModerationLog({ moderatorId, targetUserId: user.id, action: "UNBAN", description: `Desbaniu @${user.username}` });
+        await writeModerationLog({
+          moderatorId,
+          targetUserId: user.id,
+          action: "UNBAN",
+          description: `Desbaniu @${user.username}`,
+        });
         return { status: "success", message: `✅ @${user.username} desbanido.` };
       }
       case "/mute": {
@@ -513,12 +615,23 @@ export async function executeModerationCommand(
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const duration = parseDuration(tokens[2]);
         const reason = parseQuoted(tokens.slice(3).join(" ")) || "Sem motivo informado";
-        await prisma.userMute.updateMany({ where: { userId: user.id, isActive: true }, data: { isActive: false, liftedAt: new Date(), liftedById: moderatorId } });
+        await prisma.userMute.updateMany({
+          where: { userId: user.id, isActive: true },
+          data: { isActive: false, liftedAt: new Date(), liftedById: moderatorId },
+        });
         await prisma.userMute.create({
           data: { userId: user.id, moderatorId, reason, expiresAt: duration, isActive: true },
         });
-        await writeModerationLog({ moderatorId, targetUserId: user.id, action: "MUTE", description: `Silenciou @${user.username}: ${reason}` });
-        return { status: "success", message: `✅ @${user.username} silenciado${duration ? ` até ${duration.toLocaleString("pt-BR")}` : ""}. Motivo: "${reason}"` };
+        await writeModerationLog({
+          moderatorId,
+          targetUserId: user.id,
+          action: "MUTE",
+          description: `Silenciou @${user.username}: ${reason}`,
+        });
+        return {
+          status: "success",
+          message: `✅ @${user.username} silenciado${duration ? ` até ${duration.toLocaleString("pt-BR")}` : ""}. Motivo: "${reason}"`,
+        };
       }
       case "/unmute": {
         requireModAction("unmute", roles);
@@ -527,7 +640,12 @@ export async function executeModerationCommand(
           where: { userId: user.id, isActive: true },
           data: { isActive: false, liftedAt: new Date(), liftedById: moderatorId },
         });
-        await writeModerationLog({ moderatorId, targetUserId: user.id, action: "UNMUTE", description: `Removeu silêncio de @${user.username}` });
+        await writeModerationLog({
+          moderatorId,
+          targetUserId: user.id,
+          action: "UNMUTE",
+          description: `Removeu silêncio de @${user.username}`,
+        });
         return { status: "success", message: `✅ Silêncio removido de @${user.username}.` };
       }
       case "/warn": {
@@ -535,14 +653,22 @@ export async function executeModerationCommand(
         const user = await findUserByUsername(parseUsername(tokens[1]));
         const reason = parseQuoted(tokens.slice(2).join(" ")) || "Sem motivo informado";
         await prisma.userWarning.create({ data: { userId: user.id, moderatorId, reason } });
-        await writeModerationLog({ moderatorId, targetUserId: user.id, action: "WARN", description: `Advertiu @${user.username}: ${reason}` });
+        await writeModerationLog({
+          moderatorId,
+          targetUserId: user.id,
+          action: "WARN",
+          description: `Advertiu @${user.username}: ${reason}`,
+        });
         await createNotification({
           userId: user.id,
           type: "MODERATION_ACTION",
           title: "Advertência recebida",
           message: reason,
         });
-        return { status: "success", message: `✅ Advertência aplicada a @${user.username}: "${reason}"` };
+        return {
+          status: "success",
+          message: `✅ Advertência aplicada a @${user.username}: "${reason}"`,
+        };
       }
       case "/stats": {
         requireModAction("stats", roles);
@@ -562,7 +688,7 @@ export async function executeModerationCommand(
       case "/broadcast": {
         requireModAction("broadcast", roles);
         const message = parseQuoted(tokens.slice(1).join(" ")) || tokens.slice(1).join(" ");
-        if (!message) throw new Error('Informe a mensagem entre aspas.');
+        if (!message) throw new Error("Informe a mensagem entre aspas.");
         const users = await prisma.user.findMany({ select: { id: true } });
         await prisma.notification.createMany({
           data: users.map((u) => ({
@@ -578,12 +704,16 @@ export async function executeModerationCommand(
           description: `Broadcast: ${message.slice(0, 120)}`,
           metadata: { recipients: users.length },
         });
-        return { status: "success", message: `✅ Notificação enviada para ${users.length} usuários.` };
+        return {
+          status: "success",
+          message: `✅ Notificação enviada para ${users.length} usuários.`,
+        };
       }
       case "/manutencao": {
         requireModAction("manutencao", roles);
         const mode = tokens[1]?.toLowerCase();
-        const message = parseQuoted(tokens.slice(2).join(" ")) || "Estamos em manutenção. Voltamos em breve!";
+        const message =
+          parseQuoted(tokens.slice(2).join(" ")) || "Estamos em manutenção. Voltamos em breve!";
         const enabled = mode === "on" || mode === "true" || mode === "1";
         await prisma.platformSetting.upsert({
           where: { key: "maintenance" },
@@ -597,7 +727,10 @@ export async function executeModerationCommand(
           metadata: { enabled, message },
         });
         invalidatePlatformSettingsCache();
-        return { status: "success", message: `✅ Modo manutenção ${enabled ? "ATIVADO" : "DESATIVADO"}.` };
+        return {
+          status: "success",
+          message: `✅ Modo manutenção ${enabled ? "ATIVADO" : "DESATIVADO"}.`,
+        };
       }
       case "/booster": {
         requireModAction("boosterglobal", roles);
@@ -622,15 +755,24 @@ export async function executeModerationCommand(
           description: `Booster global x${multiplier} até ${duration.toISOString()}`,
         });
         invalidatePlatformSettingsCache();
-        return { status: "success", message: `✅ Booster global x${multiplier} ativado até ${duration.toLocaleString("pt-BR")}.` };
+        return {
+          status: "success",
+          message: `✅ Booster global x${multiplier} ativado até ${duration.toLocaleString("pt-BR")}.`,
+        };
       }
       case "/logs": {
         requireModAction("logs", roles);
-        const logs = await listModerationLogs({ type: tokens[1] ?? "all", search: tokens[2], limit: 15 });
+        const logs = await listModerationLogs({
+          type: tokens[1] ?? "all",
+          search: tokens[2],
+          limit: 15,
+        });
         if (!logs.length) return { status: "info", message: "Nenhum log encontrado." };
         return {
           status: "info",
-          message: logs.map((l) => `[${l.createdAt.toLocaleString("pt-BR")}] ${l.action} · ${l.description}`).join("\n"),
+          message: logs
+            .map((l) => `[${l.createdAt.toLocaleString("pt-BR")}] ${l.action} · ${l.description}`)
+            .join("\n"),
           data: logs,
         };
       }
@@ -662,7 +804,10 @@ export async function executeModerationCommand(
             description: `${sub === "publish" ? "Publicou" : "Despublicou"} curso ${course.title}`,
             metadata: { courseId: course.id },
           });
-          return { status: "success", message: `✅ Curso "${course.title}" ${sub === "publish" ? "publicado" : "despublicado"}.` };
+          return {
+            status: "success",
+            message: `✅ Curso "${course.title}" ${sub === "publish" ? "publicado" : "despublicado"}.`,
+          };
         }
         throw new Error("Use: /cursos list | publish <id> | unpublish <id>");
       }
@@ -676,7 +821,12 @@ export async function executeModerationCommand(
           });
           return {
             status: "info",
-            message: exams.map((e) => `${e.id.slice(0, 8)}… ${e.title} [${e.isPublished ? "publicado" : "rascunho"}]`).join("\n"),
+            message: exams
+              .map(
+                (e) =>
+                  `${e.id.slice(0, 8)}… ${e.title} [${e.isPublished ? "publicado" : "rascunho"}]`,
+              )
+              .join("\n"),
             data: exams,
           };
         }
@@ -695,13 +845,20 @@ export async function executeModerationCommand(
             action: "EXAM_RESET",
             description: `Resetou tentativas de @${user.username} no simulado ${exam.title}`,
           });
-          return { status: "success", message: `✅ ${deleted.count} tentativa(s) resetada(s) para @${user.username}.` };
+          return {
+            status: "success",
+            message: `✅ ${deleted.count} tentativa(s) resetada(s) para @${user.username}.`,
+          };
         }
         throw new Error("Use: /simulado list | reset @user <id>");
       }
       case "/resetpass": {
         requireModAction("resetpass", roles);
-        return { status: "info", message: "ℹ️ Use a página de recuperação de senha ou implemente token por email. Log registrado." };
+        return {
+          status: "info",
+          message:
+            "ℹ️ Use a página de recuperação de senha ou implemente token por email. Log registrado.",
+        };
       }
       case "/impersonate": {
         requireModAction("impersonate", roles);
@@ -743,7 +900,7 @@ function showHelp(roles: string[]): CommandResult {
     "/addmoedas · /removemoedas · /setmoedas @u <n>",
     "/addcargo · /removecargo @u <cargo>",
     "/ban · /unban · /mute · /unmute · /warn @u",
-    "/broadcast \"msg\" · /manutencao on|off \"msg\"",
+    '/broadcast "msg" · /manutencao on|off "msg"',
     "/booster <2x|3x> <24h|7d> · /cursos list|publish|unpublish",
     "/simulado list|reset @u <id> · /clear",
   ];
@@ -754,8 +911,28 @@ function showHelp(roles: string[]): CommandResult {
 }
 
 export const ALL_TERMINAL_COMMANDS = [
-  "/help", "/user", "/addxp", "/removexp", "/setxp", "/setlevel",
-  "/addmoedas", "/removemoedas", "/setmoedas",
-  "/addcargo", "/removecargo", "/ban", "/unban", "/mute", "/unmute", "/warn",
-  "/stats", "/broadcast", "/manutencao", "/booster", "/logs", "/cursos", "/simulado", "/clear",
+  "/help",
+  "/user",
+  "/addxp",
+  "/removexp",
+  "/setxp",
+  "/setlevel",
+  "/addmoedas",
+  "/removemoedas",
+  "/setmoedas",
+  "/addcargo",
+  "/removecargo",
+  "/ban",
+  "/unban",
+  "/mute",
+  "/unmute",
+  "/warn",
+  "/stats",
+  "/broadcast",
+  "/manutencao",
+  "/booster",
+  "/logs",
+  "/cursos",
+  "/simulado",
+  "/clear",
 ];

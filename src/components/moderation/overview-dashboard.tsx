@@ -37,11 +37,20 @@ export function OverviewDashboard({ initial }: { initial: Stats }) {
     <div className="space-y-6">
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         <StatCard icon={Users} label="Usuários ativos hoje" value={stats.activeToday} />
-        <StatCard icon={AlertTriangle} label="Denúncias pendentes" value={stats.pendingReports} color="yellow" />
+        <StatCard
+          icon={AlertTriangle}
+          label="Denúncias pendentes"
+          value={stats.pendingReports}
+          color="yellow"
+        />
         <StatCard icon={Ban} label="Bans ativos" value={stats.activeBans} color="red" />
         <StatCard icon={MessageSquare} label="Mutes ativos" value={stats.activeMutes} />
         <StatCard icon={TrendingUp} label="XP distribuído hoje" value={stats.xpToday} />
-        <StatCard icon={Coins} label="Moedas em circulação" value={stats.totalCoins.toLocaleString("pt-BR")} />
+        <StatCard
+          icon={Coins}
+          label="Moedas em circulação"
+          value={stats.totalCoins.toLocaleString("pt-BR")}
+        />
       </div>
       <ActivityChart data={stats.activityData} />
     </div>

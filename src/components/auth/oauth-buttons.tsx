@@ -10,10 +10,7 @@ type Props = {
 export function OAuthButtons({ callbackUrl, providers }: Props) {
   if (!providers.google && !providers.github) return null;
 
-  const buttonClass = cn(
-    "w-full min-h-11 gap-3 transition-all hover:shadow-md",
-    "justify-center",
-  );
+  const buttonClass = cn("w-full min-h-11 gap-3 transition-all hover:shadow-md", "justify-center");
 
   return (
     <div className="w-full space-y-3">

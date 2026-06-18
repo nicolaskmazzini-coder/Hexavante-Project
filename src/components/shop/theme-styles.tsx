@@ -10,10 +10,5 @@ export function ThemeStyles({ themeId }: Props) {
 
   if (!css) return null;
 
-  return (
-    <style
-      id="hexavante-equipped-theme"
-      dangerouslySetInnerHTML={{ __html: css }}
-    />
-  );
+  return <style id="hexavante-equipped-theme" dangerouslySetInnerHTML={{ __html: css }} />;
 }

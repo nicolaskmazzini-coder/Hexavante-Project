@@ -19,14 +19,7 @@ type Props = {
   overlay?: React.ReactNode;
 };
 
-export function Avatar({
-  src,
-  alt,
-  size = "md",
-  borderClassName,
-  className,
-  overlay,
-}: Props) {
+export function Avatar({ src, alt, size = "md", borderClassName, className, overlay }: Props) {
   const dims = SIZE_MAP[size];
   const hasBorder = Boolean(borderClassName);
 

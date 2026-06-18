@@ -44,7 +44,9 @@ export function ResetPasswordForm({ token }: Props) {
   return (
     <Card className="w-full max-w-md p-8 shadow-2xl shadow-black/30 backdrop-blur">
       <h1 className="text-2xl font-black text-white">Nova senha</h1>
-      <p className="mt-2 text-sm text-slate-400">Escolha uma senha segura com no mínimo 8 caracteres.</p>
+      <p className="mt-2 text-sm text-slate-400">
+        Escolha uma senha segura com no mínimo 8 caracteres.
+      </p>
 
       <form action={formAction} className="mt-6 space-y-4">
         <input type="hidden" name="token" value={token} />

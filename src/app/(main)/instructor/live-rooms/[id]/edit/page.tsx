@@ -10,10 +10,7 @@ import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
 import { isInstructor } from "@/lib/permissions";
 import { LIVE_ROOM_STATUS_LABELS } from "@/lib/validations/live-room";
-import {
-  getLiveRoom,
-  listInstructorApprovedCourses,
-} from "@/services/live-room.service";
+import { getLiveRoom, listInstructorApprovedCourses } from "@/services/live-room.service";
 import { notFound, redirect } from "next/navigation";
 import { Radio } from "lucide-react";
 

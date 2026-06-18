@@ -37,7 +37,11 @@ export default async function EditCoursePage({ params }: Props) {
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-10">
-      <Link href="/instructor/courses" className="text-sm text-sky-300 hover:underline" aria-label="Voltar para meus cursos">
+      <Link
+        href="/instructor/courses"
+        className="text-sm text-sky-300 hover:underline"
+        aria-label="Voltar para meus cursos"
+      >
         ← Meus cursos
       </Link>
       <h1 className="mt-4 text-2xl font-bold text-white">Editar: {course.title}</h1>
@@ -47,7 +51,11 @@ export default async function EditCoursePage({ params }: Props) {
           label={COURSE_STATUS_LABELS[course.status] ?? course.status}
         />
         {course.status === "APPROVED" && (
-          <Link href={`/courses/${course.slug}`} className="text-sm text-sky-300 hover:underline" aria-label="Ver página pública">
+          <Link
+            href={`/courses/${course.slug}`}
+            className="text-sm text-sky-300 hover:underline"
+            aria-label="Ver página pública"
+          >
             Ver página pública →
           </Link>
         )}
@@ -68,7 +76,8 @@ export default async function EditCoursePage({ params }: Props) {
 
       {course.status === "PENDING_REVIEW" && (
         <p className="mt-4 rounded-xl border border-amber-900/50 bg-amber-900/10 p-4 text-sm text-amber-400">
-          Este curso está aguardando aprovação de um moderador e ainda não aparece no catálogo público.
+          Este curso está aguardando aprovação de um moderador e ainda não aparece no catálogo
+          público.
         </p>
       )}
 
@@ -198,7 +207,10 @@ export default async function EditCoursePage({ params }: Props) {
                 </li>
               ))}
               {mod.materials.map((material) => (
-                <li key={material.id} className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/5 bg-black/20 p-4 text-sm text-sky-300">
+                <li
+                  key={material.id}
+                  className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-white/5 bg-black/20 p-4 text-sm text-sky-300"
+                >
                   <span>PDF: {material.title}</span>
                   <DeleteContentButton
                     action={deleteMaterialAction.bind(null, id, material.id)}

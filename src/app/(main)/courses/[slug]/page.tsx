@@ -3,10 +3,7 @@ import { enrollAction } from "@/app/actions/enrollment";
 import { CertificateButton } from "@/components/courses/certificate-button";
 import { CourseProgressBar } from "@/components/courses/course-progress-bar";
 import { CourseThumbnail } from "@/components/courses/course-thumbnail";
-import {
-  countTotalLessons,
-  getApprovedCourseBySlug,
-} from "@/services/course.service";
+import { countTotalLessons, getApprovedCourseBySlug } from "@/services/course.service";
 import { getEnrollment } from "@/services/enrollment.service";
 import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
@@ -25,9 +22,7 @@ export default async function CourseDetailPage({ params }: Props) {
 
   if (!course) notFound();
 
-  const enrollment = session?.user?.id
-    ? await getEnrollment(session.user.id, course.id)
-    : null;
+  const enrollment = session?.user?.id ? await getEnrollment(session.user.id, course.id) : null;
 
   const totalLessons = countTotalLessons(course.modules);
 

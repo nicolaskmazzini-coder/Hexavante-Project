@@ -81,17 +81,17 @@ export default async function RankingPage({ searchParams }: Props) {
           )}
 
           {rest.length > 0 && (
-          <ol className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20">
-            {rest.map((entry, index) => (
-              <RankingRow
-                key={entry.id}
-                entry={entry}
-                position={listStartIndex + index + 1}
-                isCurrentUser={session?.user?.id === entry.userId}
-                showTotalXp={period !== "all"}
-              />
-            ))}
-          </ol>
+            <ol className="mt-6 overflow-hidden rounded-xl border border-white/10 bg-white/[0.04] shadow-xl shadow-black/20">
+              {rest.map((entry, index) => (
+                <RankingRow
+                  key={entry.id}
+                  entry={entry}
+                  position={listStartIndex + index + 1}
+                  isCurrentUser={session?.user?.id === entry.userId}
+                  showTotalXp={period !== "all"}
+                />
+              ))}
+            </ol>
           )}
         </>
       )}

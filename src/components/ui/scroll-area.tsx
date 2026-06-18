@@ -2,19 +2,14 @@
 // Aplica tema azul e preto
 import * as React from "react";
 
-export interface ScrollAreaProps
-  extends React.HTMLAttributes<HTMLDivElement> {
+export interface ScrollAreaProps extends React.HTMLAttributes<HTMLDivElement> {
   children: React.ReactNode;
 }
 
 const ScrollArea = React.forwardRef<HTMLDivElement, ScrollAreaProps>(
   ({ className = "", children, ...props }, ref) => {
     return (
-      <div
-        ref={ref}
-        className={`relative overflow-auto ${className}`}
-        {...props}
-      >
+      <div ref={ref} className={`relative overflow-auto ${className}`} {...props}>
         {children}
       </div>
     );

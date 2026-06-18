@@ -1,11 +1,7 @@
 "use client";
 
 import { useActionState, useCallback, useRef, useState } from "react";
-import {
-  submitExamAction,
-  submitExamTimeoutAction,
-  type ActionResult,
-} from "@/app/actions/exam";
+import { submitExamAction, submitExamTimeoutAction, type ActionResult } from "@/app/actions/exam";
 import { ExamQuestionImage } from "@/components/exams/exam-question-image";
 import { ExamTimer } from "@/components/exams/exam-timer";
 import { Button } from "@/components/ui/button";
@@ -89,9 +85,7 @@ export function ExamForm({
       const selected = main.querySelector<HTMLInputElement>(
         `input[name="q_${question.id}"]:checked`,
       );
-      const hidden = timeout.querySelector<HTMLInputElement>(
-        `input[name="q_${question.id}"]`,
-      );
+      const hidden = timeout.querySelector<HTMLInputElement>(`input[name="q_${question.id}"]`);
       if (hidden && selected) hidden.value = selected.value;
     }
   }, [questions, essayDrafts]);
@@ -246,19 +240,9 @@ export function ExamForm({
           <input type="hidden" name="slug" value={slug} />
           {questions.map((question) =>
             question.type === "ESSAY" ? (
-              <textarea
-                key={question.id}
-                name={`essay_${question.id}`}
-                defaultValue=""
-                rows={1}
-              />
+              <textarea key={question.id} name={`essay_${question.id}`} defaultValue="" rows={1} />
             ) : (
-              <input
-                key={question.id}
-                type="hidden"
-                name={`q_${question.id}`}
-                defaultValue=""
-              />
+              <input key={question.id} type="hidden" name={`q_${question.id}`} defaultValue="" />
             ),
           )}
         </form>

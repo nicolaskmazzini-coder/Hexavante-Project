@@ -29,8 +29,7 @@ export function ExamDailyRewardPreview({ preview }: Props) {
         <div className="min-w-0 flex-1">
           <h2 className="font-semibold text-white">Recompensa diária de simulados</h2>
           <p className="mt-1 text-sm text-slate-300">
-            Hoje você já finalizou{" "}
-            <strong className="text-white">{completedToday}</strong>{" "}
+            Hoje você já finalizou <strong className="text-white">{completedToday}</strong>{" "}
             {completedToday === 1 ? "simulado" : "simulados"}. Este será o{" "}
             <strong className="text-white">{nextAttemptNumber}º</strong> do dia (
             <span className="text-amber-200">recompensa {tierLabel.toLowerCase()}</span>
@@ -41,8 +40,7 @@ export function ExamDailyRewardPreview({ preview }: Props) {
             <p className="mt-2 text-sm text-emerald-200">
               Ainda restam{" "}
               <strong>
-                {goodRewardsRemaining}{" "}
-                {goodRewardsRemaining === 1 ? "simulado" : "simulados"}
+                {goodRewardsRemaining} {goodRewardsRemaining === 1 ? "simulado" : "simulados"}
               </strong>{" "}
               com recompensa acima do mínimo hoje.
             </p>

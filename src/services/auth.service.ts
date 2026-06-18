@@ -36,7 +36,10 @@ export async function registerUser(data: RegisterInput) {
   });
 
   if (existing) {
-    logger.warn('Tentativa de registro com dados duplicados', { email: data.email, username: data.username });
+    logger.warn("Tentativa de registro com dados duplicados", {
+      email: data.email,
+      username: data.username,
+    });
     if (existing.email === data.email) {
       throw new Error("Este e-mail já está em uso.");
     }
@@ -75,7 +78,7 @@ export async function registerUser(data: RegisterInput) {
     },
   });
 
-  logger.info('Usuário registrado com sucesso', { userId: user.id, email: user.email });
+  logger.info("Usuário registrado com sucesso", { userId: user.id, email: user.email });
   return user;
 }
 
@@ -100,7 +103,7 @@ export async function validateCredentials(data: LoginInput) {
   // Compara senha com hash
   const valid = await bcrypt.compare(data.password, user.passwordHash);
   if (!valid) {
-    logger.warn('Tentativa de login com senha inválida', { email: data.email });
+    logger.warn("Tentativa de login com senha inválida", { email: data.email });
     return null;
   }
 
@@ -116,7 +119,7 @@ export async function validateCredentials(data: LoginInput) {
     data: { lastLogin: new Date() },
   });
 
-  logger.info('Login realizado com sucesso', { userId: user.id, email: user.email });
+  logger.info("Login realizado com sucesso", { userId: user.id, email: user.email });
 
   // Retorna dados do usuário para sessão
   return {

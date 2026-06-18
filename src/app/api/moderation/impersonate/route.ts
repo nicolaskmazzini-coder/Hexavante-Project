@@ -1,5 +1,9 @@
 import { auth } from "@/auth";
-import { getRealRolesFromToken, startImpersonation, stopImpersonation } from "@/services/impersonation.service";
+import {
+  getRealRolesFromToken,
+  startImpersonation,
+  stopImpersonation,
+} from "@/services/impersonation.service";
 import { isSuperAdmin } from "@/lib/moderation/permissions";
 import { getAuthSecret } from "@/lib/auth-env";
 import { getToken } from "next-auth/jwt";

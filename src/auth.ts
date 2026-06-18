@@ -63,7 +63,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           Google({
             clientId: oauthCredentials.googleId,
             clientSecret: oauthCredentials.googleSecret,
-            allowDangerousEmailAccountLinking: true,
+            // allowDangerousEmailAccountLinking removido: permite que conta Google
+            // sobrescreva senha de conta existente com mesmo e-mail (risco de account takeover).
           }),
         ]
       : []),
@@ -72,7 +73,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           GitHub({
             clientId: oauthCredentials.githubId,
             clientSecret: oauthCredentials.githubSecret,
-            allowDangerousEmailAccountLinking: true,
+            // allowDangerousEmailAccountLinking removido por segurança.
             authorization: { params: { scope: "read:user user:email" } },
           }),
         ]

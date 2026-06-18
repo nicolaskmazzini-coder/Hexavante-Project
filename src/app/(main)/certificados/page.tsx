@@ -37,7 +37,11 @@ export default async function CertificatesPage() {
       ) : (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {certificates.map((cert) => (
-            <Card key={cert.id} padding="lg" className="transition hover:border-amber-400/30 hover:bg-white/[0.06]">
+            <Card
+              key={cert.id}
+              padding="lg"
+              className="transition hover:border-amber-400/30 hover:bg-white/[0.06]"
+            >
               <CardHeader>
                 <span className="hx-icon-box border-amber-400/20 bg-amber-400/10 text-amber-200">
                   <Award className="h-5 w-5" />

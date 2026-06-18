@@ -1,11 +1,11 @@
 // Importações necessárias para geração de códigos de certificado
-import crypto from 'crypto'; // Módulo crypto para geração de valores aleatórios
+import crypto from "crypto"; // Módulo crypto para geração de valores aleatórios
 
 // Função para gerar código único de certificado
 // Gera código no formato HEX-{timestamp}-{random}
 export function generateCertificateCode(): string {
   const timestamp = Date.now().toString(36); // Timestamp em base 36
-  const random = crypto.randomBytes(4).toString('hex').toUpperCase(); // 4 bytes aleatórios em hex
+  const random = crypto.randomBytes(4).toString("hex").toUpperCase(); // 4 bytes aleatórios em hex
   return `HEX-${timestamp}-${random}`;
 }
 

@@ -18,8 +18,8 @@ const initialState: ActionResult = { success: false };
 
 export function CreateLiveRoomForm({ courses }: Props) {
   const [state, formAction, pending] = useActionState(createLiveRoomAction, initialState);
-  const [defaultScheduled] = useState(
-    () => new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16),
+  const [defaultScheduled] = useState(() =>
+    new Date(Date.now() + 60 * 60 * 1000).toISOString().slice(0, 16),
   );
 
   return (
@@ -33,7 +33,12 @@ export function CreateLiveRoomForm({ courses }: Props) {
         <div className="space-y-5">
           <div>
             <Label htmlFor="title">Título da sala</Label>
-            <Input id="title" name="title" placeholder="Ex: Aula de matemática - funções" required />
+            <Input
+              id="title"
+              name="title"
+              placeholder="Ex: Aula de matemática - funções"
+              required
+            />
           </div>
 
           <div>
@@ -73,11 +78,7 @@ export function CreateLiveRoomForm({ courses }: Props) {
           <div className="space-y-5">
             <div>
               <Label htmlFor="videoUrl">URL do vídeo</Label>
-              <Input
-                id="videoUrl"
-                name="videoUrl"
-                placeholder="https://youtube.com/watch?v=..."
-              />
+              <Input id="videoUrl" name="videoUrl" placeholder="https://youtube.com/watch?v=..." />
             </div>
 
             <div>
@@ -130,7 +131,11 @@ export function CreateLiveRoomForm({ courses }: Props) {
       {state.error && <p className="text-sm text-red-400">{state.error}</p>}
 
       <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
-        <AppLink href="/instructor/live-rooms" muted className="inline-flex items-center justify-center rounded-lg border border-white/10 px-4 py-2">
+        <AppLink
+          href="/instructor/live-rooms"
+          muted
+          className="inline-flex items-center justify-center rounded-lg border border-white/10 px-4 py-2"
+        >
           Cancelar
         </AppLink>
         <Button type="submit" disabled={pending}>

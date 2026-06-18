@@ -57,9 +57,7 @@ export default async function ModerationContentPage() {
             >
               <div>
                 <p className="font-medium text-white">{e.title}</p>
-                <p className="text-xs text-slate-500">
-                  {e.isPublished ? "Publicado" : "Rascunho"}
-                </p>
+                <p className="text-xs text-slate-500">{e.isPublished ? "Publicado" : "Rascunho"}</p>
               </div>
               <Link href={`/moderacao/simulados/${e.id}/edit`} className="text-sm text-sky-400">
                 Editar
@@ -69,7 +67,8 @@ export default async function ModerationContentPage() {
         </ul>
         <p className="mt-4 text-sm text-slate-500">
           Denúncias de conteúdo: em breve. Use o terminal{" "}
-          <code className="text-sky-300">/cursos</code> e <code className="text-sky-300">/simulado</code>.
+          <code className="text-sky-300">/cursos</code> e{" "}
+          <code className="text-sky-300">/simulado</code>.
         </p>
       </section>
     </div>

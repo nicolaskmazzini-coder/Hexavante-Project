@@ -1,8 +1,4 @@
-import {
-  getAvatarBorderClassName,
-  resolveAppTheme,
-  resolveProfileIcon,
-} from "@/lib/cosmetics";
+import { getAvatarBorderClassName, resolveAppTheme, resolveProfileIcon } from "@/lib/cosmetics";
 import { buildPremiumStatus } from "@/lib/premium";
 import { prisma } from "@/lib/prisma";
 import { SHOP_CATALOG } from "@/lib/shop-catalog";
@@ -134,11 +130,7 @@ export async function getShopState(userId: string) {
   };
 }
 
-async function chargeForItem(
-  userId: string,
-  item: StoreItem,
-  premiumActive: boolean,
-) {
+async function chargeForItem(userId: string, item: StoreItem, premiumActive: boolean) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: { coins: true },
@@ -259,12 +251,7 @@ export async function purchaseStoreItem(userId: string, storeItemId: string) {
   });
 }
 
-const EQUIPPABLE_CATEGORIES: StoreItemCategory[] = [
-  "TITLE",
-  "AVATAR_BORDER",
-  "THEME",
-  "COSMETIC",
-];
+const EQUIPPABLE_CATEGORIES: StoreItemCategory[] = ["TITLE", "AVATAR_BORDER", "THEME", "COSMETIC"];
 
 export async function equipStoreItem(userId: string, inventoryId: string) {
   const entry = await prisma.userInventory.findFirst({

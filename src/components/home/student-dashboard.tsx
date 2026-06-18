@@ -1,12 +1,5 @@
 import Link from "next/link";
-import {
-  ArrowRight,
-  Award,
-  BookOpen,
-  Sparkles,
-  Target,
-  Trophy,
-} from "lucide-react";
+import { ArrowRight, Award, BookOpen, Sparkles, Target, Trophy } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/button";
@@ -59,7 +52,10 @@ export function StudentDashboard({ data, userName }: Props) {
         </div>
         <div className="rounded-lg border border-white/8 bg-white/[0.04] p-3">
           <p className="text-xs text-slate-400">Ranking</p>
-          <Link href="/ranking" className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-sky-300 hover:text-sky-200">
+          <Link
+            href="/ranking"
+            className="mt-1 inline-flex items-center gap-1 text-sm font-semibold text-sky-300 hover:text-sky-200"
+          >
             <Trophy className="h-4 w-4" />
             Ver top
           </Link>

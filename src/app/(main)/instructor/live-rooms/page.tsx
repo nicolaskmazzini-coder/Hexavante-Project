@@ -31,7 +31,11 @@ export default async function InstructorLiveRoomsPage() {
         title="Minhas salas ao vivo"
         description="Gerencie suas aulas ao vivo e interaja com seus alunos."
         action={
-          <LinkButton href="/instructor/live-rooms/new" size="sm" aria-label="Criar nova sala ao vivo">
+          <LinkButton
+            href="/instructor/live-rooms/new"
+            size="sm"
+            aria-label="Criar nova sala ao vivo"
+          >
             Nova sala ao vivo
           </LinkButton>
         }
@@ -48,21 +52,19 @@ export default async function InstructorLiveRoomsPage() {
           {rooms.map((room) => {
             const isLive = room.status === "LIVE";
             const scheduledDate = new Date(room.scheduledAt);
-            const startsIn =
-              room.status === "SCHEDULED" ? getStartsInLabel(scheduledDate) : null;
+            const startsIn = room.status === "SCHEDULED" ? getStartsInLabel(scheduledDate) : null;
 
             return (
-              <div
-                key={room.id}
-                className="rounded-xl border border-white/10 bg-white/[0.04] p-4"
-              >
+              <div key={room.id} className="rounded-xl border border-white/10 bg-white/[0.04] p-4">
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-2">
                       <h3 className="font-semibold text-white">{room.title}</h3>
                       {isLive && <Badge variant="red">Live</Badge>}
                       {startsIn && <Badge variant="sky">{startsIn}</Badge>}
-                      <Badge variant={isLive ? "red" : room.status === "SCHEDULED" ? "sky" : "default"}>
+                      <Badge
+                        variant={isLive ? "red" : room.status === "SCHEDULED" ? "sky" : "default"}
+                      >
                         {LIVE_ROOM_STATUS_LABELS[room.status] || room.status}
                       </Badge>
                     </div>

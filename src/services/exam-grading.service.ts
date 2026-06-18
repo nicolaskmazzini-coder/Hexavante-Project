@@ -61,25 +61,21 @@ export async function gradeEssayAnswer(data: EssayGradeInput) {
   });
 
   const attempt = answer.attempt;
-  const mcAnswers = attempt.answers.filter(
-    (item) => item.id !== answer.id && item.alternativeId,
-  );
+  const mcAnswers = attempt.answers.filter((item) => item.id !== answer.id && item.alternativeId);
   const gradedEssays = attempt.answers.filter(
     (item) => item.id !== answer.id && item.essayAnswer && item.essayStatus !== "PENDING",
   );
 
   const mcCorrect = mcAnswers.filter((item) => item.isCorrect).length;
-  const essayCorrect = gradedEssays.filter((item) => item.isCorrect).length
-    + (isCorrect ? 1 : 0);
-  const essayPartial = gradedEssays.filter((item) => item.essayStatus === "PARTIAL").length
-    + (isPartial ? 1 : 0);
+  const essayCorrect = gradedEssays.filter((item) => item.isCorrect).length + (isCorrect ? 1 : 0);
+  const essayPartial =
+    gradedEssays.filter((item) => item.essayStatus === "PARTIAL").length + (isPartial ? 1 : 0);
 
   const mcTotal = attempt.exam.questions.filter((q) => q.type !== "ESSAY").length;
   const essayTotal = attempt.exam.questions.filter((q) => q.type === "ESSAY").length;
   const gradedMc = mcTotal;
   const gradedEssayCount = gradedEssays.length + 1;
-  const pendingEssays =
-    essayTotal - gradedEssayCount;
+  const pendingEssays = essayTotal - gradedEssayCount;
 
   const weightedCorrect = mcCorrect + essayCorrect + essayPartial * 0.5;
   const weightedTotal = gradedMc + gradedEssayCount;

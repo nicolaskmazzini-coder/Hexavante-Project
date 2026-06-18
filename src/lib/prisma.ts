@@ -12,8 +12,7 @@ type PrismaGlobal = typeof globalThis & {
 
 const globalForPrisma = globalThis as PrismaGlobal;
 
-export const prisma =
-  globalForPrisma[PRISMA_SINGLETON_KEY] ?? new PrismaClient();
+export const prisma = globalForPrisma[PRISMA_SINGLETON_KEY] ?? new PrismaClient();
 
 if (process.env.NODE_ENV !== "production") {
   globalForPrisma[PRISMA_SINGLETON_KEY] = prisma;

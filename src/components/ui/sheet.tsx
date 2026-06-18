@@ -27,7 +27,9 @@ SheetOverlay.displayName = SheetPrimitive.Overlay.displayName;
 
 const SheetContent = React.forwardRef<
   React.ElementRef<typeof SheetPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content> & { side?: "top" | "right" | "bottom" | "left" }
+  React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content> & {
+    side?: "top" | "right" | "bottom" | "left";
+  }
 >(({ side = "right", className, children, ...props }, ref) => (
   <SheetPortal>
     <SheetOverlay />

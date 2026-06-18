@@ -28,7 +28,9 @@ export function BroadcastPanel() {
   return (
     <div className="rounded-xl border border-[#1e1e2e] bg-[#0a0a0f] p-6">
       <h3 className="text-lg font-bold text-white">Broadcast de notificação</h3>
-      <p className="mt-1 text-sm text-slate-400">Envia aviso para todos os usuários da plataforma.</p>
+      <p className="mt-1 text-sm text-slate-400">
+        Envia aviso para todos os usuários da plataforma.
+      </p>
       <div className="mt-4 space-y-3">
         <Input placeholder="Título" value={title} onChange={(e) => setTitle(e.target.value)} />
         <Textarea

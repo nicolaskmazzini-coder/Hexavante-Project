@@ -2,12 +2,7 @@
 
 import { auth } from "@/auth";
 import { isInstructor } from "@/lib/permissions";
-import {
-  courseSchema,
-  lessonSchema,
-  materialSchema,
-  moduleSchema,
-} from "@/lib/validations/course";
+import { courseSchema, lessonSchema, materialSchema, moduleSchema } from "@/lib/validations/course";
 import {
   addLesson,
   addMaterial,

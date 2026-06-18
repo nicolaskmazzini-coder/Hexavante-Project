@@ -77,7 +77,9 @@ export function ExamCard({
             </span>
           )}
           {userAttemptCount != null && userAttemptCount > 0 && (
-            <span>{userAttemptCount} tentativa{userAttemptCount > 1 ? "s" : ""}</span>
+            <span>
+              {userAttemptCount} tentativa{userAttemptCount > 1 ? "s" : ""}
+            </span>
           )}
         </CardFooter>
       </div>

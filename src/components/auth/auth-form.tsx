@@ -71,9 +71,7 @@ export function AuthForm({
   const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
     const formData = new FormData(event.currentTarget);
     const validationSchema = validationSchemas[formKind];
-    const raw = Object.fromEntries(
-      fields.map((field) => [field.name, formData.get(field.name)]),
-    );
+    const raw = Object.fromEntries(fields.map((field) => [field.name, formData.get(field.name)]));
     const parsed = validationSchema.safeParse(raw);
 
     if (!parsed.success) {
@@ -139,15 +137,12 @@ export function AuthForm({
         })}
 
         {state.error && (
-          <Alert variant={Object.keys(fieldErrors).length ? "warning" : "danger"}>{state.error}</Alert>
+          <Alert variant={Object.keys(fieldErrors).length ? "warning" : "danger"}>
+            {state.error}
+          </Alert>
         )}
 
-        <Button
-          type="submit"
-          disabled={pending}
-          className="mt-2 h-11 w-full"
-          size="lg"
-        >
+        <Button type="submit" disabled={pending} className="mt-2 h-11 w-full" size="lg">
           {pending ? (
             <>
               <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
@@ -167,5 +162,9 @@ export function AuthForm({
     return <div className="w-full">{formContent}</div>;
   }
 
-  return <Card className="w-full max-w-md p-8 shadow-2xl shadow-black/30 backdrop-blur">{formContent}</Card>;
+  return (
+    <Card className="w-full max-w-md p-8 shadow-2xl shadow-black/30 backdrop-blur">
+      {formContent}
+    </Card>
+  );
 }

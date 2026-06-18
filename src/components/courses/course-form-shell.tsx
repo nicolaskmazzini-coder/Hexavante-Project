@@ -31,13 +31,7 @@ type Props = {
   cancelHref: string;
 };
 
-export function CourseFormShell({
-  categories,
-  action,
-  initial,
-  submitLabel,
-  cancelHref,
-}: Props) {
+export function CourseFormShell({ categories, action, initial, submitLabel, cancelHref }: Props) {
   const coverRef = useRef<CourseCoverUploadHandle>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const [pending, setPending] = useState(false);
@@ -71,9 +65,7 @@ export function CourseFormShell({
         setSuccess(true);
       }
     } catch (submitError) {
-      setError(
-        submitError instanceof Error ? submitError.message : "Erro ao salvar curso.",
-      );
+      setError(submitError instanceof Error ? submitError.message : "Erro ao salvar curso.");
     } finally {
       setPending(false);
     }
@@ -81,10 +73,7 @@ export function CourseFormShell({
 
   return (
     <form ref={formRef} onSubmit={handleSubmit} className="max-w-2xl space-y-4">
-      <CourseCoverUpload
-        ref={coverRef}
-        initialUrl={initial?.coverImage ?? initial?.thumbnailUrl}
-      />
+      <CourseCoverUpload ref={coverRef} initialUrl={initial?.coverImage ?? initial?.thumbnailUrl} />
 
       <div>
         <Label htmlFor="title">Título</Label>
@@ -141,9 +130,7 @@ export function CourseFormShell({
             min={1}
             max={500}
             placeholder="Ex: 20"
-            defaultValue={
-              initial?.estimatedHours != null ? String(initial.estimatedHours) : ""
-            }
+            defaultValue={initial?.estimatedHours != null ? String(initial.estimatedHours) : ""}
           />
         </div>
         <div>
@@ -162,9 +149,7 @@ export function CourseFormShell({
         Todos os cursos são gratuitos por enquanto. Pagamentos serão habilitados em versão futura.
       </p>
       {error && <p className="text-sm text-red-400">{error}</p>}
-      {success && (
-        <p className="text-sm text-emerald-400">Curso salvo com sucesso!</p>
-      )}
+      {success && <p className="text-sm text-emerald-400">Curso salvo com sucesso!</p>}
       <div className="flex gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? "Salvando..." : submitLabel}

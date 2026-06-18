@@ -9,9 +9,24 @@ import { getStudentDashboard } from "@/services/student.service";
 import Link from "next/link";
 
 const highlights = [
-  { label: "Cursos", value: "Aprendizado guiado", icon: BookOpen, tone: "text-sky-300 bg-sky-400/10" },
-  { label: "Simulados", value: "Prática com desempenho", icon: Target, tone: "text-teal-300 bg-teal-400/10" },
-  { label: "Certificados", value: "Evolução registrada", icon: Award, tone: "text-amber-300 bg-amber-400/10" },
+  {
+    label: "Cursos",
+    value: "Aprendizado guiado",
+    icon: BookOpen,
+    tone: "text-sky-300 bg-sky-400/10",
+  },
+  {
+    label: "Simulados",
+    value: "Prática com desempenho",
+    icon: Target,
+    tone: "text-teal-300 bg-teal-400/10",
+  },
+  {
+    label: "Certificados",
+    value: "Evolução registrada",
+    icon: Award,
+    tone: "text-amber-300 bg-amber-400/10",
+  },
 ];
 
 const shortcuts = [
@@ -40,7 +55,11 @@ export default async function HomePage() {
           </p>
 
           <div className="mt-8 flex flex-wrap gap-3">
-            <LinkButton href="/courses" size="lg" aria-label="Explorar cursos disponíveis na plataforma">
+            <LinkButton
+              href="/courses"
+              size="lg"
+              aria-label="Explorar cursos disponíveis na plataforma"
+            >
               Explorar cursos
               <ArrowRight className="h-4 w-4" />
             </LinkButton>
@@ -49,7 +68,12 @@ export default async function HomePage() {
                 Meu progresso
               </LinkButton>
             ) : (
-              <LinkButton href="/register" variant="outline" size="lg" aria-label="Criar nova conta na plataforma">
+              <LinkButton
+                href="/register"
+                variant="outline"
+                size="lg"
+                aria-label="Criar nova conta na plataforma"
+              >
                 Criar conta
               </LinkButton>
             )}

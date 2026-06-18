@@ -61,7 +61,12 @@ const COMMUNITY_ITEMS: NavItem[] = [
   { icon: MessageCircle, label: "Mensagens", href: "/mensagens", requiresAuth: true },
   { icon: BarChart2, label: "Ranking", href: "/ranking" },
   { icon: Award, label: "Certificados", href: "/certificados", requiresAuth: true },
-  { icon: History, label: "Histórico de simulados", href: "/simulados/historico", requiresAuth: true },
+  {
+    icon: History,
+    label: "Histórico de simulados",
+    href: "/simulados/historico",
+    requiresAuth: true,
+  },
 ];
 
 const ACCOUNT_ITEMS: NavItem[] = [
@@ -93,7 +98,15 @@ function isActive(pathname: string, href: string): boolean {
   return pathname === href || pathname.startsWith(`${href}/`);
 }
 
-function NavGroup({ items, session, pathname }: { items: NavItem[]; session: NavSession; pathname: string }) {
+function NavGroup({
+  items,
+  session,
+  pathname,
+}: {
+  items: NavItem[];
+  session: NavSession;
+  pathname: string;
+}) {
   const visible = items.filter((item) => isItemVisible(item, session));
   if (!visible.length) return null;
 
@@ -104,14 +117,18 @@ function NavGroup({ items, session, pathname }: { items: NavItem[]; session: Nav
           {visible.map((item) => {
             const href = resolveNavHref(item, session);
             return (
-            <SidebarMenuItem key={item.label}>
-              <SidebarMenuButton asChild isActive={isActive(pathname, item.href)} tooltip={item.label}>
-                <Link href={href}>
-                  <item.icon />
-                  <span>{item.label}</span>
-                </Link>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+              <SidebarMenuItem key={item.label}>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive(pathname, item.href)}
+                  tooltip={item.label}
+                >
+                  <Link href={href}>
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             );
           })}
         </SidebarMenu>
@@ -146,7 +163,9 @@ export function AppSidebar({ session }: Props) {
           <span className="hx-icon-box shadow-lg shadow-sky-950/30">
             <Hexagon className="h-5 w-5" />
           </span>
-          <span className="text-sm font-extrabold tracking-tight text-sidebar-foreground">HEXAVANTE</span>
+          <span className="text-sm font-extrabold tracking-tight text-sidebar-foreground">
+            HEXAVANTE
+          </span>
         </Link>
       </SidebarHeader>
 

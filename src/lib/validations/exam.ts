@@ -33,11 +33,7 @@ export const examAdminSchema = z.object({
     .string()
     .optional()
     .refine(
-      (v) =>
-        !v ||
-        v === "" ||
-        v.startsWith("/uploads/exams/") ||
-        z.url().safeParse(v).success,
+      (v) => !v || v === "" || v.startsWith("/uploads/exams/") || z.url().safeParse(v).success,
       "URL de capa inválida",
     ),
   removeCover: z
@@ -61,10 +57,7 @@ const questionImageSchema = z
   .optional()
   .refine(
     (v) =>
-      !v ||
-      v === "" ||
-      v.startsWith("/uploads/exam-questions/") ||
-      z.url().safeParse(v).success,
+      !v || v === "" || v.startsWith("/uploads/exam-questions/") || z.url().safeParse(v).success,
     "URL de imagem inválida",
   );
 

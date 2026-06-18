@@ -13,9 +13,7 @@ const SESSION_COOKIE_PREFIXES = [
 ];
 
 function isSessionCookieName(name: string): boolean {
-  return SESSION_COOKIE_PREFIXES.some(
-    (prefix) => name === prefix || name.startsWith(`${prefix}.`),
-  );
+  return SESSION_COOKIE_PREFIXES.some((prefix) => name === prefix || name.startsWith(`${prefix}.`));
 }
 
 export function listSessionCookieNames(cookieHeader?: string | null): string[] {

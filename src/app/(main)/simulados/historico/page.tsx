@@ -112,8 +112,8 @@ export default async function HistoricoPage({ searchParams }: Props) {
                   <div>
                     <p className="font-semibold text-white">{attempt.exam.title}</p>
                     <p className="text-sm text-slate-400">
-                      {EXAM_TYPE_LABELS[attempt.exam.examType]} ·{" "}
-                      {attempt.correctAnswers}/{attempt.totalQuestions} acertos ·{" "}
+                      {EXAM_TYPE_LABELS[attempt.exam.examType]} · {attempt.correctAnswers}/
+                      {attempt.totalQuestions} acertos ·{" "}
                       {attempt.finishedAt?.toLocaleDateString("pt-BR")}
                     </p>
                   </div>

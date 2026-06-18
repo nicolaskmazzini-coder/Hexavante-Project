@@ -4,30 +4,17 @@
  */
 export function getOAuthCredentials() {
   return {
-    googleId:
-      process.env.AUTH_GOOGLE_ID?.trim() ||
-      process.env.GOOGLE_CLIENT_ID?.trim() ||
-      "",
+    googleId: process.env.AUTH_GOOGLE_ID?.trim() || process.env.GOOGLE_CLIENT_ID?.trim() || "",
     googleSecret:
-      process.env.AUTH_GOOGLE_SECRET?.trim() ||
-      process.env.GOOGLE_CLIENT_SECRET?.trim() ||
-      "",
-    githubId:
-      process.env.AUTH_GITHUB_ID?.trim() ||
-      process.env.GITHUB_ID?.trim() ||
-      "",
-    githubSecret:
-      process.env.AUTH_GITHUB_SECRET?.trim() ||
-      process.env.GITHUB_SECRET?.trim() ||
-      "",
+      process.env.AUTH_GOOGLE_SECRET?.trim() || process.env.GOOGLE_CLIENT_SECRET?.trim() || "",
+    githubId: process.env.AUTH_GITHUB_ID?.trim() || process.env.GITHUB_ID?.trim() || "",
+    githubSecret: process.env.AUTH_GITHUB_SECRET?.trim() || process.env.GITHUB_SECRET?.trim() || "",
   };
 }
 
 export function getAuthBaseUrl(): string {
   return (
-    process.env.AUTH_URL?.trim() ||
-    process.env.NEXTAUTH_URL?.trim() ||
-    "http://localhost:3000"
+    process.env.AUTH_URL?.trim() || process.env.NEXTAUTH_URL?.trim() || "http://localhost:3000"
   );
 }
 
@@ -66,14 +53,11 @@ const PLACEHOLDER_SECRETS = new Set([
   "gere-um-secret-aleatorio-aqui",
   "change-me",
   "your-secret-here",
-  'node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'base64\'))"',
+  "node -e \"console.log(require('crypto').randomBytes(32).toString('base64'))\"",
 ]);
 
 export function getAuthSecret(): string {
-  const secret =
-    process.env.AUTH_SECRET?.trim() ||
-    process.env.NEXTAUTH_SECRET?.trim() ||
-    "";
+  const secret = process.env.AUTH_SECRET?.trim() || process.env.NEXTAUTH_SECRET?.trim() || "";
 
   if (secret && !PLACEHOLDER_SECRETS.has(secret)) {
     return secret;

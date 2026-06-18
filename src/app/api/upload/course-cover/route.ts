@@ -25,10 +25,7 @@ export async function POST(request: Request) {
   }
 
   if (!COURSE_COVER_MIME_TYPES.has(file.type)) {
-    return Response.json(
-      { error: "Formato inválido. Use JPEG, PNG ou WebP." },
-      { status: 400 },
-    );
+    return Response.json({ error: "Formato inválido. Use JPEG, PNG ou WebP." }, { status: 400 });
   }
 
   if (file.size > COURSE_COVER_MAX_BYTES) {

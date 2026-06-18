@@ -25,12 +25,7 @@ export function xpRequiredForLevel(level: number): number {
 
 // Função para aplicar XP ao usuário
 // Calcula novo nível e XP após ganhar XP
-export function applyXp(
-  level: number,
-  currentXp: number,
-  totalXp: number,
-  amount: number,
-) {
+export function applyXp(level: number, currentXp: number, totalXp: number, amount: number) {
   let newLevel = level;
   let newCurrentXp = currentXp + amount;
   const newTotalXp = totalXp + amount;

@@ -18,9 +18,7 @@ export default async function PublicProfilePage({ params }: Props) {
   if (!profile) notFound();
 
   const allEnrollments =
-    profile.isOwner && session?.user?.id
-      ? await listUserEnrollments(session.user.id)
-      : [];
+    profile.isOwner && session?.user?.id ? await listUserEnrollments(session.user.id) : [];
 
   return (
     <PageShell>

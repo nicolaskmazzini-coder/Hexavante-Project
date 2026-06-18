@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { Component, ReactNode } from 'react';
+import { Component, ReactNode } from "react";
 
 interface Props {
   children: ReactNode;
@@ -22,7 +22,7 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: any) {
-    console.error('ErrorBoundary caught an error:', error, errorInfo);
+    console.error("ErrorBoundary caught an error:", error, errorInfo);
   }
 
   render() {
@@ -30,19 +30,14 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="flex min-h-screen items-center justify-center bg-black px-4">
           <div className="max-w-md rounded-xl border border-white/10 bg-white/[0.05] p-8 text-center shadow-2xl shadow-black/30">
-            <h2 className="mb-4 text-2xl font-bold text-white">
-              Algo deu errado
-            </h2>
+            <h2 className="mb-4 text-2xl font-bold text-white">Algo deu errado</h2>
             <p className="mb-6 text-slate-400">
               Ocorreu um erro inesperado. Por favor, tente recarregar a página.
             </p>
-            <button
-              onClick={() => window.location.reload()}
-              className="hx-btn-primary px-6"
-            >
+            <button onClick={() => window.location.reload()} className="hx-btn-primary px-6">
               Recarregar página
             </button>
-            {process.env.NODE_ENV === 'development' && this.state.error && (
+            {process.env.NODE_ENV === "development" && this.state.error && (
               <details className="mt-4 text-left">
                 <summary className="cursor-pointer text-sm text-slate-500">
                   Detalhes do erro

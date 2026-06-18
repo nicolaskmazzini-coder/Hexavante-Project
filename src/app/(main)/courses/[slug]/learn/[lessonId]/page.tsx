@@ -38,9 +38,7 @@ export default async function LessonPage({ params }: Props) {
   if (!data) notFound();
 
   const { course, enrollment, lesson, module, allLessons, progresses } = data;
-  const completedIds = new Set(
-    progresses.filter((p) => p.completed).map((p) => p.lessonId),
-  );
+  const completedIds = new Set(progresses.filter((p) => p.completed).map((p) => p.lessonId));
   const isCompleted = completedIds.has(lesson.id);
 
   const sidebarLessons = allLessons.map((l) => {
@@ -83,9 +81,7 @@ export default async function LessonPage({ params }: Props) {
           Módulo {module?.orderNumber}: {module?.title}
         </p>
         <h1 className="mt-1 text-2xl font-bold text-white">{lesson.title}</h1>
-        {lesson.description && (
-          <p className="mt-2 text-slate-300">{lesson.description}</p>
-        )}
+        {lesson.description && <p className="mt-2 text-slate-300">{lesson.description}</p>}
 
         {lesson.videoUrl && (
           <div className="mt-6">

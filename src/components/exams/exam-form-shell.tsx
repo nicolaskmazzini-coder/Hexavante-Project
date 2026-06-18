@@ -2,10 +2,7 @@
 
 import { useRef, useState } from "react";
 import type { ActionResult } from "@/app/actions/exam-admin";
-import {
-  ExamCoverUpload,
-  type ExamCoverUploadHandle,
-} from "@/components/exams/exam-cover-upload";
+import { ExamCoverUpload, type ExamCoverUploadHandle } from "@/components/exams/exam-cover-upload";
 import { AppLink } from "@/components/ui/app-link";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -61,9 +58,7 @@ export function ExamFormShell({ action, initial, submitLabel, cancelHref }: Prop
         setSuccess(true);
       }
     } catch (submitError) {
-      setError(
-        submitError instanceof Error ? submitError.message : "Erro ao salvar simulado.",
-      );
+      setError(submitError instanceof Error ? submitError.message : "Erro ao salvar simulado.");
     } finally {
       setPending(false);
     }
@@ -108,9 +103,7 @@ export function ExamFormShell({ action, initial, submitLabel, cancelHref }: Prop
             min={1}
             max={300}
             placeholder="Ex: 60"
-            defaultValue={
-              initial?.timeLimit != null ? String(initial.timeLimit) : ""
-            }
+            defaultValue={initial?.timeLimit != null ? String(initial.timeLimit) : ""}
           />
         </div>
         <div>
@@ -126,9 +119,7 @@ export function ExamFormShell({ action, initial, submitLabel, cancelHref }: Prop
         </div>
       </div>
       {error && <p className="text-sm text-red-400">{error}</p>}
-      {success && (
-        <p className="text-sm text-emerald-400">Simulado salvo com sucesso!</p>
-      )}
+      {success && <p className="text-sm text-emerald-400">Simulado salvo com sucesso!</p>}
       <div className="flex gap-3">
         <Button type="submit" disabled={pending}>
           {pending ? "Salvando..." : submitLabel}

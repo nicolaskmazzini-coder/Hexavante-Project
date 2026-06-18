@@ -7,10 +7,7 @@ import { EmptyState } from "@/components/ui/empty-state";
 import { LinkButton } from "@/components/ui/button";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
-import {
-  getUserFinishedAttemptCounts,
-  searchPublishedExams,
-} from "@/services/exam.service";
+import { getUserFinishedAttemptCounts, searchPublishedExams } from "@/services/exam.service";
 
 type Props = {
   searchParams: Promise<{ tipo?: string; q?: string; sort?: string }>;
@@ -42,7 +39,11 @@ export default async function SimuladosPage({ searchParams }: Props) {
         title="Simulados"
         description="Resolva questões objetivas e acompanhe sua evolução por tentativa."
         action={
-          <LinkButton href="/simulados/historico" variant="outline" aria-label="Ver histórico de simulados">
+          <LinkButton
+            href="/simulados/historico"
+            variant="outline"
+            aria-label="Ver histórico de simulados"
+          >
             <BarChart3 className="h-4 w-4 text-teal-300" />
             Histórico
           </LinkButton>

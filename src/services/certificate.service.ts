@@ -45,7 +45,7 @@ export async function issueCertificate(userId: string, courseId: string) {
     });
   });
 
-  logger.info('Certificado emitido', { certificateId: certificate.id, userId, courseId });
+  logger.info("Certificado emitido", { certificateId: certificate.id, userId, courseId });
 
   await createNotification({
     userId,
@@ -95,7 +95,7 @@ export async function verifyCertificate(code: string) {
     data: { verifiedAt: new Date() },
   });
 
-  logger.info('Certificado verificado', { certificateId: certificate.id, code });
+  logger.info("Certificado verificado", { certificateId: certificate.id, code });
   return certificate;
 }
 

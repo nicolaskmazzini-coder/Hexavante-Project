@@ -31,8 +31,7 @@ export function ProfilePhotoUpload({ currentAvatar, borderClassName }: Props) {
     setError(null);
 
     const isAllowedType =
-      ALLOWED_TYPES.includes(file.type) ||
-      /\.(jpe?g|png|gif|webp)$/i.test(file.name);
+      ALLOWED_TYPES.includes(file.type) || /\.(jpe?g|png|gif|webp)$/i.test(file.name);
 
     if (!isAllowedType) {
       setError("Use uma imagem PNG, JPG, GIF ou WebP.");
@@ -67,7 +66,9 @@ export function ProfilePhotoUpload({ currentAvatar, borderClassName }: Props) {
       }
       router.refresh();
     } catch (uploadError) {
-      setError(uploadError instanceof Error ? uploadError.message : "Erro ao fazer upload da foto.");
+      setError(
+        uploadError instanceof Error ? uploadError.message : "Erro ao fazer upload da foto.",
+      );
       setLocalPreview(previousPreview);
     } finally {
       setUploading(false);

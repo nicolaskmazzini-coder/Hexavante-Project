@@ -63,7 +63,9 @@ export async function awardXp(
   const boosterParts: string[] = [];
   if (rewards.global > 1) boosterParts.push(`global x${rewards.global}`);
   if (rewards.booster / rewards.global > 1) {
-    boosterParts.push(`pessoal x${(rewards.booster / rewards.global).toFixed(1).replace(/\.0$/, "")}`);
+    boosterParts.push(
+      `pessoal x${(rewards.booster / rewards.global).toFixed(1).replace(/\.0$/, "")}`,
+    );
   }
   const awardLabel =
     boosterMultiplier > 1
@@ -89,12 +91,7 @@ export async function awardXp(
       }
 
       // Aplica XP e verifica se subiu de nível
-      const updated = applyXp(
-        userXp.level,
-        userXp.currentXp,
-        userXp.totalXp,
-        finalAmount,
-      );
+      const updated = applyXp(userXp.level, userXp.currentXp, userXp.totalXp, finalAmount);
       const leveledUp = updated.level > userXp.level;
 
       // Cria registro de transação de XP
@@ -158,11 +155,11 @@ export async function awardXp(
     return result;
   } catch (error) {
     if (isPrismaUniqueViolation(error)) return null;
-    logger.error(
-      "Erro ao conceder XP",
-      error instanceof Error ? error : undefined,
-      { userId, source, sourceId },
-    );
+    logger.error("Erro ao conceder XP", error instanceof Error ? error : undefined, {
+      userId,
+      source,
+      sourceId,
+    });
     return null;
   }
 }
@@ -179,11 +176,7 @@ export async function getXpHistory(userId: string, limit = 20) {
 
 // Função para obter XP de uma fonte específica
 // Retorna transação de XP para uma fonte específica
-export async function getXpForSource(
-  userId: string,
-  source: XpSource,
-  sourceId: string,
-) {
+export async function getXpForSource(userId: string, source: XpSource, sourceId: string) {
   return prisma.xpTransaction.findUnique({
     where: {
       userId_source_sourceId: { userId, source, sourceId },
@@ -217,7 +210,10 @@ function getPeriodStart(period: Exclude<RankingPeriod, "all">): Date {
 
 // Função para obter ranking
 // Retorna usuários ordenados por XP total ou por período
-export async function getRanking(limit = 50, period: RankingPeriod = "all"): Promise<RankingEntry[]> {
+export async function getRanking(
+  limit = 50,
+  period: RankingPeriod = "all",
+): Promise<RankingEntry[]> {
   if (period === "all") {
     const rows = await prisma.userXP.findMany({
       orderBy: [{ totalXp: "desc" }, { level: "desc" }],

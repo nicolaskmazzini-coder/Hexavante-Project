@@ -18,12 +18,13 @@ export async function listInstructorLiveRooms(instructorId: string) {
 
 export type LiveRoomListFilter = "scheduled" | "live" | "ended" | "all";
 
-const FILTER_STATUS: Record<LiveRoomListFilter, ("SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED")[]> = {
-  scheduled: ["SCHEDULED"],
-  live: ["LIVE"],
-  ended: ["ENDED"],
-  all: ["SCHEDULED", "LIVE", "ENDED"],
-};
+const FILTER_STATUS: Record<LiveRoomListFilter, ("SCHEDULED" | "LIVE" | "ENDED" | "CANCELLED")[]> =
+  {
+    scheduled: ["SCHEDULED"],
+    live: ["LIVE"],
+    ended: ["ENDED"],
+    all: ["SCHEDULED", "LIVE", "ENDED"],
+  };
 
 export async function listAvailableLiveRooms(filter: LiveRoomListFilter = "all") {
   return prisma.liveRoom.findMany({
@@ -324,11 +325,7 @@ export async function canAccessLiveChat(roomId: string, userId: string) {
   return Boolean(participant && !participant.leftAt);
 }
 
-export async function getLiveChatMessagesSince(
-  roomId: string,
-  userId: string,
-  since?: Date,
-) {
+export async function getLiveChatMessagesSince(roomId: string, userId: string, since?: Date) {
   const allowed = await canAccessLiveChat(roomId, userId);
   if (!allowed) {
     throw new Error("Você não tem acesso ao chat desta sala.");
@@ -349,11 +346,7 @@ export async function getLiveChatMessagesSince(
 
 // Função para enviar mensagem no chat
 // Cria nova mensagem no chat da sala
-export async function sendLiveChatMessage(
-  roomId: string,
-  userId: string,
-  message: string,
-) {
+export async function sendLiveChatMessage(roomId: string, userId: string, message: string) {
   const room = await prisma.liveRoom.findUnique({
     where: { id: roomId },
   });

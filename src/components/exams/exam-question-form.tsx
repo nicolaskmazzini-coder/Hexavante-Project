@@ -39,9 +39,7 @@ export function ExamQuestionForm({ examId, nextOrder, action }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
   const [formKey, setFormKey] = useState(0);
-  const [questionType, setQuestionType] = useState<"MULTIPLE_CHOICE" | "ESSAY">(
-    "MULTIPLE_CHOICE",
-  );
+  const [questionType, setQuestionType] = useState<"MULTIPLE_CHOICE" | "ESSAY">("MULTIPLE_CHOICE");
   const [alternatives, setAlternatives] = useState<string[]>(
     createEmptyAlternatives(DEFAULT_ALTERNATIVE_COUNT),
   );
@@ -122,9 +120,7 @@ export function ExamQuestionForm({ examId, nextOrder, action }: Props) {
         resetForm();
       }
     } catch (submitError) {
-      setError(
-        submitError instanceof Error ? submitError.message : "Erro ao adicionar questão.",
-      );
+      setError(submitError instanceof Error ? submitError.message : "Erro ao adicionar questão.");
     } finally {
       setPending(false);
     }
@@ -142,9 +138,7 @@ export function ExamQuestionForm({ examId, nextOrder, action }: Props) {
           <NativeSelect
             id="question-type"
             value={questionType}
-            onChange={(event) =>
-              setQuestionType(event.target.value as "MULTIPLE_CHOICE" | "ESSAY")
-            }
+            onChange={(event) => setQuestionType(event.target.value as "MULTIPLE_CHOICE" | "ESSAY")}
           >
             <option value="MULTIPLE_CHOICE">Múltipla escolha</option>
             <option value="ESSAY">Dissertativa</option>
@@ -196,9 +190,7 @@ export function ExamQuestionForm({ examId, nextOrder, action }: Props) {
                       <Input
                         id={`alternative-${index}`}
                         value={text}
-                        onChange={(event) =>
-                          handleAlternativeChange(index, event.target.value)
-                        }
+                        onChange={(event) => handleAlternativeChange(index, event.target.value)}
                         required
                         placeholder={`Texto da alternativa ${letter}`}
                       />

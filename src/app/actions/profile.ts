@@ -89,9 +89,7 @@ export async function updateProfileAction(
   return { success: true };
 }
 
-export async function updateProfilePhotoAction(
-  formData: FormData,
-): Promise<ProfileActionResult> {
+export async function updateProfilePhotoAction(formData: FormData): Promise<ProfileActionResult> {
   const session = await auth();
   if (!session?.user?.id) {
     return { success: false, error: "Faça login para continuar." };

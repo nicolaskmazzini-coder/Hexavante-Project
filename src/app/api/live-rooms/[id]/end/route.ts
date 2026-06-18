@@ -2,10 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/auth";
 import { endLiveRoom } from "@/services/live-room.service";
 
-export async function POST(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autenticado" }, { status: 401 });
@@ -19,7 +16,7 @@ export async function POST(
   } catch (error) {
     return NextResponse.json(
       { error: error instanceof Error ? error.message : "Erro ao encerrar transmissão" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

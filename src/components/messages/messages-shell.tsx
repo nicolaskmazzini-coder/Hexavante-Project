@@ -53,7 +53,10 @@ export function MessagesShell({
                 Selecione uma conversa ao lado ou visite um perfil e toque em{" "}
                 <strong className="text-slate-300">Mensagem</strong> para começar.
               </p>
-              <Link href="/social" className="mt-5 text-sm font-semibold text-sky-300 hover:text-sky-200">
+              <Link
+                href="/social"
+                className="mt-5 text-sm font-semibold text-sky-300 hover:text-sky-200"
+              >
                 Explorar comunidade
               </Link>
             </div>

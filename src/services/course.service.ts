@@ -69,10 +69,7 @@ export async function searchApprovedCourses({
       },
       _count: { select: { modules: true, enrollments: true } },
     },
-    orderBy:
-      sort === "popular"
-        ? { enrollments: { _count: "desc" } }
-        : { createdAt: "desc" },
+    orderBy: sort === "popular" ? { enrollments: { _count: "desc" } } : { createdAt: "desc" },
   });
 }
 
@@ -148,9 +145,7 @@ export async function getCourseById(id: string, userId?: string) {
   if (!course) return null;
 
   // Verifica se o usuário é instrutor do curso
-  const isInstructor = userId
-    ? course.instructors.some((i) => i.userId === userId)
-    : false;
+  const isInstructor = userId ? course.instructors.some((i) => i.userId === userId) : false;
 
   return { course, isInstructor };
 }
@@ -198,11 +193,7 @@ export async function createCourse(userId: string, data: CourseInput) {
 
 // Função para atualizar curso
 // Atualiza apenas campos fornecidos, verifica permissão de instrutor
-export async function updateCourse(
-  courseId: string,
-  userId: string,
-  data: Partial<CourseInput>,
-) {
+export async function updateCourse(courseId: string, userId: string, data: Partial<CourseInput>) {
   // Verifica se o usuário é instrutor do curso
   const course = await prisma.course.findFirst({
     where: {
@@ -238,9 +229,7 @@ export async function updateCourse(
       ...(data.shortDescription !== undefined
         ? { shortDescription: data.shortDescription || null }
         : {}),
-      ...(data.description !== undefined
-        ? { description: data.description || null }
-        : {}),
+      ...(data.description !== undefined ? { description: data.description || null } : {}),
       ...(data.removeCover === true
         ? { coverImage: null, thumbnailUrl: null }
         : data.coverImage !== undefined
@@ -255,9 +244,7 @@ export async function updateCourse(
               }
             : {}),
       ...(data.level ? { level: data.level } : {}),
-      ...(data.estimatedHours !== undefined
-        ? { estimatedHours: data.estimatedHours ?? null }
-        : {}),
+      ...(data.estimatedHours !== undefined ? { estimatedHours: data.estimatedHours ?? null } : {}),
       ...(data.progressionType ? { progressionType: data.progressionType } : {}),
       ...(needsRemoderation ? { status: "PENDING_REVIEW" } : {}),
     },
@@ -308,11 +295,7 @@ export async function addLesson(moduleId: string, userId: string, data: LessonIn
 
 // Função para adicionar material ao módulo
 // Verifica permissão de instrutor antes de criar material
-export async function addMaterial(
-  moduleId: string,
-  userId: string,
-  data: MaterialInput,
-) {
+export async function addMaterial(moduleId: string, userId: string, data: MaterialInput) {
   // Busca módulo com curso e instrutores
   const courseModule = await prisma.module.findUnique({
     where: { id: moduleId },
@@ -351,9 +334,7 @@ async function assertInstructor(courseId: string, userId: string) {
 
 // Função para contar total de aulas em módulos
 // Soma o número de aulas em todos os módulos
-export function countTotalLessons(
-  modules: { lessons: unknown[] }[],
-): number {
+export function countTotalLessons(modules: { lessons: unknown[] }[]): number {
   return modules.reduce((acc, m) => acc + m.lessons.length, 0);
 }
 
@@ -385,11 +366,7 @@ async function assertLessonInstructor(lessonId: string, userId: string) {
   return lesson;
 }
 
-export async function updateModule(
-  moduleId: string,
-  userId: string,
-  data: Partial<ModuleInput>,
-) {
+export async function updateModule(moduleId: string, userId: string, data: Partial<ModuleInput>) {
   await assertModuleInstructor(moduleId, userId);
 
   return prisma.module.update({
@@ -408,11 +385,7 @@ export async function deleteModule(moduleId: string, userId: string) {
   return courseModule.courseId;
 }
 
-export async function updateLesson(
-  lessonId: string,
-  userId: string,
-  data: Partial<LessonInput>,
-) {
+export async function updateLesson(lessonId: string, userId: string, data: Partial<LessonInput>) {
   await assertLessonInstructor(lessonId, userId);
 
   return prisma.lesson.update({

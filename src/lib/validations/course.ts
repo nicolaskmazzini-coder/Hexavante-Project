@@ -16,11 +16,7 @@ export const courseSchema = z.object({
     .string()
     .optional()
     .refine(
-      (v) =>
-        !v ||
-        v === "" ||
-        v.startsWith("/uploads/courses/") ||
-        z.url().safeParse(v).success,
+      (v) => !v || v === "" || v.startsWith("/uploads/courses/") || z.url().safeParse(v).success,
       "URL de capa inválida",
     ),
   removeCover: z

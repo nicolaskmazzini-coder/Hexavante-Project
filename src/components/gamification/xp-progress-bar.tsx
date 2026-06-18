@@ -60,7 +60,9 @@ export function XpProgressBar({
           style={{ width: `${progressPercent}%` }}
         />
       </div>
-      <p className="mt-2 text-xs font-medium text-slate-400">{progressPercent}% para o próximo nível</p>
+      <p className="mt-2 text-xs font-medium text-slate-400">
+        {progressPercent}% para o próximo nível
+      </p>
     </div>
   );
 }

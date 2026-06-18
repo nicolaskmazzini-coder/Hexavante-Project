@@ -1,10 +1,21 @@
 {
   "compilerOptions": {
-    "target": "ES2017",
+    // ES2022 suporta top-level await, class fields, Error cause, etc.
+    // O SWC/Webpack do Next.js transpila para os browsers-alvo independentemente.
+    "target": "ES2022",
     "lib": ["dom", "dom.iterable", "esnext"],
     "allowJs": true,
     "skipLibCheck": true,
+
+    // Modo estrito completo — nunca desativar
     "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    // Manter false por ora — ativar gradualmente ao refatorar acessos de array
+    "noUncheckedIndexedAccess": false,
+    "noUnusedLocals": false,
+    "noUnusedParameters": false,
+
     "noEmit": true,
     "esModuleInterop": true,
     "module": "esnext",

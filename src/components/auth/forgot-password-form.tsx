@@ -1,10 +1,7 @@
 "use client";
 
 import { useActionState } from "react";
-import {
-  requestPasswordResetAction,
-  type PasswordResetResult,
-} from "@/app/actions/password-reset";
+import { requestPasswordResetAction, type PasswordResetResult } from "@/app/actions/password-reset";
 import { AppLink } from "@/components/ui/app-link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";

@@ -13,12 +13,7 @@ type Props = {
   completed: boolean;
 };
 
-export function CompleteLessonButton({
-  courseSlug,
-  lessonId,
-  courseId,
-  completed,
-}: Props) {
+export function CompleteLessonButton({ courseSlug, lessonId, courseId, completed }: Props) {
   const [pending, startTransition] = useTransition();
   const [justCompleted, setJustCompleted] = useState(false);
   const [xpFeedback, setXpFeedback] = useState<string[]>([]);

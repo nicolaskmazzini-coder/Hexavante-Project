@@ -80,9 +80,7 @@ export function LiveChat({
           {messages.length === 0 ? (
             <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-8 text-center">
               <MessageCircle className="mx-auto h-7 w-7 text-slate-500" />
-              <p className="mt-3 text-sm font-semibold text-slate-300">
-                Nenhuma mensagem ainda.
-              </p>
+              <p className="mt-3 text-sm font-semibold text-slate-300">Nenhuma mensagem ainda.</p>
               <p className="mt-1 text-xs text-slate-500">
                 Quando a transmissão começar, a conversa aparece aqui.
               </p>
@@ -95,7 +93,9 @@ export function LiveChat({
                   key={msg.id}
                   className={`flex flex-col ${isOwnMessage ? "items-end" : "items-start"}`}
                 >
-                  <span className={`mb-1 text-xs font-medium ${isOwnMessage ? "text-sky-200" : "text-slate-400"}`}>
+                  <span
+                    className={`mb-1 text-xs font-medium ${isOwnMessage ? "text-sky-200" : "text-slate-400"}`}
+                  >
                     {isOwnMessage ? "Você" : msg.fullName || msg.username}
                   </span>
                   <div

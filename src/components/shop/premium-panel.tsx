@@ -95,7 +95,12 @@ export function PremiumPanel({ premium, premiumItems, inventory, coins }: Props)
           </div>
 
           {!premium?.isActive && (
-            <Button type="button" onClick={handleActivate} disabled={pending} className="min-h-10 px-6">
+            <Button
+              type="button"
+              onClick={handleActivate}
+              disabled={pending}
+              className="min-h-10 px-6"
+            >
               {pending ? "Ativando..." : "Ativar trial Premium (30 dias)"}
             </Button>
           )}

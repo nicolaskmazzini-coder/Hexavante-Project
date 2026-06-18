@@ -188,10 +188,7 @@ export async function getCourseForModeration(courseId: string) {
 
 // Função para moderar curso
 // Cria registro de moderação e atualiza status do curso
-export async function moderateCourse(
-  moderatorId: string,
-  data: CourseModerationInput,
-) {
+export async function moderateCourse(moderatorId: string, data: CourseModerationInput) {
   // Busca curso
   const course = await prisma.course.findUnique({ where: { id: data.courseId } });
 
@@ -326,9 +323,7 @@ export async function listModerationHistory(limit = 15) {
     })),
   ];
 
-  return items
-    .sort((a, b) => b.reviewedAt.getTime() - a.reviewedAt.getTime())
-    .slice(0, limit);
+  return items.sort((a, b) => b.reviewedAt.getTime() - a.reviewedAt.getTime()).slice(0, limit);
 }
 
 // Função para verificar se usuário tem papel de instrutor

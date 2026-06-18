@@ -21,9 +21,7 @@ export default async function LiveRoomsPage({ searchParams }: Props) {
 
   const params = await searchParams;
   const filter: LiveRoomListFilter =
-    params.status === "scheduled" ||
-    params.status === "live" ||
-    params.status === "ended"
+    params.status === "scheduled" || params.status === "live" || params.status === "ended"
       ? params.status
       : "all";
 
