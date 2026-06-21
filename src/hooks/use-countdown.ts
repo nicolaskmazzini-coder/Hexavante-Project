@@ -16,24 +16,22 @@ export function useCountdown(
   const startedMs = new Date(startedAt).getTime();
   const expiredRef = useRef(false);
 
-  const computeRemaining = () => {
-    if (storageKey && typeof window !== "undefined") {
-      const saved = sessionStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = Number(saved);
-        if (!Number.isNaN(parsed)) return parsed;
-      }
-    }
-    return limitMs - (Date.now() - startedMs);
-  };
-
-  const [remainingMs, setRemainingMs] = useState(computeRemaining);
+  // Valor inicial sem sessionStorage — evita hydration mismatch com RSC.
+  const [remainingMs, setRemainingMs] = useState(() => limitMs - (Date.now() - startedMs));
 
   useEffect(() => {
     expiredRef.current = false;
 
-    const tick = () => {
-      const left = limitMs - (Date.now() - startedMs);
+    const tick = (restoreFromStorage = false) => {
+      let left = limitMs - (Date.now() - startedMs);
+      if (restoreFromStorage && storageKey) {
+        const saved = sessionStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = Number(saved);
+          if (!Number.isNaN(parsed)) left = parsed;
+        }
+      }
+
       setRemainingMs(left);
       if (storageKey) {
         sessionStorage.setItem(storageKey, String(left));
@@ -45,9 +43,12 @@ export function useCountdown(
       }
     };
 
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    const initialId = window.setTimeout(() => tick(true), 0);
+    const interval = setInterval(() => tick(false), 1000);
+    return () => {
+      window.clearTimeout(initialId);
+      clearInterval(interval);
+    };
   }, [startedAt, timeLimitMinutes, storageKey, limitMs, startedMs, onExpire]);
 
   return remainingMs;

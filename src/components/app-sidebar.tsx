@@ -17,6 +17,7 @@ import {
   Radio,
   Shield,
   ShoppingBag,
+  Package,
   Target,
   Users,
   Video,
@@ -51,6 +52,7 @@ const PRIMARY_ITEMS: NavItem[] = [
   { icon: BookOpen, label: "Cursos", href: "/courses" },
   { icon: Target, label: "Simulados", href: "/simulados" },
   { icon: ShoppingBag, label: "Loja", href: "/shop", requiresAuth: true },
+  { icon: Package, label: "Inventário", href: "/inventario", requiresAuth: true },
   { icon: Compass, label: "Introdução", href: "/" },
   { icon: Map, label: "Trilha", href: "/courses" },
 ];

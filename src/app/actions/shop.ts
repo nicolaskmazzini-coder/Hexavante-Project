@@ -23,6 +23,7 @@ export async function purchaseItemAction(
   try {
     await purchaseStoreItem(session.user.id, storeItemId);
     revalidatePath("/shop");
+    revalidatePath("/inventario");
     revalidatePath("/perfil");
     revalidatePath("/simulados");
     revalidatePath("/pacotes-revisao");
@@ -51,7 +52,10 @@ export async function equipItemAction(
 
   try {
     await equipStoreItem(session.user.id, inventoryId);
+    revalidatePath("/", "layout");
     revalidatePath("/shop");
+    revalidatePath("/inventario");
+    revalidatePath("/configuracoes/cosmeticos");
     revalidatePath("/perfil");
     revalidatePath("/simulados");
     revalidatePath("/pacotes-revisao");

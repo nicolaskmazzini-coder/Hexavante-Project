@@ -1,3 +1,4 @@
+import { logger } from "@/lib/logger";
 import { prisma } from "@/lib/prisma";
 import type { EssayGradeInput } from "@/lib/validations/exam";
 
@@ -31,7 +32,7 @@ export async function listPendingEssayAnswers() {
   });
 }
 
-export async function gradeEssayAnswer(data: EssayGradeInput) {
+export async function gradeEssayAnswer(data: EssayGradeInput, moderatorId: string) {
   const answer = await prisma.examAnswer.findUnique({
     where: { id: data.answerId },
     include: {
@@ -91,6 +92,13 @@ export async function gradeEssayAnswer(data: EssayGradeInput) {
       },
     });
   }
+
+  logger.info("Dissertativa corrigida", {
+    answerId: data.answerId,
+    moderatorId,
+    status: data.status,
+    attemptId: attempt.id,
+  });
 
   return { pendingEssays, provisionalScore };
 }

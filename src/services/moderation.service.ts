@@ -4,6 +4,7 @@ import type {
   CourseModerationInput,
   InstructorApplicationInput,
 } from "@/lib/validations/moderation"; // Tipos de entrada para validação
+import { enforceCleanContent } from "@/services/content-policy.service";
 import { createNotification } from "@/services/notification.service";
 
 // Função para obter última aplicação de instrutor do usuário
@@ -41,7 +42,19 @@ export async function submitInstructorApplication(
     throw new Error("Você já é instrutor na plataforma.");
   }
 
-  // Cria nova aplicação de instrutor
+  await enforceCleanContent({
+    userId,
+    text: data.motivation,
+    fieldLabel: "motivação",
+    context: "INSTRUCTOR_APPLICATION",
+  });
+  await enforceCleanContent({
+    userId,
+    text: data.experience,
+    fieldLabel: "experiência",
+    context: "INSTRUCTOR_APPLICATION",
+  });
+
   return prisma.instructorApplication.create({
     data: {
       userId,
@@ -189,12 +202,14 @@ export async function getCourseForModeration(courseId: string) {
 // Função para moderar curso
 // Cria registro de moderação e atualiza status do curso
 export async function moderateCourse(moderatorId: string, data: CourseModerationInput) {
-  // Busca curso
   const course = await prisma.course.findUnique({ where: { id: data.courseId } });
 
-  // Verifica se curso existe e está pendente
-  if (!course || course.status !== "PENDING_REVIEW") {
-    throw new Error("Curso não encontrado ou não está pendente de análise.");
+  if (!course) {
+    throw new Error("Curso não encontrado.");
+  }
+
+  if (course.status === data.status) {
+    throw new Error("O curso já está com este status.");
   }
 
   const instructors = await prisma.courseInstructor.findMany({
@@ -202,7 +217,6 @@ export async function moderateCourse(moderatorId: string, data: CourseModeration
     select: { userId: true },
   });
 
-  // Cria moderação e atualiza status do curso em transação
   await prisma.$transaction([
     prisma.courseModeration.create({
       data: {
@@ -232,19 +246,29 @@ export async function moderateCourse(moderatorId: string, data: CourseModeration
         ? `Seu curso "${course.title}" foi devolvido para revisão.`
         : `Seu curso "${course.title}" foi rejeitado.`;
 
-  await prisma.notification.createMany({
-    data: instructors.map((instructor) => ({
-      userId: instructor.userId,
-      type: notificationType,
-      title:
-        data.status === "APPROVED"
-          ? "Curso aprovado"
-          : data.status === "REVISION_REQUIRED"
-            ? "Curso devolvido para revisão"
-            : "Curso rejeitado",
-      message: data.reviewNotes ?? defaultMessage,
-      link: `/instructor/courses/${data.courseId}/edit`,
-    })),
+  if (instructors.length > 0) {
+    await prisma.notification.createMany({
+      data: instructors.map((instructor) => ({
+        userId: instructor.userId,
+        type: notificationType,
+        title:
+          data.status === "APPROVED"
+            ? "Curso aprovado"
+            : data.status === "REVISION_REQUIRED"
+              ? "Curso devolvido para revisão"
+              : "Curso rejeitado",
+        message: data.reviewNotes ?? defaultMessage,
+        link: `/instructor/courses/${data.courseId}/edit`,
+      })),
+    });
+  }
+}
+
+export async function setCoursePublished(courseId: string, moderatorId: string, publish: boolean) {
+  return moderateCourse(moderatorId, {
+    courseId,
+    status: publish ? "APPROVED" : "REVISION_REQUIRED",
+    reviewNotes: publish ? "Publicado pelo painel de conteúdo." : "Despublicado pelo painel de conteúdo.",
   });
 }
 

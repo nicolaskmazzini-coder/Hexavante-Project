@@ -37,8 +37,8 @@ export function ConfirmDialog({
         <Dialog.Overlay className="fixed inset-0 z-[10002] bg-black/60 data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0" />
         <Dialog.Content
           className={cn(
-            "fixed left-1/2 top-1/2 z-[10003] w-[calc(100%-2rem)] max-w-md -translate-x-1/2 -translate-y-1/2",
-            "rounded-xl border border-white/10 bg-[#111120] p-6 shadow-2xl shadow-black/40",
+            "fixed left-1/2 top-1/2 z-[10003] w-[calc(100%-2rem)] max-w-md max-h-[min(90dvh,640px)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain",
+            "rounded-xl border border-white/10 bg-[#111120] p-5 shadow-2xl shadow-black/40 sm:p-6",
             "data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
             "data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95",
           )}
@@ -50,7 +50,7 @@ export function ConfirmDialog({
 
           <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
             <Dialog.Close asChild>
-              <Button type="button" variant="outline" disabled={pending} className="min-h-9">
+              <Button type="button" variant="outline" disabled={pending} className="min-h-11 w-full sm:w-auto">
                 {cancelLabel}
               </Button>
             </Dialog.Close>
@@ -58,7 +58,7 @@ export function ConfirmDialog({
               type="button"
               variant={variant}
               disabled={pending}
-              className="min-h-9"
+              className="min-h-11 w-full sm:w-auto"
               onClick={handleConfirm}
             >
               {pending ? "Aguarde..." : confirmLabel}

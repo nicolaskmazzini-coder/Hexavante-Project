@@ -3,7 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
+import { ContentPolicyError } from "@/lib/profanity-filter";
 import { updateProfileSchema } from "@/lib/validations/profile";
+import { enforceCleanContent } from "@/services/content-policy.service";
 import type { ZodError } from "zod";
 
 export type ProfileActionResult = {
@@ -11,6 +13,7 @@ export type ProfileActionResult = {
   error?: string;
   fieldErrors?: Record<string, string>;
   avatarUrl?: string;
+  fullName?: string;
 };
 
 const MAX_AVATAR_SIZE = 5 * 1024 * 1024;
@@ -69,6 +72,28 @@ export async function updateProfileAction(
     };
   }
 
+  try {
+    await enforceCleanContent({
+      userId: session.user.id,
+      text: parsed.data.fullName,
+      fieldLabel: "nome",
+      context: "PROFILE",
+    });
+    if (parsed.data.bio) {
+      await enforceCleanContent({
+        userId: session.user.id,
+        text: parsed.data.bio,
+        fieldLabel: "bio",
+        context: "PROFILE",
+      });
+    }
+  } catch (error) {
+    if (error instanceof ContentPolicyError) {
+      return { success: false, error: error.message };
+    }
+    throw error;
+  }
+
   await prisma.user.update({
     where: { id: session.user.id },
     data: {
@@ -81,12 +106,16 @@ export async function updateProfileAction(
     },
   });
 
+  revalidatePath("/", "layout");
   revalidatePath("/perfil");
   revalidatePath(`/perfil/${session.user.username}`);
   revalidatePath("/configuracoes/perfil");
   revalidatePath("/");
+  revalidatePath("/ranking");
+  revalidatePath("/social");
+  revalidatePath("/mensagens");
 
-  return { success: true };
+  return { success: true, fullName: parsed.data.fullName };
 }
 
 export async function updateProfilePhotoAction(formData: FormData): Promise<ProfileActionResult> {

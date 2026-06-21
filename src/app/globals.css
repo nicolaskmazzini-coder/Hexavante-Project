@@ -43,6 +43,7 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans), system-ui, sans-serif;
+  overflow-x: hidden;
   background-image:
     radial-gradient(
       circle at top left,
@@ -117,11 +118,11 @@ body {
 
 @layer components {
   .hx-page {
-    @apply mx-auto max-w-6xl px-4 py-10 sm:py-14;
+    @apply mx-auto w-full max-w-6xl px-3 py-6 sm:px-4 sm:py-10 md:py-14;
   }
 
   .hx-page-md {
-    @apply mx-auto max-w-4xl px-4 py-10;
+    @apply mx-auto w-full max-w-4xl px-3 py-6 sm:px-4 sm:py-10;
   }
 
   .hx-page-title {
@@ -214,7 +215,8 @@ body {
 
   .navbar-search {
     flex: 1;
-    max-width: 480px;
+    width: 100%;
+    max-width: min(480px, 100%);
     margin-inline: auto;
     display: flex;
     align-items: center;
@@ -284,6 +286,14 @@ body {
   position: sticky;
   z-index: 20;
   min-height: var(--hx-header-height);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+}
+
+/* Sidebar — largura garantida mesmo se utilitários Tailwind falharem */
+[data-sidebar="spacer"] {
+  flex-shrink: 0;
+  width: var(--sidebar-width);
 }
 
 /* Avatar borders — fora do @layer para evitar conflitos com Tailwind */
@@ -335,4 +345,26 @@ body {
   opacity: 0.45;
   z-index: 0;
   animation: avatar-neon-pulse 2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .hx-card-interactive:hover,
+  .hx-btn-primary:hover,
+  .hx-btn-danger:hover {
+    transform: none !important;
+  }
+
+  .avatar-border--legendary.avatar-border--border-premium-neon,
+  .avatar-border--premium.avatar-border--border-premium-neon {
+    animation: none !important;
+  }
 }

@@ -109,7 +109,6 @@ describe("auth.service", () => {
         id: "user-1",
         name: "Test User",
         email: mockData.email,
-        image: undefined,
         username: "testuser",
         roles: ["USER"],
       });

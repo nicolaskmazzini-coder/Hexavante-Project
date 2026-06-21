@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
+import { ContentPolicyError } from "@/lib/profanity-filter";
 import {
   getConversationMessages,
   markConversationRead,
+  sendDirectMessage,
   serializeDirectMessage,
 } from "@/services/direct-message.service";
 
@@ -49,5 +51,39 @@ export async function PATCH(_request: Request, context: RouteContext) {
       { error: err instanceof Error ? err.message : "Erro ao marcar como lida." },
       { status: 404 },
     );
+  }
+}
+
+export async function POST(request: Request, context: RouteContext) {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
+  }
+
+  const { id } = await context.params;
+
+  let payload: unknown;
+  try {
+    payload = await request.json();
+  } catch {
+    return NextResponse.json({ error: "Corpo da requisição inválido." }, { status: 400 });
+  }
+
+  const body =
+    payload && typeof payload === "object" && "body" in payload
+      ? String((payload as { body: unknown }).body ?? "")
+      : "";
+
+  try {
+    const message = await sendDirectMessage(id, session.user.id, body);
+    return NextResponse.json(serializeDirectMessage(message));
+  } catch (err) {
+    if (err instanceof ContentPolicyError) {
+      return NextResponse.json({ error: err.message }, { status: 422 });
+    }
+
+    const message = err instanceof Error ? err.message : "Erro ao enviar mensagem.";
+    const status = message.includes("não encontrada") ? 404 : 400;
+    return NextResponse.json({ error: message }, { status });
   }
 }

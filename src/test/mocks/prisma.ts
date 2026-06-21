@@ -7,6 +7,14 @@ export const prismaMock = {
     create: vi.fn(),
     update: vi.fn(),
   },
+  userBan: {
+    updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    findFirst: vi.fn().mockResolvedValue(null),
+  },
+  userMute: {
+    updateMany: vi.fn().mockResolvedValue({ count: 0 }),
+    findFirst: vi.fn().mockResolvedValue(null),
+  },
   role: {
     findUnique: vi.fn(),
   },

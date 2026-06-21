@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, Sparkles } from "lucide-react";
 import { completeLessonAction } from "@/app/actions/enrollment";
+import { NextLessonCard } from "@/components/courses/next-lesson-card";
 import { useToast } from "@/components/ui/toast";
 
 type Props = {
@@ -11,9 +12,16 @@ type Props = {
   lessonId: string;
   courseId: string;
   completed: boolean;
+  nextLesson?: { id: string; title: string } | null;
 };
 
-export function CompleteLessonButton({ courseSlug, lessonId, courseId, completed }: Props) {
+export function CompleteLessonButton({
+  courseSlug,
+  lessonId,
+  courseId,
+  completed,
+  nextLesson,
+}: Props) {
   const [pending, startTransition] = useTransition();
   const [justCompleted, setJustCompleted] = useState(false);
   const [xpFeedback, setXpFeedback] = useState<string[]>([]);
@@ -25,9 +33,14 @@ export function CompleteLessonButton({ courseSlug, lessonId, courseId, completed
 
   if (showCompleted && xpFeedback.length === 0) {
     return (
-      <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-200">
-        <CheckCircle2 className="h-5 w-5" />
-        Aula concluída
+      <div className="space-y-4">
+        <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-400/20 bg-emerald-400/10 px-4 py-3 text-sm font-semibold text-emerald-200">
+          <CheckCircle2 className="h-5 w-5" />
+          Aula concluída
+        </div>
+        {nextLesson && (
+          <NextLessonCard courseSlug={courseSlug} nextLesson={nextLesson} completed />
+        )}
       </div>
     );
   }
@@ -60,6 +73,10 @@ export function CompleteLessonButton({ courseSlug, lessonId, courseId, completed
             ))}
           </ul>
         </div>
+
+        {nextLesson && (
+          <NextLessonCard courseSlug={courseSlug} nextLesson={nextLesson} completed />
+        )}
       </div>
     );
   }

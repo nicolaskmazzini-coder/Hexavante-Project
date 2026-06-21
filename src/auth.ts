@@ -1,8 +1,9 @@
-import NextAuth from "next-auth";
+import NextAuth, { AuthError } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import GitHub from "next-auth/providers/github";
 import Google from "next-auth/providers/google";
 import { getAuthSecret, getOAuthCredentials, resolveOAuthEmail } from "@/lib/auth-env";
+import { isAuthEdgeRuntime } from "@/lib/auth-runtime";
 import { getSafeCallbackUrl, isPublicAuthRoute } from "@/lib/auth-routes";
 import { authAdapter } from "@/lib/auth-adapter";
 import { oauthProviders } from "@/lib/oauth";
@@ -43,6 +44,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   secret: getAuthSecret(),
   session: { strategy: "jwt" },
   trustHost: true,
+  logger: {
+    error(error) {
+      if (error instanceof AuthError && error.type === "JWTSessionError") {
+        // Cookie legado ou AUTH_SECRET alterado — sessão tratada como null.
+        return;
+      }
+
+      const name = error instanceof AuthError ? error.type : error.name;
+      console.error(`[auth][error] ${name}: ${error.message}`);
+    },
+  },
   pages: {
     signIn: "/login",
   },
@@ -129,48 +141,85 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
       return true;
     },
-    async jwt({ token, user }) {
-      // Prisma só no sign-in (Node). No middleware (Edge) usar valores já no token.
+    async jwt({ token, user, trigger }) {
+      // Prisma só no Node (páginas/API). No middleware (Edge) usar valores já no token.
       if (user?.id) {
-        const dbUser = await prisma.user.findUnique({
-          where: { id: user.id },
-          include: { roles: { include: { role: true } } },
-        });
-
-        if (dbUser) {
-          applyUserToToken(token, {
-            id: dbUser.id,
-            email: dbUser.email,
-            name: dbUser.fullName,
-            username: dbUser.username,
-            roles: dbUser.roles.map((r) => r.role.name),
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            include: { roles: { include: { role: true } } },
           });
-        } else if ("username" in user && Array.isArray(user.roles)) {
+
+          if (dbUser) {
+            applyUserToToken(token, {
+              id: dbUser.id,
+              email: dbUser.email,
+              name: dbUser.fullName,
+              username: dbUser.username,
+              roles: dbUser.roles.map((r) => r.role.name),
+            });
+          } else if ("username" in user && Array.isArray(user.roles)) {
+            applyUserToToken(token, {
+              id: user.id,
+              email: user.email,
+              name: user.name,
+              username: user.username as string,
+              roles: user.roles as string[],
+            });
+          }
+
+          if (token.id && !token.isImpersonating) {
+            const status = await getActiveModerationStatus(token.id as string);
+            token.isBanned = status.isBanned;
+            token.banReason = status.banReason;
+            token.isMuted = status.isMuted;
+          }
+        } catch {
           applyUserToToken(token, {
             id: user.id,
             email: user.email,
             name: user.name,
-            username: user.username as string,
-            roles: user.roles as string[],
+            username: "username" in user ? (user.username as string) : undefined,
+            roles: "roles" in user && Array.isArray(user.roles) ? (user.roles as string[]) : [],
           });
         }
+      } else if (token.id && !token.isImpersonating && !isAuthEdgeRuntime()) {
+        // Sincroniza nome/username no servidor — nunca no middleware Edge (quebra a sessão).
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.id as string },
+            select: { fullName: true, username: true },
+          });
+          if (dbUser) {
+            token.name = dbUser.fullName;
+            token.username = dbUser.username;
+          }
 
-        if (token.id && !token.isImpersonating) {
-          const status = await getActiveModerationStatus(token.id as string);
-          token.isBanned = status.isBanned;
-          token.banReason = status.banReason;
-          token.isMuted = status.isMuted;
+          if (trigger === "update") {
+            const status = await getActiveModerationStatus(token.id as string);
+            token.isBanned = status.isBanned;
+            token.banReason = status.banReason;
+            token.isMuted = status.isMuted;
+          }
+        } catch {
+          // Mantém token existente se o banco estiver indisponível.
         }
       }
 
       delete token.picture;
       delete token.image;
 
+      if (!token.id && token.sub) {
+        token.id = token.sub;
+      }
+
       return slimJwtToken(token);
     },
     async session({ session, token }) {
-      if (session.user && token.id) {
-        session.user.id = token.id as string;
+      const userId = (token.id ?? token.sub) as string | undefined;
+
+      if (session.user && userId) {
+        session.user.id = userId;
         session.user.email = (token.email as string | null | undefined) ?? session.user.email;
         session.user.name = (token.name as string | null | undefined) ?? session.user.name;
         session.user.username = (token.username as string) ?? "";

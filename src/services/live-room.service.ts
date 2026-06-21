@@ -1,4 +1,9 @@
 // Importações necessárias para o serviço de salas ao vivo
+import {
+  enforceCleanContent,
+  enforceCleanMessageSequence,
+  filterProfanity,
+} from "@/services/content-policy.service";
 import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
 import type { LiveRoomStatus } from "@prisma/client"; // Tipo de status de sala ao vivo
 
@@ -95,12 +100,27 @@ export async function createLiveRoom(
     }
   }
 
+  await enforceCleanContent({
+    userId: instructorId,
+    text: data.title,
+    fieldLabel: "título",
+    context: "LIVE_ROOM",
+  });
+  if (data.description) {
+    await enforceCleanContent({
+      userId: instructorId,
+      text: data.description,
+      fieldLabel: "descrição",
+      context: "LIVE_ROOM",
+    });
+  }
+
   return prisma.liveRoom.create({
     data: {
       instructorId,
       title: data.title,
       description: data.description,
-      courseId: data.courseId || null, // Usa null se courseId estiver vazio
+      courseId: data.courseId || null,
       videoUrl: data.videoUrl,
       videoProvider: data.videoProvider,
       scheduledAt: data.scheduledAt,
@@ -151,6 +171,23 @@ export async function updateLiveRoom(
     if (!course) {
       throw new Error("Curso não encontrado ou sem permissão.");
     }
+  }
+
+  if (data.title) {
+    await enforceCleanContent({
+      userId: instructorId,
+      text: data.title,
+      fieldLabel: "título",
+      context: "LIVE_ROOM",
+    });
+  }
+  if (data.description) {
+    await enforceCleanContent({
+      userId: instructorId,
+      text: data.description,
+      fieldLabel: "descrição",
+      context: "LIVE_ROOM",
+    });
   }
 
   return prisma.liveRoom.update({
@@ -299,7 +336,7 @@ export async function leaveLiveRoom(roomId: string, userId: string) {
 // Função para obter mensagens do chat
 // Retorna mensagens da sala ao vivo
 export async function getLiveChatMessages(roomId: string, limit = 50) {
-  return prisma.liveChatMessage.findMany({
+  const rows = await prisma.liveChatMessage.findMany({
     where: { roomId },
     include: {
       user: { select: { id: true, username: true, fullName: true } },
@@ -307,6 +344,7 @@ export async function getLiveChatMessages(roomId: string, limit = 50) {
     orderBy: { createdAt: "asc" },
     take: limit,
   });
+  return rows.map((row) => ({ ...row, message: filterProfanity(row.message) }));
 }
 
 export async function canAccessLiveChat(roomId: string, userId: string) {
@@ -331,7 +369,7 @@ export async function getLiveChatMessagesSince(roomId: string, userId: string, s
     throw new Error("Você não tem acesso ao chat desta sala.");
   }
 
-  return prisma.liveChatMessage.findMany({
+  const rows = await prisma.liveChatMessage.findMany({
     where: {
       roomId,
       ...(since ? { createdAt: { gt: since } } : {}),
@@ -342,6 +380,7 @@ export async function getLiveChatMessagesSince(roomId: string, userId: string, s
     orderBy: { createdAt: "asc" },
     take: 100,
   });
+  return rows.map((row) => ({ ...row, message: filterProfanity(row.message) }));
 }
 
 // Função para enviar mensagem no chat
@@ -368,8 +407,35 @@ export async function sendLiveChatMessage(roomId: string, userId: string, messag
     throw new Error("Você precisa estar na sala para enviar mensagens.");
   }
 
+  const trimmed = message.trim();
+
+  const sequenceWindowMs = 5 * 60 * 1000;
+  const since = new Date(Date.now() - sequenceWindowMs);
+  const recentFromSender = await prisma.liveChatMessage.findMany({
+    where: {
+      roomId,
+      userId,
+      createdAt: { gte: since },
+    },
+    orderBy: { createdAt: "asc" },
+    take: 8,
+    select: { message: true },
+  });
+
+  const recentFragments = recentFromSender
+    .map((row) => row.message.trim())
+    .filter((body) => body.length > 0 && body.length <= 24 && body.split(/\s+/).length <= 3);
+
+  await enforceCleanMessageSequence({
+    userId,
+    text: trimmed,
+    recentFragments,
+    fieldLabel: "mensagem",
+    context: "LIVE_CHAT",
+  });
+
   return prisma.liveChatMessage.create({
-    data: { roomId, userId, message },
+    data: { roomId, userId, message: filterProfanity(trimmed) },
     include: {
       user: { select: { id: true, username: true, fullName: true } },
     },

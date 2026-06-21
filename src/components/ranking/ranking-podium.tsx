@@ -3,6 +3,7 @@ import { Crown, Medal, Sparkles } from "lucide-react";
 import type { RankingEntry } from "@/services/xp.service";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { LeagueBadge } from "@/components/ranking/league-badge";
 import { cn } from "@/lib/cn";
 
 type Props = {
@@ -71,6 +72,11 @@ export function RankingPodium({ entries, currentUserId, periodLabel }: Props) {
                 <Badge variant="sky" className="mt-1">
                   Você
                 </Badge>
+              )}
+              {entry.league && (
+                <div className="mt-1">
+                  <LeagueBadge league={entry.league} />
+                </div>
               )}
               <div className="mt-2 flex items-center gap-1 text-xs text-slate-400">
                 <Sparkles className="h-3.5 w-3.5 text-sky-300" />

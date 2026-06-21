@@ -1,6 +1,7 @@
 "use client";
 
 import { useActionState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { updateProfileAction, type ProfileActionResult } from "@/app/actions/profile";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -29,14 +30,16 @@ const initialState: ProfileActionResult = { success: false };
 export function ProfileEditForm({ profile }: Props) {
   const [state, formAction, pending] = useActionState(updateProfileAction, initialState);
   const { toast } = useToast();
+  const router = useRouter();
 
   useEffect(() => {
     if (state.success) {
-      toast("Perfil atualizado com sucesso!", "success");
+      toast("Perfil atualizado! Seu nome foi atualizado em todo o app.", "success");
+      router.refresh();
     } else if (state.error && !state.fieldErrors) {
       toast(state.error, "error");
     }
-  }, [state, toast]);
+  }, [state, toast, router]);
 
   return (
     <Card padding="lg">

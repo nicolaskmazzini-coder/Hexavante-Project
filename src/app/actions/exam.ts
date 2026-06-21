@@ -24,18 +24,29 @@ function parseExamSubmission(formData: FormData) {
   return { answers, essays };
 }
 
-export async function startExamAction(examId: string, slug: string) {
+export async function startExamAction(examId: string, slug: string, mode?: string) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect(`/login?callbackUrl=/simulados/${slug}`);
   }
+
+  const studyMode =
+    mode === "REINFORCEMENT" || mode === "FAVORITES" ? mode : ("FULL" as const);
 
   const active = await getActiveAttempt(session.user.id, examId);
   if (active) {
     redirect(`/simulados/${slug}/fazer?attempt=${active.id}`);
   }
 
-  const attempt = await startAttempt(session.user.id, examId);
+  let attempt;
+  try {
+    attempt = await startAttempt(session.user.id, examId, studyMode);
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : "Não foi possível iniciar o simulado.";
+    redirect(`/simulados/${slug}?error=${encodeURIComponent(message)}`);
+  }
+
   redirect(`/simulados/${slug}/fazer?attempt=${attempt.id}`);
 }
 

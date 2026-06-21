@@ -1,5 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import { getUserXpProfile, getXpHistory } from "@/services/xp.service";
+import { getStudyContinuation } from "@/services/study-continuation.service";
+import { getRecommendedCourses } from "@/services/recommendation.service";
+import { getPersonalStats } from "@/services/personal-stats.service";
+import { getUserAchievements } from "@/services/achievement.service";
+import { shouldShowOnboardingTour } from "@/services/onboarding.service";
+import { getDashboardHighlights } from "@/services/dashboard-goals.service";
+import { getDashboardPendingItems } from "@/services/dashboard-pending.service";
 
 export async function getUserProfile(userId: string) {
   return prisma.user.findUnique({
@@ -65,5 +72,30 @@ export async function getStudentDashboard(userId: string) {
     completedCount,
     recentXp,
     lastExam: examAttempts[0] ?? null,
+  };
+}
+
+export async function getStudentHomeData(userId: string) {
+  const [dashboard, continuation, recommendations, stats, achievements, showOnboardingTour, highlights, pendingItems] =
+    await Promise.all([
+      getStudentDashboard(userId),
+      getStudyContinuation(userId),
+      getRecommendedCourses(userId),
+      getPersonalStats(userId),
+      getUserAchievements(userId),
+      shouldShowOnboardingTour(userId),
+      getDashboardHighlights(userId),
+      getDashboardPendingItems(userId),
+    ]);
+
+  return {
+    ...dashboard,
+    continuation,
+    recommendations,
+    stats,
+    achievements,
+    showOnboardingTour,
+    highlights,
+    pendingItems,
   };
 }

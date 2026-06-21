@@ -37,6 +37,7 @@ export async function completeLessonAction(
 
   try {
     const result = await markLessonComplete(session.user.id, lessonId, courseId);
+    revalidatePath("/");
     revalidatePath(`/courses/${courseSlug}/learn`);
     revalidatePath(`/courses/${courseSlug}/learn/${lessonId}`);
     revalidatePath("/perfil");

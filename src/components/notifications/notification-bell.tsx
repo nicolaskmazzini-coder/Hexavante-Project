@@ -3,20 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import {
+  NotificationItem,
+  type NotificationView,
+} from "@/components/notifications/notification-item";
 import { cn } from "@/lib/cn";
-
-type NotificationItem = {
-  id: string;
-  title: string;
-  message: string;
-  link: string | null;
-  readAt: string | null;
-  createdAt: string;
-};
 
 export function NotificationBell() {
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [notifications, setNotifications] = useState<NotificationView[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
   const panelRef = useRef<HTMLDivElement>(null);
 
@@ -31,7 +26,7 @@ export function NotificationBell() {
         return;
       }
       const data = (await response.json()) as {
-        notifications: NotificationItem[];
+        notifications: NotificationView[];
         unreadCount: number;
       };
       setNotifications(data.notifications);
@@ -79,16 +74,15 @@ export function NotificationBell() {
     );
   };
 
-  const markOneRead = async (id: string) => {
-    const response = await fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
-    if (!response.ok) return;
+  const markRead = useCallback((id: string) => {
     setNotifications((current) =>
       current.map((item) =>
         item.id === id ? { ...item, readAt: item.readAt ?? new Date().toISOString() } : item,
       ),
     );
     setUnreadCount((count) => Math.max(count - 1, 0));
-  };
+    void fetch(`/api/notifications/${id}/read`, { method: "PATCH" });
+  }, []);
 
   return (
     <div className="relative" ref={panelRef}>
@@ -128,50 +122,30 @@ export function NotificationBell() {
             <p className="px-4 py-6 text-center text-sm text-slate-400">Nenhuma notificação.</p>
           ) : (
             <ul className="max-h-80 overflow-y-auto">
-              {notifications.map((item) => {
-                const content = (
-                  <div
-                    className={cn(
-                      "px-4 py-3 transition hover:bg-white/[0.04]",
-                      !item.readAt && "bg-sky-400/5",
-                    )}
-                  >
-                    <p className="text-sm font-semibold text-white">{item.title}</p>
-                    <p className="mt-1 line-clamp-2 text-xs text-slate-400">{item.message}</p>
-                    <p className="mt-2 text-[10px] text-slate-500">
-                      {new Date(item.createdAt).toLocaleString("pt-BR")}
-                    </p>
-                  </div>
-                );
-
-                return (
-                  <li key={item.id} className="border-b border-white/5 last:border-b-0">
-                    {item.link ? (
-                      <Link
-                        href={item.link}
-                        onClick={() => {
-                          if (!item.readAt) void markOneRead(item.id);
-                          setOpen(false);
-                        }}
-                      >
-                        {content}
-                      </Link>
-                    ) : (
-                      <button
-                        type="button"
-                        className="w-full text-left"
-                        onClick={() => {
-                          if (!item.readAt) void markOneRead(item.id);
-                        }}
-                      >
-                        {content}
-                      </button>
-                    )}
-                  </li>
-                );
-              })}
+              {notifications.map((item) => (
+                <li key={item.id} className="border-b border-white/5 last:border-b-0">
+                  <NotificationItem
+                    notification={item}
+                    compact
+                    onRead={markRead}
+                    onNavigate={() => setOpen(false)}
+                  />
+                </li>
+              ))}
             </ul>
           )}
+
+          <div className="border-t border-white/10 px-4 py-3">
+            <Link
+              href="/notificacoes"
+              onClick={() => setOpen(false)}
+              className={cn(
+                "block text-center text-xs font-semibold text-sky-300 transition hover:text-sky-200",
+              )}
+            >
+              Ver todas
+            </Link>
+          </div>
         </div>
       )}
     </div>

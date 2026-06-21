@@ -70,6 +70,15 @@ export const SHOP_CATALOG: ShopCatalogItem[] = [
     metadata: { borderId: "border-crystal", rarity: "legendary" },
   },
   {
+    slug: "theme-hexavante",
+    name: "Tema Hexavante",
+    description: "Visual padrão da plataforma — azul e teal original.",
+    cost: 0,
+    category: "THEME",
+    isPermanent: true,
+    metadata: { themeId: "default" },
+  },
+  {
     slug: "theme-cyberpunk",
     name: "Tema Dark Cyberpunk",
     description: "Neon fuchsia, violeta e ciano em toda a interface.",
@@ -222,6 +231,63 @@ export const SHOP_CATALOG: ShopCatalogItem[] = [
     isPremiumOnly: true,
     metadata: { borderId: "border-premium-neon", rarity: "legendary" },
   },
+  {
+    slug: "pet-owl",
+    name: "Coruja Hex",
+    description: "Companheiro sábio que aparece no seu perfil.",
+    cost: 130,
+    category: "PET",
+    metadata: { petId: "pet-owl", rarity: "common" },
+  },
+  {
+    slug: "pet-fox",
+    name: "Raposa Astuta",
+    description: "Pet ágil e curioso para perfis em movimento.",
+    cost: 180,
+    category: "PET",
+    metadata: { petId: "pet-fox", rarity: "rare" },
+  },
+  {
+    slug: "pet-dragon",
+    name: "Dragão Estudante",
+    description: "Companheiro lendário para quem domina a plataforma.",
+    cost: 280,
+    category: "PET",
+    metadata: { petId: "pet-dragon", rarity: "legendary" },
+  },
+  {
+    slug: "pet-bot",
+    name: "Bot Hexavante",
+    description: "Assistente digital exclusivo para assinantes Premium.",
+    cost: 0,
+    category: "PET",
+    isPremiumOnly: true,
+    metadata: { petId: "pet-bot", rarity: "premium" },
+  },
+  {
+    slug: "pet-acc-crown",
+    name: "Coroa Real (Pet)",
+    description: "Acessório dourado para o seu companheiro.",
+    cost: 65,
+    category: "PET_COSMETIC",
+    metadata: { accessoryId: "acc-crown" },
+  },
+  {
+    slug: "pet-acc-scarf",
+    name: "Lenço de Inverno (Pet)",
+    description: "Visual aconchegante para o pet no perfil.",
+    cost: 55,
+    category: "PET_COSMETIC",
+    metadata: { accessoryId: "acc-scarf" },
+  },
+  {
+    slug: "pet-acc-glasses",
+    name: "Óculos Estudioso (Pet)",
+    description: "Deixa seu pet com ar intelectual.",
+    cost: 70,
+    category: "PET_COSMETIC",
+    metadata: { accessoryId: "acc-glasses" },
+  },
 ];
 
 export const STORE_CATEGORY_LABELS: Record<StoreItemCategory, string> = {
@@ -232,14 +298,26 @@ export const STORE_CATEGORY_LABELS: Record<StoreItemCategory, string> = {
   BOOSTER: "Boosters",
   PASS: "Passes",
   REVIEW_PACK: "Pacotes de revisão",
+  PET: "Pets",
+  PET_COSMETIC: "Acessórios de pet",
 };
 
+export const SHOP_FAIR_PLAY_NOTE =
+  "A loja vende personalização e conveniência — nunca vantagem em provas. Boosters só aumentam XP e moedas; passes liberam acesso antecipado, não alteram notas.";
+
+export const SHOP_EARN_COINS_HINTS = [
+  { label: "Aula concluída", amount: 3 },
+  { label: "Módulo concluído", amount: 10 },
+  { label: "Curso concluído", amount: 25 },
+  { label: "Questão correta no simulado", amount: 5 },
+  { label: "Recompensa de liga (temporada)", amount: "variável" },
+] as const;
+
 export const SHOP_TAB_CATEGORIES: Record<
-  "titles" | "cosmetics" | "boosters" | "passes" | "review_packs" | "premium",
+  "personalize" | "boosters" | "passes" | "review_packs" | "premium",
   StoreItemCategory[] | "premium"
 > = {
-  titles: ["TITLE"],
-  cosmetics: ["AVATAR_BORDER", "THEME", "COSMETIC"],
+  personalize: ["TITLE", "AVATAR_BORDER", "THEME", "COSMETIC", "PET", "PET_COSMETIC"],
   boosters: ["BOOSTER"],
   passes: ["PASS"],
   review_packs: ["REVIEW_PACK"],

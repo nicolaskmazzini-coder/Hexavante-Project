@@ -10,20 +10,29 @@ type Props = {
 export function EquippedTheme({ themeId, themeClassName }: Props) {
   useEffect(() => {
     const root = document.documentElement;
+    const body = document.body;
     const classes = ["theme-default", "theme-cyberpunk", "theme-hacker", "theme-obsidian"];
 
-    classes.forEach((cls) => root.classList.remove(cls));
+    classes.forEach((cls) => {
+      root.classList.remove(cls);
+      body.classList.remove(cls);
+    });
+
+    const active = themeId && themeClassName ? themeClassName : "theme-default";
+    root.classList.add(active);
+    body.classList.add(active);
 
     if (themeId && themeClassName) {
-      root.classList.add(themeClassName);
       root.dataset.shopTheme = themeId;
     } else {
-      root.classList.add("theme-default");
       delete root.dataset.shopTheme;
     }
 
     return () => {
-      classes.forEach((cls) => root.classList.remove(cls));
+      classes.forEach((cls) => {
+        root.classList.remove(cls);
+        body.classList.remove(cls);
+      });
       delete root.dataset.shopTheme;
     };
   }, [themeId, themeClassName]);

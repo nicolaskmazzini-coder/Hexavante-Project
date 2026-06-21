@@ -3,8 +3,8 @@ import type { RankingPeriod } from "@/services/xp.service";
 import { cn } from "@/lib/cn";
 
 const PERIODS: { value: RankingPeriod; label: string }[] = [
+  { value: "month", label: "Temporada" },
   { value: "week", label: "Semanal" },
-  { value: "month", label: "Mensal" },
   { value: "all", label: "Total" },
 ];
 

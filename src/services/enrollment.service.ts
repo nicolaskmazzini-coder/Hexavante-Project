@@ -6,6 +6,8 @@ import { COIN_REWARDS } from "@/lib/gamification";
 import { awardCoins } from "@/services/wallet.service";
 import { awardXp, type XpAward, XP_REWARDS } from "@/services/xp.service";
 import { issueCertificate } from "@/services/certificate.service"; // Serviço de certificados
+import { recordStudyVisit } from "@/services/study-continuation.service";
+import { buildLessonProgressContext } from "@/services/lesson-learning.service";
 
 // Tipo para resultado de conclusão de aula
 export type LessonCompleteResult = {
@@ -250,7 +252,15 @@ export async function markLessonComplete(
         // Se o certificado já existe, ignora o erro
         console.error("Erro ao emitir certificado (pode já existir):", error);
       }
+
+      const { syncUserAchievements } = await import("@/services/achievement.service");
+      await syncUserAchievements(userId);
     }
+  }
+
+  if (!alreadyCompleted) {
+    const { syncUserAchievements } = await import("@/services/achievement.service");
+    await syncUserAchievements(userId);
   }
 
   // Calcula total de XP ganho
@@ -309,6 +319,21 @@ export async function getLessonWithAccess(userId: string, courseSlug: string, le
   const courseModule = course.modules.find((m) => m.id === lesson.moduleId);
   const progresses = enrollment.lessonProgresses;
 
+  await recordStudyVisit(userId, courseSlug, lessonId);
+
+  const completedIds = new Set(
+    progresses.filter((p) => p.completed).map((p) => p.lessonId),
+  );
+
+  const learning = await buildLessonProgressContext(
+    userId,
+    lessonId,
+    { estimatedHours: course.estimatedHours },
+    allLessons.map((l) => ({ id: l.id, title: l.title, duration: l.duration })),
+    completedIds,
+    enrollment.progress,
+  );
+
   return {
     course,
     enrollment,
@@ -317,5 +342,6 @@ export async function getLessonWithAccess(userId: string, courseSlug: string, le
     allLessons,
     progresses,
     lessonIndex,
+    learning,
   };
 }

@@ -1,12 +1,13 @@
 "use client";
 
 import { useActionState } from "react";
-import { BookOpen, Coins, Crown, Sparkles, Ticket, Zap } from "lucide-react";
+import { BookOpen, Coins, Crown, PawPrint, Sparkles, Ticket, Zap } from "lucide-react";
 import { equipItemAction, purchaseItemAction, type ShopActionResult } from "@/app/actions/shop";
 import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { RARITY_LABELS } from "@/lib/cosmetics";
+import { resolvePet, resolvePetAccessory } from "@/lib/pets";
 import { STORE_CATEGORY_LABELS } from "@/lib/shop-catalog";
 import {
   formatExpirationDate,
@@ -34,6 +35,8 @@ type ShopItem = {
     affects?: string[];
     passType?: string;
     topic?: string;
+    petId?: string;
+    accessoryId?: string;
   } | null;
 };
 
@@ -57,6 +60,8 @@ const CATEGORY_ICONS: Record<StoreItemCategory, typeof Coins> = {
   COSMETIC: Sparkles,
   PASS: Ticket,
   REVIEW_PACK: BookOpen,
+  PET: PawPrint,
+  PET_COSMETIC: Sparkles,
 };
 
 const OWNERSHIP_BADGE_VARIANT: Record<
@@ -93,7 +98,16 @@ export function ShopItemCard({
     ownershipStatus === "expired_temporary" ||
     (!item.isPermanent && ownershipStatus === "active_temporary");
 
-  const isEquippable = ["TITLE", "AVATAR_BORDER", "THEME", "COSMETIC"].includes(item.category);
+  const isEquippable = ["TITLE", "AVATAR_BORDER", "THEME", "COSMETIC", "PET", "PET_COSMETIC"].includes(
+    item.category,
+  );
+
+  const petPreview =
+    item.category === "PET" && item.metadata?.petId
+      ? resolvePet(item.metadata.petId)
+      : item.category === "PET_COSMETIC" && item.metadata?.accessoryId
+        ? resolvePetAccessory(item.metadata.accessoryId)
+        : null;
 
   const durationLabel = item.metadata?.durationDays
     ? `${item.metadata.durationDays} dias`
@@ -110,13 +124,19 @@ export function ShopItemCard({
 
   return (
     <Card
-      className={`flex h-full flex-col border bg-white/[0.04] p-5 ${
+      className={`flex h-full max-w-full flex-col border bg-white/[0.04] p-4 sm:p-5 ${
         isOwned ? "border-emerald-400/25" : "border-white/10"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-amber-400/10 text-amber-200">
-          <Icon className="h-5 w-5" />
+          {petPreview ? (
+            <span className="text-2xl leading-none" aria-hidden>
+              {petPreview.emoji}
+            </span>
+          ) : (
+            <Icon className="h-5 w-5" />
+          )}
         </div>
         <div className="flex flex-col items-end gap-1.5">
           <Badge variant={item.isPremiumOnly ? "violet" : "default"}>
@@ -165,7 +185,7 @@ export function ShopItemCard({
         <p className="mt-2 text-xs text-amber-300">Expirado — você pode renovar a compra.</p>
       )}
 
-      <div className="mt-4 flex items-center justify-between gap-3 border-t border-white/10 pt-4">
+      <div className="mt-4 flex flex-col gap-3 border-t border-white/10 pt-4 sm:flex-row sm:items-center sm:justify-between">
         {item.isPremiumOnly ? (
           <span className="text-sm font-semibold text-fuchsia-200">
             {isPremium ? "Grátis para Premium" : "Exclusivo Premium"}
@@ -177,8 +197,9 @@ export function ShopItemCard({
           </span>
         )}
 
+        <div className="w-full sm:w-auto sm:shrink-0">
         {isOwned && item.category === "REVIEW_PACK" && ownershipStatus === "active_temporary" ? (
-          <LinkButton href={`/pacotes-revisao/${item.slug}`} className="min-h-9">
+          <LinkButton href={`/pacotes-revisao/${item.slug}`} className="min-h-11 w-full sm:w-auto">
             Acessar pacote
           </LinkButton>
         ) : isOwned && item.category === "BOOSTER" ? (
@@ -191,13 +212,13 @@ export function ShopItemCard({
           </span>
         ) : isOwned && isEquippable ? (
           equipped ? (
-            <Button variant="outline" disabled className="min-h-9">
+            <Button variant="outline" disabled className="min-h-11 w-full sm:w-auto">
               Equipado
             </Button>
           ) : inventoryId ? (
             <form action={equip}>
               <input type="hidden" name="inventoryId" value={inventoryId} />
-              <Button type="submit" disabled={equipping} className="min-h-9">
+              <Button type="submit" disabled={equipping} className="min-h-11 w-full sm:w-auto">
                 {equipping ? "Equipando..." : "Equipar"}
               </Button>
             </form>
@@ -208,7 +229,7 @@ export function ShopItemCard({
           ) : (
             <form action={purchase}>
               <input type="hidden" name="storeItemId" value={item.id} />
-              <Button type="submit" disabled={purchasing || !canAfford} className="min-h-9">
+              <Button type="submit" disabled={purchasing || !canAfford} className="min-h-11 w-full sm:w-auto">
                 {purchasing
                   ? "Comprando..."
                   : ownershipStatus === "active_temporary" && !item.isPermanent
@@ -222,6 +243,7 @@ export function ShopItemCard({
         ) : (
           <span className="text-sm font-semibold text-emerald-300">Adquirido</span>
         )}
+        </div>
       </div>
 
       {error && <p className="mt-2 text-xs text-red-300">{error}</p>}

@@ -4,9 +4,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/button";
 import { XpProgressBar } from "@/components/gamification/xp-progress-bar";
-import type { getStudentDashboard } from "@/services/student.service";
+import type { getStudentHomeData } from "@/services/student.service";
 
-type DashboardData = Awaited<ReturnType<typeof getStudentDashboard>>;
+type DashboardData = Awaited<ReturnType<typeof getStudentHomeData>>;
 
 type Props = {
   data: DashboardData;
@@ -14,7 +14,7 @@ type Props = {
 };
 
 export function StudentDashboard({ data, userName }: Props) {
-  const { xpProfile, inProgress, completedCount, recentXp, lastExam } = data;
+  const { xpProfile, inProgress, completedCount, recentXp, lastExam, continuation } = data;
 
   return (
     <Card padding="md" className="shadow-2xl shadow-black/30 backdrop-blur">
@@ -62,7 +62,7 @@ export function StudentDashboard({ data, userName }: Props) {
         </div>
       </div>
 
-      {inProgress.length > 0 ? (
+      {inProgress.length > 0 && !data.continuation ? (
         <div className="mt-5 space-y-2">
           <p className="text-xs font-semibold uppercase tracking-wide text-slate-400">
             Continue estudando

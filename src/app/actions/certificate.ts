@@ -3,6 +3,7 @@
 import { auth } from "@/auth";
 import { verifyCertificateSchema } from "@/lib/validations/certificate";
 import {
+  getCertificateByCode,
   getUserCertificates,
   issueCertificate,
   verifyCertificate,
@@ -30,6 +31,12 @@ export async function verifyCertificateByCode(code: string) {
   const parsed = verifyCertificateSchema.safeParse({ code });
   if (!parsed.success) return null;
   return verifyCertificate(parsed.data.code);
+}
+
+export async function getPublicCertificateByCode(code: string) {
+  const parsed = verifyCertificateSchema.safeParse({ code });
+  if (!parsed.success) return null;
+  return getCertificateByCode(parsed.data.code);
 }
 
 export async function getUserCertificatesAction() {

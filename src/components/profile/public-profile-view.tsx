@@ -1,7 +1,9 @@
 import { ProfileIconBadge } from "@/components/profile/profile-icon-badge";
+import { ProfilePetCompanion } from "@/components/profile/profile-pet-companion";
+import { ProfileShowcase } from "@/components/profile/profile-showcase";
 import { StartMessageButton } from "@/components/messages/start-message-button";
 import Link from "next/link";
-import { Award, BarChart3, Pencil, Settings, Sparkles, Store, Trophy } from "lucide-react";
+import { Pencil, Settings, Store } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { FollowButton } from "@/components/social/follow-button";
 import { ProfileTabs } from "./profile-tabs";
@@ -12,30 +14,46 @@ type ProfileData = NonNullable<Awaited<ReturnType<typeof getPublicProfile>>>;
 type Props = {
   profile: ProfileData;
   viewerId?: string;
+  viewerUsername?: string;
 };
 
-export function PublicProfileView({ profile, viewerId }: Props) {
+export function PublicProfileView({ profile, viewerId, viewerUsername }: Props) {
   const {
     user,
     isOwner,
     isPrivate,
     xp,
-    rank,
     followCounts,
     isFollowing,
     completedCourses,
     cosmetics,
     enrollments,
     activities,
+    achievements,
+    showcase,
+    certificates,
   } = profile;
 
   if (isPrivate) {
+    const isLikelyOwner =
+      viewerUsername != null &&
+      viewerUsername.toLowerCase() === user.username.toLowerCase();
+
     return (
       <div className="rounded-xl border border-white/10 bg-[#111120] p-10 text-center">
         <p className="text-lg font-semibold text-white">Este perfil é privado</p>
         <p className="mt-2 text-sm text-slate-400">
           @{user.username} restringiu a visualização do perfil.
         </p>
+        {isLikelyOwner && (
+          <Link
+            href="/configuracoes/perfil"
+            className="hx-btn-primary mt-6 inline-flex items-center gap-2"
+          >
+            <Pencil className="h-4 w-4" />
+            Editar visibilidade do perfil
+          </Link>
+        )}
       </div>
     );
   }
@@ -45,13 +63,16 @@ export function PublicProfileView({ profile, viewerId }: Props) {
       <section className="overflow-hidden rounded-xl border border-[#1e1e2e] bg-[#111120] shadow-2xl shadow-black/25">
         <div className="h-28 bg-gradient-to-r from-sky-500/20 via-blue-500/15 to-teal-400/15" />
         <div className="grid gap-6 p-6 lg:grid-cols-[180px_minmax(0,1fr)]">
-          <div className="-mt-16 flex justify-center lg:justify-start">
+          <div className="-mt-16 flex flex-col items-center gap-3 lg:items-start">
             <Avatar
               src={user.avatarUrl}
               alt={user.username}
               size="lg"
               borderClassName={cosmetics?.avatarBorderClassName}
             />
+            {cosmetics?.pet && (
+              <ProfilePetCompanion pet={cosmetics.pet} accessory={cosmetics.petAccessory} />
+            )}
           </div>
 
           <div className="min-w-0">
@@ -64,6 +85,9 @@ export function PublicProfileView({ profile, viewerId }: Props) {
                   )}
                 </div>
                 <p className="mt-1 text-slate-400">@{user.username}</p>
+                {cosmetics?.equippedTitle && (
+                  <p className="mt-2 text-sm font-semibold text-amber-200">{cosmetics.equippedTitle}</p>
+                )}
                 {user.bio && (
                   <p className="mt-3 max-w-xl text-sm leading-6 text-slate-300">{user.bio}</p>
                 )}
@@ -129,44 +153,14 @@ export function PublicProfileView({ profile, viewerId }: Props) {
               <span>
                 <strong className="text-white">{completedCourses}</strong> cursos concluídos
               </span>
+              {showcase && showcase.certificatesCount > 0 && (
+                <span>
+                  <strong className="text-white">{showcase.certificatesCount}</strong> certificados
+                </span>
+              )}
             </div>
 
-            {isOwner && xp && (
-              <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                <div className="rounded-xl border border-white/10 bg-slate-950/35 p-4">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Sparkles className="h-4 w-4 text-sky-300" />
-                    <span className="text-xs font-semibold uppercase">Nível</span>
-                  </div>
-                  <p className="mt-2 text-3xl font-black text-sky-200">{xp.level}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-slate-950/35 p-4">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <BarChart3 className="h-4 w-4 text-amber-300" />
-                    <span className="text-xs font-semibold uppercase">Ranking</span>
-                  </div>
-                  <p className="mt-2 text-3xl font-black text-white">{rank ? `#${rank}` : "-"}</p>
-                </div>
-                <div className="rounded-xl border border-white/10 bg-slate-950/35 p-4">
-                  <div className="flex items-center gap-2 text-slate-400">
-                    <Trophy className="h-4 w-4 text-amber-300" />
-                    <span className="text-xs font-semibold uppercase">Conquistas</span>
-                  </div>
-                  <p className="mt-2 text-3xl font-black text-white">{completedCourses}</p>
-                </div>
-                {cosmetics?.equippedTitle && (
-                  <div className="rounded-xl border border-white/10 bg-slate-950/35 p-4">
-                    <div className="flex items-center gap-2 text-slate-400">
-                      <Award className="h-4 w-4 text-teal-300" />
-                      <span className="text-xs font-semibold uppercase">Título</span>
-                    </div>
-                    <p className="mt-2 text-sm font-semibold text-white">
-                      {cosmetics.equippedTitle}
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+            {showcase && <ProfileShowcase showcase={showcase} />}
           </div>
         </div>
       </section>
@@ -174,8 +168,9 @@ export function PublicProfileView({ profile, viewerId }: Props) {
       <ProfileTabs
         activities={activities}
         enrollments={enrollments}
-        equippedTitle={cosmetics?.equippedTitle ?? null}
         canInteract={Boolean(viewerId)}
+        achievements={achievements}
+        certificates={certificates}
       />
     </>
   );

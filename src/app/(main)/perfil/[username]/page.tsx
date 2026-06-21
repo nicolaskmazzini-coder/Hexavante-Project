@@ -13,7 +13,10 @@ type Props = {
 export default async function PublicProfilePage({ params }: Props) {
   const { username } = await params;
   const session = await auth();
-  const profile = await getPublicProfile(username, session?.user?.id);
+  const profile = await getPublicProfile(username, {
+    id: session?.user?.id,
+    username: session?.user?.username,
+  });
 
   if (!profile) notFound();
 
@@ -22,7 +25,11 @@ export default async function PublicProfilePage({ params }: Props) {
 
   return (
     <PageShell>
-      <PublicProfileView profile={profile} viewerId={session?.user?.id} />
+      <PublicProfileView
+        profile={profile}
+        viewerId={session?.user?.id}
+        viewerUsername={session?.user?.username}
+      />
 
       {profile.isOwner && allEnrollments.length > 0 && (
         <div className="mt-8">

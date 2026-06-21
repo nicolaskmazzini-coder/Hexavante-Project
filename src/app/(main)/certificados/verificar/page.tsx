@@ -8,6 +8,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
+import { getCertificatePublicPath } from "@/lib/certificate-share";
+import Link from "next/link";
 
 type Props = {
   searchParams: Promise<{ code?: string }>;
@@ -39,7 +41,7 @@ export default async function VerifyCertificatePage({ searchParams }: Props) {
               name="code"
               defaultValue={trimmedCode ?? ""}
               required
-              placeholder="HEXA-XXXX-XXXX"
+              placeholder="HEX-abc123-ABCD1234"
             />
           </div>
           <Button type="submit">Verificar</Button>
@@ -76,9 +78,12 @@ export default async function VerifyCertificatePage({ searchParams }: Props) {
               <span className="opacity-70">Código:</span> {certificate.code}
             </p>
             <p className="pt-2">
-              <AppLink href={`/certificados/verificar/${certificate.code}`}>
-                Link público de verificação →
-              </AppLink>
+              <Link
+                href={getCertificatePublicPath(certificate.code)}
+                className="font-semibold text-sky-200 hover:text-sky-100"
+              >
+                Abrir página pública do certificado →
+              </Link>
             </p>
           </div>
           <div className="mt-4 flex items-center gap-2 text-xs opacity-90">

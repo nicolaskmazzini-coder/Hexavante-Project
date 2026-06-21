@@ -33,7 +33,7 @@ export default async function MessagesPage() {
         badge="Social"
         icon={MessageCircle}
         title="Mensagens"
-        description="Converse em privado com outros estudantes — como no Instagram ou Twitter."
+        description="Converse em privado com outros estudantes."
       />
 
       <MessagesShell conversations={serialized} currentUserId={session.user.id} />

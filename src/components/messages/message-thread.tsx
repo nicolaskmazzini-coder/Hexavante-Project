@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
-import { Check, CheckCheck, Send } from "lucide-react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { Check, CheckCheck, Loader2, Send } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
+import { cn } from "@/lib/cn";
+import { formatMessageTime, groupMessagesForThread } from "@/lib/message-thread-format";
 import type { SerializedDirectMessage } from "@/services/direct-message.service";
 
 type Props = {
@@ -16,6 +17,36 @@ type Props = {
   isSending?: boolean;
 };
 
+function clusterPosition(index: number, total: number): "single" | "first" | "middle" | "last" {
+  if (total === 1) return "single";
+  if (index === 0) return "first";
+  if (index === total - 1) return "last";
+  return "middle";
+}
+
+function bubbleShape(isOwn: boolean, position: "single" | "first" | "middle" | "last") {
+  const base = isOwn
+    ? "bg-primary text-white shadow-sm shadow-black/20"
+    : "border border-white/10 bg-slate-950/50 text-slate-100";
+
+  if (isOwn) {
+    return cn(
+      base,
+      position === "single" && "rounded-2xl rounded-br-md",
+      position === "first" && "rounded-2xl rounded-br-lg",
+      position === "middle" && "rounded-2xl rounded-r-xl",
+      position === "last" && "rounded-2xl rounded-br-sm",
+    );
+  }
+  return cn(
+    base,
+    position === "single" && "rounded-2xl rounded-bl-md",
+    position === "first" && "rounded-2xl rounded-bl-lg",
+    position === "middle" && "rounded-2xl rounded-l-xl",
+    position === "last" && "rounded-2xl rounded-bl-sm",
+  );
+}
+
 export function MessageThread({
   conversationId,
   currentUserId,
@@ -26,16 +57,36 @@ export function MessageThread({
 }: Props) {
   const [draft, setDraft] = useState("");
   const scrollRef = useRef<HTMLDivElement>(null);
+  const shouldStickToBottom = useRef(true);
+
+  // Memoize so grouping doesn't rerun on every render
+  const datedBlocks = useMemo(() => groupMessagesForThread(messages), [messages]);
+
+  const scrollToBottom = useCallback((behavior: ScrollBehavior = "smooth") => {
+    scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (shouldStickToBottom.current) {
+      scrollToBottom(messages.length <= 2 ? "auto" : "smooth");
+    }
+  }, [messages, conversationId, scrollToBottom]);
 
   useEffect(() => {
-    if (scrollRef.current) {
-      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
-    }
-  }, [messages, conversationId]);
+    const node = scrollRef.current;
+    if (!node) return;
+    const onScroll = () => {
+      const distance = node.scrollHeight - node.scrollTop - node.clientHeight;
+      shouldStickToBottom.current = distance < 80;
+    };
+    node.addEventListener("scroll", onScroll, { passive: true });
+    return () => node.removeEventListener("scroll", onScroll);
+  }, [conversationId]);
 
   const handleSend = async () => {
     const trimmed = draft.trim();
     if (!trimmed || disabled) return;
+    shouldStickToBottom.current = true;
     await onSendMessage(trimmed);
     setDraft("");
   };
@@ -47,58 +98,88 @@ export function MessageThread({
     }
   };
 
+  const canSend = draft.trim().length > 0 && !disabled;
+
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <ScrollArea className="flex-1 p-4" ref={scrollRef}>
-        <div className="space-y-4">
-          {messages.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-white/15 bg-white/[0.03] px-4 py-10 text-center">
-              <p className="text-sm font-semibold text-slate-300">Nenhuma mensagem ainda</p>
-              <p className="mt-1 text-xs text-slate-500">Envie a primeira mensagem para começar.</p>
-            </div>
-          ) : (
-            messages.map((message) => {
-              const isOwn = message.senderId === currentUserId;
-              return (
-                <div
-                  key={message.id}
-                  className={`flex flex-col ${isOwn ? "items-end" : "items-start"}`}
-                >
-                  <div
-                    className={`max-w-[82%] rounded-2xl px-3 py-2 shadow-sm ${
-                      isOwn
-                        ? "rounded-br-sm bg-primary text-white"
-                        : "rounded-bl-sm border border-white/10 bg-slate-950/55 text-slate-200"
-                    }`}
-                  >
-                    <p className="break-words text-sm leading-6">{message.body}</p>
-                  </div>
-                  <div
-                    className={`mt-1 flex items-center gap-1 text-[11px] text-slate-500 ${
-                      isOwn ? "flex-row-reverse" : ""
-                    }`}
-                  >
-                    <span>
-                      {new Date(message.createdAt).toLocaleTimeString("pt-BR", {
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                    </span>
-                    {isOwn &&
-                      (message.readAt ? (
-                        <CheckCheck className="h-3.5 w-3.5 text-sky-300" aria-label="Lida" />
-                      ) : (
-                        <Check className="h-3.5 w-3.5" aria-label="Enviada" />
-                      ))}
-                  </div>
+      <div
+        ref={scrollRef}
+        className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-4 sm:px-4"
+      >
+        {messages.length === 0 ? (
+          <div className="flex h-full min-h-[10rem] items-center justify-center">
+            <p className="text-center text-sm text-slate-500">
+              Nenhuma mensagem ainda.
+              <br />
+              <span className="text-slate-400">Envie a primeira para começar.</span>
+            </p>
+          </div>
+        ) : (
+          <div className="space-y-5">
+            {datedBlocks.map((block) => (
+              <section key={block.dateKey}>
+                <div className="mb-3 flex justify-center">
+                  <span className="rounded-full bg-white/[0.06] px-3 py-0.5 text-[11px] font-medium text-slate-400">
+                    {block.label}
+                  </span>
                 </div>
-              );
-            })
-          )}
-        </div>
-      </ScrollArea>
+                <div className="space-y-2">
+                  {block.clusters.map((cluster) => {
+                    const isOwn = cluster.senderId === currentUserId;
+                    return (
+                      <div
+                        key={`${cluster.senderId}-${cluster.messages[0]?.id}`}
+                        className={cn(
+                          "flex flex-col gap-0.5",
+                          isOwn ? "items-end" : "items-start",
+                        )}
+                      >
+                        {cluster.messages.map((message, index) => {
+                          const total = cluster.messages.length;
+                          const position = clusterPosition(index, total);
+                          const isLast = index === total - 1;
+                          return (
+                            <div
+                              key={message.id}
+                              className={cn(
+                                "max-w-[85%] px-3 py-2 sm:max-w-[70%]",
+                                bubbleShape(isOwn, position),
+                              )}
+                            >
+                              {/* body already filtered server-side via serializeDirectMessage */}
+                              <p className="whitespace-pre-wrap break-words text-sm leading-relaxed">
+                                {message.body}
+                              </p>
+                              {isLast ? (
+                                <div
+                                  className={cn(
+                                    "mt-0.5 flex items-center gap-1 text-[10px]",
+                                    isOwn ? "justify-end text-white/60" : "text-slate-500",
+                                  )}
+                                >
+                                  <span>{formatMessageTime(message.createdAt)}</span>
+                                  {isOwn &&
+                                    (message.readAt ? (
+                                      <CheckCheck className="h-3 w-3" aria-label="Lida" />
+                                    ) : (
+                                      <Check className="h-3 w-3" aria-label="Enviada" />
+                                    ))}
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+              </section>
+            ))}
+          </div>
+        )}
+      </div>
 
-      <div className="border-t border-white/10 p-4">
+      <div className="shrink-0 border-t border-white/10 bg-white/[0.02] p-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:p-4">
         <div className="flex gap-2">
           <Input
             value={draft}
@@ -106,15 +187,20 @@ export function MessageThread({
             onKeyDown={handleKeyDown}
             placeholder="Escreva uma mensagem..."
             disabled={disabled}
-            className="flex-1"
             maxLength={2000}
+            className="min-h-11 flex-1 rounded-xl border-white/10 bg-slate-950/40"
           />
           <Button
             onClick={() => void handleSend()}
-            disabled={!draft.trim() || disabled}
+            disabled={!canSend}
             aria-label="Enviar mensagem"
+            className="h-11 w-11 shrink-0 rounded-xl p-0"
           >
-            {isSending ? "..." : <Send className="h-4 w-4" />}
+            {isSending ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <Send className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </div>

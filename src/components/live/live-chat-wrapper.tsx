@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { LiveChat, type ChatMessage } from "./live-chat";
 import { sendChatMessageAction } from "@/app/actions/live-room";
 import { useToast } from "@/components/ui/toast";
+import { usePollFeedback } from "@/hooks/use-poll-feedback";
 
 type Props = {
   roomId: string;
@@ -19,6 +20,7 @@ export function LiveChatWrapper({ roomId, currentUserId, initialMessages, disabl
   const [messages, setMessages] = useState(initialMessages);
   const messagesRef = useRef(messages);
   const { toast } = useToast();
+  const { onSuccess, onFailure } = usePollFeedback("atualização do chat ao vivo");
 
   useEffect(() => {
     messagesRef.current = messages;
@@ -53,7 +55,10 @@ export function LiveChatWrapper({ roomId, currentUserId, initialMessages, disabl
 
       try {
         const response = await fetch(url);
-        if (!response.ok) return;
+        if (!response.ok) {
+          onFailure();
+          return;
+        }
         const data = (await response.json()) as Array<{
           id: string;
           userId: string;
@@ -68,15 +73,16 @@ export function LiveChatWrapper({ roomId, currentUserId, initialMessages, disabl
             createdAt: new Date(msg.createdAt),
           })),
         );
+        onSuccess();
       } catch {
-        // Ignora falhas temporárias de polling
+        onFailure();
       }
     };
 
     void poll();
     const interval = setInterval(() => void poll(), POLL_INTERVAL_MS);
     return () => clearInterval(interval);
-  }, [roomId, disabled, mergeMessages]);
+  }, [roomId, disabled, mergeMessages, onSuccess, onFailure]);
 
   const handleSendMessage = async (message: string) => {
     setIsSending(true);

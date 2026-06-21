@@ -5,31 +5,32 @@ import { useEffect, useState } from "react";
 export function useElapsedTimer(startedAt: string, storageKey?: string) {
   const startedMs = new Date(startedAt).getTime();
 
-  const computeElapsed = () => {
-    if (storageKey && typeof window !== "undefined") {
-      const saved = sessionStorage.getItem(storageKey);
-      if (saved) {
-        const parsed = Number(saved);
-        if (!Number.isNaN(parsed)) return parsed;
-      }
-    }
-    return Date.now() - startedMs;
-  };
-
-  const [elapsedMs, setElapsedMs] = useState(computeElapsed);
+  // Valor inicial sem sessionStorage — evita hydration mismatch com RSC.
+  const [elapsedMs, setElapsedMs] = useState(() => Date.now() - startedMs);
 
   useEffect(() => {
-    const tick = () => {
-      const value = Date.now() - startedMs;
+    const tick = (restoreFromStorage = false) => {
+      let value = Date.now() - startedMs;
+      if (restoreFromStorage && storageKey) {
+        const saved = sessionStorage.getItem(storageKey);
+        if (saved) {
+          const parsed = Number(saved);
+          if (!Number.isNaN(parsed)) value = parsed;
+        }
+      }
+
       setElapsedMs(value);
       if (storageKey) {
         sessionStorage.setItem(storageKey, String(value));
       }
     };
 
-    tick();
-    const interval = setInterval(tick, 1000);
-    return () => clearInterval(interval);
+    const initialId = window.setTimeout(() => tick(true), 0);
+    const interval = setInterval(() => tick(false), 1000);
+    return () => {
+      window.clearTimeout(initialId);
+      clearInterval(interval);
+    };
   }, [startedAt, storageKey, startedMs]);
 
   return elapsedMs;

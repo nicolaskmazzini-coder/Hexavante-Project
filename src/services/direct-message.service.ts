@@ -1,3 +1,4 @@
+import { enforceCleanMessageSequence, filterProfanity } from "@/services/content-policy.service";
 import { prisma } from "@/lib/prisma";
 import { assertUserCanInteract, assertUserNotBanned } from "@/lib/moderation/status";
 import { isFollowing } from "@/services/follow.service";
@@ -234,12 +235,38 @@ export async function sendDirectMessage(conversationId: string, senderId: string
 
   await assertCanMessageUser(senderId, recipientId);
 
+  const sequenceWindowMs = 5 * 60 * 1000;
+  const since = new Date(Date.now() - sequenceWindowMs);
+  const recentFromSender = await prisma.directMessage.findMany({
+    where: {
+      conversationId,
+      senderId,
+      createdAt: { gte: since },
+    },
+    orderBy: { createdAt: "asc" },
+    take: 8,
+    select: { body: true },
+  });
+
+  const recentFragments = recentFromSender
+    .map((row) => row.body.trim())
+    .filter((body) => body.length > 0 && body.length <= 24 && body.split(/\s+/).length <= 3);
+
+  await enforceCleanMessageSequence({
+    userId: senderId,
+    text: trimmed,
+    recentFragments,
+    fieldLabel: "mensagem",
+    context: "DIRECT_MESSAGE",
+  });
+  const sanitized = filterProfanity(trimmed);
+
   const [message] = await prisma.$transaction([
     prisma.directMessage.create({
       data: {
         conversationId,
         senderId,
-        body: trimmed,
+        body: sanitized,
       },
       include: {
         sender: { select: USER_PREVIEW },
@@ -252,13 +279,17 @@ export async function sendDirectMessage(conversationId: string, senderId: string
   ]);
 
   const senderName = message.sender.fullName || message.sender.username;
-  await createNotification({
-    userId: recipientId,
-    type: "NEW_MESSAGE",
-    title: "Nova mensagem",
-    message: `${senderName}: ${trimmed.slice(0, 120)}${trimmed.length > 120 ? "…" : ""}`,
-    link: `/mensagens/${conversationId}`,
-  });
+  try {
+    await createNotification({
+      userId: recipientId,
+      type: "NEW_MESSAGE",
+      title: "Nova mensagem",
+      message: `${senderName}: ${sanitized.slice(0, 120)}${sanitized.length > 120 ? "…" : ""}`,
+      link: `/mensagens/${conversationId}`,
+    });
+  } catch {
+    // Notificação opcional — não impede o envio da mensagem
+  }
 
   return message;
 }
@@ -297,7 +328,7 @@ export function serializeDirectMessage(
     id: message.id,
     conversationId: message.conversationId,
     senderId: message.senderId,
-    body: message.body,
+    body: filterProfanity(message.body),
     createdAt: message.createdAt.toISOString(),
     readAt: message.readAt?.toISOString() ?? null,
     sender: message.sender,

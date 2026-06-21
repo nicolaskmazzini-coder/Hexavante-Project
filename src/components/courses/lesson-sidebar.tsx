@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Check, Lock } from "lucide-react";
+import { Check, Lock, Star } from "lucide-react";
 
 type LessonItem = {
   id: string;
@@ -15,6 +15,7 @@ type LessonSidebarProps = {
   lessons: LessonItem[];
   currentLessonId: string;
   completedLessonIds: Set<string>;
+  favoriteLessonIds?: Set<string>;
   progressionType: string;
 };
 
@@ -23,6 +24,7 @@ export function LessonSidebar({
   lessons,
   currentLessonId,
   completedLessonIds,
+  favoriteLessonIds = new Set(),
   progressionType,
 }: LessonSidebarProps) {
   const lessonItems = lessons.reduce<{
@@ -33,6 +35,7 @@ export function LessonSidebar({
       isCurrent: boolean;
       showModuleTitle: boolean;
       locked: boolean;
+      isFavorite: boolean;
     }[];
   }>(
     (state, lesson, index) => {
@@ -45,7 +48,17 @@ export function LessonSidebar({
 
       return {
         previousCompleted,
-        items: [...state.items, { lesson, completed, isCurrent, showModuleTitle, locked }],
+        items: [
+          ...state.items,
+          {
+            lesson,
+            completed,
+            isCurrent,
+            showModuleTitle,
+            locked,
+            isFavorite: favoriteLessonIds.has(lesson.id),
+          },
+        ],
       };
     },
     { previousCompleted: true, items: [] },
@@ -53,7 +66,7 @@ export function LessonSidebar({
 
   return (
     <aside className="space-y-1">
-      {lessonItems.map(({ lesson, completed, isCurrent, showModuleTitle, locked }) => (
+      {lessonItems.map(({ lesson, completed, isCurrent, showModuleTitle, locked, isFavorite }) => (
         <div key={lesson.id}>
           {showModuleTitle && (
             <p className="mb-1 mt-4 text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -68,7 +81,7 @@ export function LessonSidebar({
           ) : (
             <Link
               href={`/courses/${courseSlug}/learn/${lesson.id}`}
-              className={`block rounded-lg px-3 py-2 text-sm transition ${
+              className={`flex items-center justify-between gap-2 rounded-lg px-3 py-2 text-sm transition ${
                 isCurrent
                   ? "bg-primary text-white shadow-lg shadow-blue-950/20"
                   : completed
@@ -77,8 +90,13 @@ export function LessonSidebar({
               }`}
               aria-label={completed ? `Aula concluída: ${lesson.title}` : `Aula: ${lesson.title}`}
             >
-              {completed && !isCurrent ? <Check className="mr-1 inline h-4 w-4" /> : null}
-              {lesson.orderNumber}. {lesson.title}
+              <span className="min-w-0 truncate">
+                {completed && !isCurrent ? <Check className="mr-1 inline h-4 w-4" /> : null}
+                {lesson.orderNumber}. {lesson.title}
+              </span>
+              {isFavorite && (
+                <Star className="h-3.5 w-3.5 shrink-0 fill-amber-300 text-amber-300" />
+              )}
             </Link>
           )}
         </div>

@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { redirect } from "next/navigation";
-import { ArrowLeft, MessageCircle } from "lucide-react";
+import { MessageCircle } from "lucide-react";
 import { auth } from "@/auth";
+import { ConversationHeader } from "@/components/messages/conversation-header";
 import { MessageThreadWrapper } from "@/components/messages/message-thread-wrapper";
 import { MessagesShell } from "@/components/messages/messages-shell";
-import { Avatar } from "@/components/ui/avatar";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
 import {
@@ -56,14 +55,17 @@ export default async function ConversationPage({ params }: Props) {
   }));
 
   const serializedMessages = messages.map(serializeDirectMessage);
+  const displayName = otherUser.fullName ?? otherUser.username ?? "Usuário";
 
   return (
-    <PageShell>
+    // Reduced padding so the shell height calculation is accurate
+    <PageShell className="py-4 sm:py-6 md:py-8">
       <PageHeader
         badge="Social"
         icon={MessageCircle}
         title="Mensagens"
         description="Converse em privado com outros estudantes."
+        className="mb-5"
       />
 
       <MessagesShell
@@ -71,27 +73,12 @@ export default async function ConversationPage({ params }: Props) {
         currentUserId={session.user.id}
         activeConversationId={conversationId}
       >
-        <div className="flex h-full min-h-[50vh] flex-col">
-          <div className="flex items-center gap-3 border-b border-white/10 px-4 py-3">
-            <Link
-              href="/mensagens"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-lg border border-white/10 text-slate-300 transition hover:text-white lg:hidden"
-              aria-label="Voltar para mensagens"
-            >
-              <ArrowLeft className="h-4 w-4" />
-            </Link>
-            <Avatar src={otherUser.avatarUrl} alt={otherUser.username} size="sm" />
-            <div className="min-w-0">
-              <p className="truncate text-sm font-bold text-white">{otherUser.fullName}</p>
-              <Link
-                href={`/perfil/${otherUser.username}`}
-                className="text-xs text-slate-400 transition hover:text-sky-300"
-              >
-                @{otherUser.username}
-              </Link>
-            </div>
-          </div>
-
+        <div className="flex h-full min-h-0 flex-col">
+          <ConversationHeader
+            fullName={displayName}
+            username={otherUser.username}
+            avatarUrl={otherUser.avatarUrl}
+          />
           <div className="min-h-0 flex-1">
             <MessageThreadWrapper
               conversationId={conversationId}

@@ -51,9 +51,9 @@ function CountdownDisplay({
   const critical = remainingMs > 0 && remainingMs <= 60 * 1000;
 
   return (
-    <div className="sticky top-4 z-20 space-y-3">
+    <div className="sticky top-[calc(var(--hx-header-height)+0.5rem)] z-20 space-y-3">
       <div
-        className={`flex items-center justify-between rounded-xl border px-4 py-3 backdrop-blur ${
+        className={`flex items-center justify-between rounded-xl border px-3 py-3 backdrop-blur sm:px-4 [-webkit-backdrop-filter:blur(12px)] ${
           critical
             ? "border-red-400/40 bg-red-500/10"
             : warning
@@ -89,8 +89,8 @@ function ElapsedDisplay({ startedAt, attemptId }: { startedAt: string; attemptId
   const elapsedMs = useElapsedTimer(startedAt, `exam-elapsed-${attemptId}`);
 
   return (
-    <div className="sticky top-4 z-20">
-      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/80 px-4 py-3 backdrop-blur">
+    <div className="sticky top-[calc(var(--hx-header-height)+0.5rem)] z-20">
+      <div className="flex items-center justify-between rounded-xl border border-white/10 bg-slate-950/80 px-3 py-3 backdrop-blur sm:px-4 [-webkit-backdrop-filter:blur(12px)]">
         <span className="flex items-center gap-2 text-sm text-slate-300">
           <Clock3 className="h-4 w-4" />
           Tempo decorrido

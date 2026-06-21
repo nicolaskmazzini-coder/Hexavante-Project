@@ -4,26 +4,50 @@ import { AppLink } from "@/components/ui/app-link";
 import { Badge } from "@/components/ui/badge";
 import { Button, LinkButton } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Alert } from "@/components/ui/alert";
 import { PageShell } from "@/components/ui/page-shell";
 import { ExamDailyRewardPreview } from "@/components/exams/exam-daily-reward-preview";
+import { ExamSubjectStatsPanel } from "@/components/exams/exam-subject-stats-panel";
 import { ExamThumbnail } from "@/components/exams/exam-thumbnail";
 import { EXAM_PASS_SCORE } from "@/lib/gamification";
 import { EXAM_TYPE_LABELS } from "@/lib/validations/exam";
+import {
+  EXAM_STUDY_MODE_LABELS,
+  getDifficultyLabel,
+  REINFORCEMENT_QUESTION_LIMIT,
+} from "@/lib/exam-learning";
 import { getExamBySlug, getUserExamPerformance } from "@/services/exam.service";
+import {
+  canStartReinforcement,
+  getFavoriteQuestionCount,
+  getRecommendedDifficulty,
+  getUserSubjectStats,
+} from "@/services/exam-learning.service";
 import { getUserDailyExamRewardStatus } from "@/services/exam-daily-rewards.service";
 import { canAccessPremiumExam } from "@/services/premium.service";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { BarChart3, Clock3, ClipboardList, Crown, Trophy } from "lucide-react";
+import { BarChart3, Clock3, ClipboardList, Crown, Sparkles, Star, Trophy } from "lucide-react";
 
-type Props = { params: Promise<{ slug: string }> };
+type Props = {
+  params: Promise<{ slug: string }>;
+  searchParams: Promise<{ error?: string }>;
+};
 
-export default async function ExamDetailPage({ params }: Props) {
+export default async function ExamDetailPage({ params, searchParams }: Props) {
   const { slug } = await params;
+  const { error } = await searchParams;
   const session = await auth();
   const exam = await getExamBySlug(slug);
 
   if (!exam || !exam.isPublished) notFound();
+
+  const questionRefs = exam.questions.map((q) => ({
+    id: q.id,
+    type: q.type,
+    subject: q.subject,
+    difficulty: q.difficulty,
+  }));
 
   const performance = session?.user?.id
     ? await getUserExamPerformance(session.user.id, exam.id)
@@ -39,11 +63,26 @@ export default async function ExamDetailPage({ params }: Props) {
       ? await getUserDailyExamRewardStatus(session.user.id, mcQuestionCount)
       : null;
 
+  const [subjectStats, recommendedDifficulty, favoriteCount, canReinforce] = session?.user?.id
+    ? await Promise.all([
+        getUserSubjectStats(session.user.id, exam.id),
+        getRecommendedDifficulty(session.user.id, exam.id),
+        getFavoriteQuestionCount(session.user.id, exam.id),
+        canStartReinforcement(session.user.id, exam.id, questionRefs),
+      ])
+    : [null, null, 0, false];
+
   return (
     <PageShell size="md">
       <AppLink href="/simulados" muted className="mb-4 inline-flex items-center gap-1">
         ← Simulados
       </AppLink>
+
+      {error && (
+        <Alert variant="warning" className="mb-4">
+          {decodeURIComponent(error)}
+        </Alert>
+      )}
 
       <div className="overflow-hidden rounded-2xl border border-white/10">
         <ExamThumbnail
@@ -77,6 +116,12 @@ export default async function ExamDetailPage({ params }: Props) {
                 {exam.timeLimit} minutos
               </span>
             )}
+            {session?.user && recommendedDifficulty != null && (
+              <span className="flex items-center gap-1.5">
+                <Sparkles className="h-4 w-4 text-amber-300" />
+                Dificuldade sugerida: {getDifficultyLabel(recommendedDifficulty)}
+              </span>
+            )}
           </div>
         </div>
       </div>
@@ -104,6 +149,12 @@ export default async function ExamDetailPage({ params }: Props) {
               {Math.round(performance.bestScore)}%
             </p>
           </Card>
+        </div>
+      )}
+
+      {subjectStats && subjectStats.length > 0 && (
+        <div className="mt-6">
+          <ExamSubjectStatsPanel stats={subjectStats} title="Seus pontos fortes e fracos" />
         </div>
       )}
 
@@ -139,14 +190,56 @@ export default async function ExamDetailPage({ params }: Props) {
 
       {dailyRewardPreview && <ExamDailyRewardPreview preview={dailyRewardPreview} />}
 
-      <div className="mt-8">
+      <div className="mt-8 space-y-4">
         {session?.user ? (
           canAccess ? (
-            <form action={startExamAction.bind(null, exam.id, slug)}>
-              <Button type="submit" size="lg">
-                {performance?.attemptCount ? "Fazer nova tentativa" : "Iniciar simulado"}
-              </Button>
-            </form>
+            <>
+              <form action={startExamAction.bind(null, exam.id, slug, "FULL")}>
+                <Button type="submit" size="lg">
+                  {performance?.attemptCount
+                    ? "Fazer nova tentativa completa"
+                    : "Iniciar simulado completo"}
+                </Button>
+              </form>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Card padding="md" className="flex flex-col">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Sparkles className="h-4 w-4 text-amber-300" />
+                    <h3 className="font-semibold text-white">
+                      {EXAM_STUDY_MODE_LABELS.REINFORCEMENT}
+                    </h3>
+                  </div>
+                  <p className="mb-4 flex-1 text-sm text-slate-400">
+                    Foque em questões que você errou e nos assuntos com menor desempenho (até{" "}
+                    {REINFORCEMENT_QUESTION_LIMIT} questões).
+                  </p>
+                  <form action={startExamAction.bind(null, exam.id, slug, "REINFORCEMENT")}>
+                    <Button type="submit" variant="outline" disabled={!canReinforce}>
+                      {canReinforce ? "Iniciar reforço" : "Faça uma tentativa antes"}
+                    </Button>
+                  </form>
+                </Card>
+
+                <Card padding="md" className="flex flex-col">
+                  <div className="mb-2 flex items-center gap-2">
+                    <Star className="h-4 w-4 text-amber-300" />
+                    <h3 className="font-semibold text-white">
+                      {EXAM_STUDY_MODE_LABELS.FAVORITES}
+                    </h3>
+                  </div>
+                  <p className="mb-4 flex-1 text-sm text-slate-400">
+                    Revise apenas as questões que você marcou como favoritas neste simulado (
+                    {favoriteCount} salvas).
+                  </p>
+                  <form action={startExamAction.bind(null, exam.id, slug, "FAVORITES")}>
+                    <Button type="submit" variant="outline" disabled={favoriteCount === 0}>
+                      {favoriteCount > 0 ? "Estudar favoritas" : "Favorite questões no resultado"}
+                    </Button>
+                  </form>
+                </Card>
+              </div>
+            </>
           ) : (
             <div className="space-y-3">
               <p className="text-sm text-fuchsia-200">

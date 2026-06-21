@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Bell, Lock, Settings, UserRound } from "lucide-react";
+import { Bell, Lock, Palette, Settings, UserRound } from "lucide-react";
 import { auth } from "@/auth";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
@@ -10,6 +10,12 @@ export default async function ConfiguracoesPage() {
   if (!session?.user?.id) redirect("/login?callbackUrl=/configuracoes");
 
   const items = [
+    {
+      href: "/inventario",
+      icon: Palette,
+      title: "Inventário",
+      description: "Cosméticos, boosters, passes e pacotes de revisão que você possui.",
+    },
     {
       href: "/configuracoes/perfil",
       icon: UserRound,
@@ -23,11 +29,10 @@ export default async function ConfiguracoesPage() {
       description: "Veja como outros enxergam seu perfil.",
     },
     {
-      href: "#",
+      href: "/configuracoes/notificacoes",
       icon: Bell,
       title: "Notificações",
-      description: "Preferências de alertas (em breve).",
-      disabled: true,
+      description: "Escolha quais alertas receber sobre cursos, mensagens e progresso.",
     },
     {
       href: "#",

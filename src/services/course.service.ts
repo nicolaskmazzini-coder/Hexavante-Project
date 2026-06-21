@@ -1,5 +1,7 @@
 // Importações necessárias para o serviço de cursos
-import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
+import { prisma } from "@/lib/prisma";
+import { enforceCleanContent } from "@/services/content-policy.service";
+import { notifyEnrolledUsersOfCourseUpdate } from "@/services/course-notification.service"; // Cliente Prisma para banco de dados
 import { slugify } from "@/lib/slug"; // Função para gerar slugs amigáveis
 import type {
   CourseInput,
@@ -22,6 +24,21 @@ async function uniqueSlug(title: string): Promise<string> {
   }
 
   return slug;
+}
+
+async function validateCourseText(
+  userId: string,
+  fields: { label: string; text?: string | null }[],
+) {
+  for (const field of fields) {
+    if (!field.text?.trim()) continue;
+    await enforceCleanContent({
+      userId,
+      text: field.text,
+      fieldLabel: field.label,
+      context: "COURSE",
+    });
+  }
 }
 
 // Função para listar cursos aprovados
@@ -168,7 +185,13 @@ export async function listInstructorCourses(userId: string) {
 // Função para criar novo curso
 // Cria curso com slug único e status PENDING_REVIEW
 export async function createCourse(userId: string, data: CourseInput) {
-  const slug = await uniqueSlug(data.title); // Gera slug único
+  await validateCourseText(userId, [
+    { label: "título", text: data.title },
+    { label: "descrição curta", text: data.shortDescription },
+    { label: "descrição", text: data.description },
+  ]);
+
+  const slug = await uniqueSlug(data.title);
 
   return prisma.course.create({
     data: {
@@ -205,6 +228,12 @@ export async function updateCourse(courseId: string, userId: string, data: Parti
   if (!course) {
     throw new Error("Curso não encontrado ou sem permissão.");
   }
+
+  await validateCourseText(userId, [
+    { label: "título", text: data.title },
+    { label: "descrição curta", text: data.shortDescription },
+    { label: "descrição", text: data.description },
+  ]);
 
   const contentFieldsChanged =
     data.title !== undefined ||
@@ -254,7 +283,12 @@ export async function updateCourse(courseId: string, userId: string, data: Parti
 // Função para adicionar módulo ao curso
 // Verifica permissão de instrutor antes de criar módulo
 export async function addModule(courseId: string, userId: string, data: ModuleInput) {
-  await assertInstructor(courseId, userId); // Verifica se usuário é instrutor
+  await assertInstructor(courseId, userId);
+
+  await validateCourseText(userId, [
+    { label: "título do módulo", text: data.title },
+    { label: "descrição do módulo", text: data.description },
+  ]);
 
   return prisma.module.create({
     data: {
@@ -263,6 +297,21 @@ export async function addModule(courseId: string, userId: string, data: ModuleIn
       description: data.description || null,
       orderNumber: data.orderNumber,
     },
+  }).then(async (created) => {
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { id: true, title: true, slug: true, status: true },
+    });
+    if (course?.status === "APPROVED") {
+      await notifyEnrolledUsersOfCourseUpdate({
+        courseId: course.id,
+        courseTitle: course.title,
+        courseSlug: course.slug,
+        updateLabel: `Novo módulo: ${data.title}`,
+        excludeUserId: userId,
+      });
+    }
+    return created;
   });
 }
 
@@ -272,15 +321,29 @@ export async function addLesson(moduleId: string, userId: string, data: LessonIn
   // Busca módulo com curso e instrutores
   const courseModule = await prisma.module.findUnique({
     where: { id: moduleId },
-    include: { course: { include: { instructors: true } } },
+    include: {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          status: true,
+          instructors: { select: { userId: true } },
+        },
+      },
+    },
   });
 
-  // Verifica se módulo existe e se usuário é instrutor
   if (!courseModule || !courseModule.course.instructors.some((i) => i.userId === userId)) {
     throw new Error("Sem permissão para adicionar aula.");
   }
 
-  return prisma.lesson.create({
+  await validateCourseText(userId, [
+    { label: "título da aula", text: data.title },
+    { label: "descrição da aula", text: data.description },
+  ]);
+
+  const lesson = await prisma.lesson.create({
     data: {
       moduleId,
       title: data.title,
@@ -291,6 +354,18 @@ export async function addLesson(moduleId: string, userId: string, data: LessonIn
       orderNumber: data.orderNumber,
     },
   });
+
+  if (courseModule.course.status === "APPROVED") {
+    await notifyEnrolledUsersOfCourseUpdate({
+      courseId: courseModule.course.id,
+      courseTitle: courseModule.course.title,
+      courseSlug: courseModule.course.slug,
+      updateLabel: `Nova aula: ${data.title}`,
+      excludeUserId: userId,
+    });
+  }
+
+  return lesson;
 }
 
 // Função para adicionar material ao módulo
@@ -299,15 +374,26 @@ export async function addMaterial(moduleId: string, userId: string, data: Materi
   // Busca módulo com curso e instrutores
   const courseModule = await prisma.module.findUnique({
     where: { id: moduleId },
-    include: { course: { include: { instructors: true } } },
+    include: {
+      course: {
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          status: true,
+          instructors: { select: { userId: true } },
+        },
+      },
+    },
   });
 
-  // Verifica se módulo existe e se usuário é instrutor
   if (!courseModule || !courseModule.course.instructors.some((i) => i.userId === userId)) {
     throw new Error("Sem permissão para adicionar material.");
   }
 
-  return prisma.material.create({
+  await validateCourseText(userId, [{ label: "título do material", text: data.title }]);
+
+  const material = await prisma.material.create({
     data: {
       moduleId,
       title: data.title,
@@ -315,6 +401,18 @@ export async function addMaterial(moduleId: string, userId: string, data: Materi
       fileType: data.fileType,
     },
   });
+
+  if (courseModule.course.status === "APPROVED") {
+    await notifyEnrolledUsersOfCourseUpdate({
+      courseId: courseModule.course.id,
+      courseTitle: courseModule.course.title,
+      courseSlug: courseModule.course.slug,
+      updateLabel: `Novo material: ${data.title}`,
+      excludeUserId: userId,
+    });
+  }
+
+  return material;
 }
 
 // Função auxiliar para verificar se usuário é instrutor do curso

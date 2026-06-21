@@ -4,6 +4,12 @@ import { applyDailyRewardAmount } from "@/lib/exam-daily-rewards";
 import { COIN_REWARDS, EXAM_PASS_SCORE } from "@/lib/gamification";
 import { prisma } from "@/lib/prisma";
 import { resolveNextDailyAttemptIndex } from "@/services/exam-daily-rewards.service";
+import {
+  countQuestionsForMode,
+  filterQuestionsByIds,
+  resolveAttemptQuestionIds,
+} from "@/services/exam-learning.service";
+import type { ExamStudyMode } from "@/lib/exam-learning";
 import { canAccessPremiumExam } from "@/services/premium.service";
 import { awardCoins } from "@/services/wallet.service";
 import { awardXp, XP_REWARDS } from "@/services/xp.service";
@@ -123,7 +129,11 @@ export async function getExamForTaking(slug: string) {
 
 // Função para iniciar tentativa de simulado
 // Cria nova tentativa se simulado estiver disponível
-export async function startAttempt(userId: string, examId: string) {
+export async function startAttempt(
+  userId: string,
+  examId: string,
+  mode: ExamStudyMode = "FULL",
+) {
   return prisma.$transaction(async (tx) => {
     const active = await tx.examAttempt.findFirst({
       where: { userId, examId, finishedAt: null },
@@ -133,22 +143,49 @@ export async function startAttempt(userId: string, examId: string) {
 
     const exam = await tx.exam.findFirst({
       where: { id: examId, isPublished: true },
-      include: { _count: { select: { questions: true } } },
+      include: {
+        questions: {
+          select: { id: true, type: true, subject: true, difficulty: true },
+          orderBy: { orderNumber: "asc" },
+        },
+      },
     });
 
     if (exam && !(await canAccessPremiumExam(userId, exam))) {
       throw new Error("Este simulado é exclusivo para assinantes Premium.");
     }
 
-    if (!exam || exam._count.questions === 0) {
+    if (!exam || exam.questions.length === 0) {
       throw new Error("Simulado não disponível.");
+    }
+
+    if (mode === "FAVORITES") {
+      const favoriteCount = await countQuestionsForMode(
+        userId,
+        examId,
+        "FAVORITES",
+        exam.questions,
+      );
+      if (favoriteCount === 0) {
+        throw new Error("Marque questões como favoritas antes de usar este modo.");
+      }
+    }
+
+    const totalQuestions =
+      mode === "FULL"
+        ? exam.questions.length
+        : await countQuestionsForMode(userId, examId, mode, exam.questions);
+
+    if (totalQuestions === 0) {
+      throw new Error("Não há questões disponíveis para este modo de estudo.");
     }
 
     return tx.examAttempt.create({
       data: {
         examId,
         userId,
-        totalQuestions: exam._count.questions,
+        totalQuestions,
+        studyMode: mode,
       },
     });
   });
@@ -213,7 +250,19 @@ export async function submitAttempt(
     }
   }
 
-  const questions = attempt.exam.questions;
+  const questionIds = await resolveAttemptQuestionIds(
+    userId,
+    attempt.examId,
+    attempt.studyMode,
+    attempt.exam.questions.map((q) => ({
+      id: q.id,
+      type: q.type,
+      subject: q.subject,
+      difficulty: q.difficulty,
+    })),
+  );
+
+  const questions = filterQuestionsByIds(attempt.exam.questions, questionIds);
   const mcQuestions = questions.filter((q) => q.type !== "ESSAY");
   const essayQuestions = questions.filter((q) => q.type === "ESSAY");
 
@@ -272,7 +321,7 @@ export async function submitAttempt(
 
     answerRecords.push({
       questionId: question.id,
-      essayAnswer: essayText.slice(0, 2000),
+      essayAnswer: essayText.slice(0, 4000),
       essayStatus: "PENDING",
       isCorrect: false,
     });
@@ -378,6 +427,9 @@ export async function submitAttempt(
       // feed opcional
     }
   }
+
+  const { syncUserAchievements } = await import("@/services/achievement.service");
+  await syncUserAchievements(userId);
 
   return {
     attemptId,

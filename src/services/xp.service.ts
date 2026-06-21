@@ -135,15 +135,15 @@ export async function awardXp(
 
     if (result) {
       try {
-        await createNotification({
-          userId,
-          type: result.leveledUp ? "LEVEL_UP" : "XP_EARNED",
-          title: result.leveledUp ? `Nível ${result.newLevel}!` : "XP ganho",
-          message: result.leveledUp
-            ? `Parabéns! Você subiu para o nível ${result.newLevel}.`
-            : `+${result.amount} XP: ${result.description}`,
-          link: "/perfil",
-        });
+        if (result.leveledUp) {
+          await createNotification({
+            userId,
+            type: "LEVEL_UP",
+            title: `Nível ${result.newLevel}!`,
+            message: `Parabéns! Você subiu para o nível ${result.newLevel}.`,
+            link: "/perfil",
+          });
+        }
       } catch (notificationError) {
         logger.warn("Falha ao criar notificação de XP", {
           userId,
@@ -190,6 +190,7 @@ export type RankingEntry = {
   id: string;
   userId: string;
   level: number;
+  league?: import("@prisma/client").RankingLeague;
   periodXp: number;
   totalXp: number;
   user: {
@@ -234,6 +235,7 @@ export async function getRanking(
       id: row.id,
       userId: row.userId,
       level: row.level,
+      league: row.league,
       periodXp: row.totalXp,
       totalXp: row.totalXp,
       user: row.user,
@@ -268,21 +270,23 @@ export async function getRanking(
 
   const profileByUser = new Map(profiles.map((profile) => [profile.userId, profile]));
 
-  return grouped
-    .map((row) => {
-      const profile = profileByUser.get(row.userId);
-      if (!profile) return null;
-      const periodXp = row._sum.amount ?? 0;
-      return {
-        id: profile.id,
-        userId: profile.userId,
-        level: profile.level,
-        periodXp,
-        totalXp: profile.totalXp,
-        user: profile.user,
-      };
-    })
-    .filter((entry): entry is RankingEntry => entry !== null);
+  const entries: RankingEntry[] = [];
+
+  for (const row of grouped) {
+    const profile = profileByUser.get(row.userId);
+    if (!profile) continue;
+    entries.push({
+      id: profile.id,
+      userId: profile.userId,
+      level: profile.level,
+      league: profile.league,
+      periodXp: row._sum.amount ?? 0,
+      totalXp: profile.totalXp,
+      user: profile.user,
+    });
+  }
+
+  return entries;
 }
 
 // Função para obter posição do usuário no ranking

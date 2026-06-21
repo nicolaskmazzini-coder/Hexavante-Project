@@ -4,6 +4,11 @@ import { getActiveModerationStatus } from "@/lib/moderation/status";
 import { prisma } from "@/lib/prisma"; // Cliente Prisma para banco de dados
 import { logger } from "@/lib/logger"; // Sistema de logging
 import type { LoginInput, RegisterInput } from "@/lib/validations/auth"; // Tipos de entrada
+import {
+  enforceCleanContent,
+  enforceCleanUsername,
+} from "@/services/content-policy.service";
+import { ensureDefaultUserCosmetics } from "@/services/shop.service";
 
 // Idade mínima para registro
 const MIN_AGE = 13;
@@ -28,6 +33,17 @@ function assertMinimumAge(birthDate: Date) {
 
 export async function registerUser(data: RegisterInput) {
   assertMinimumAge(data.birthDate);
+
+  await enforceCleanUsername({
+    username: data.username,
+    identifier: data.email,
+  });
+  await enforceCleanContent({
+    text: data.fullName,
+    fieldLabel: "nome",
+    context: "REGISTER",
+    identifier: data.email,
+  });
 
   const existing = await prisma.user.findFirst({
     where: {
@@ -79,6 +95,7 @@ export async function registerUser(data: RegisterInput) {
   });
 
   logger.info("Usuário registrado com sucesso", { userId: user.id, email: user.email });
+  await ensureDefaultUserCosmetics(user.id);
   return user;
 }
 
@@ -169,4 +186,6 @@ export async function ensureUserProvisioned(userId: string) {
       });
     }
   });
+
+  await ensureDefaultUserCosmetics(userId);
 }

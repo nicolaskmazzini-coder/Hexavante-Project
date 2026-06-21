@@ -1,39 +1,75 @@
 import { Trophy } from "lucide-react";
 import { auth } from "@/auth";
 import { RankingFilters } from "@/components/ranking/ranking-filters";
+import { RankingLeagueFilters } from "@/components/ranking/ranking-league-filters";
 import { RankingPodium } from "@/components/ranking/ranking-podium";
 import { RankingRow } from "@/components/ranking/ranking-row";
+import { RankingSeasonHistory } from "@/components/ranking/ranking-season-history";
+import { RankingSeasonPanel } from "@/components/ranking/ranking-season-panel";
 import { AppLink } from "@/components/ui/app-link";
 import { Alert } from "@/components/ui/alert";
 import { EmptyState } from "@/components/ui/empty-state";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
+import { getCurrentSeasonKey, parseLeagueFilter } from "@/lib/ranking-leagues";
+import {
+  getLeagueRanking,
+  getPendingSeasonRewards,
+  getUserSeasonHistory,
+  getUserSeasonStanding,
+  processPreviousSeasonIfNeeded,
+} from "@/services/ranking-season.service";
 import { getRanking, type RankingPeriod } from "@/services/xp.service";
+import { prisma } from "@/lib/prisma";
 
 type Props = {
-  searchParams: Promise<{ period?: string }>;
+  searchParams: Promise<{ period?: string; league?: string }>;
 };
 
 const PERIOD_LABELS: Record<RankingPeriod, string> = {
   week: "semanal",
-  month: "mensal",
+  month: "da temporada",
   all: "geral",
 };
 
 function parsePeriod(value?: string): RankingPeriod {
   if (value === "week" || value === "month" || value === "all") return value;
-  return "all";
+  return "month";
 }
 
 export default async function RankingPage({ searchParams }: Props) {
   const session = await auth();
-  const { period: periodParam } = await searchParams;
+  const { period: periodParam, league: leagueParam } = await searchParams;
   const period = parsePeriod(periodParam);
+
+  await processPreviousSeasonIfNeeded();
+
+  let leagueFilter = parseLeagueFilter(leagueParam);
+  if (period === "month" && leagueFilter === "ALL" && session?.user?.id) {
+    const profile = await prisma.userXP.findUnique({
+      where: { userId: session.user.id },
+      select: { league: true },
+    });
+    if (profile) leagueFilter = profile.league;
+  }
+
   let ranking: Awaited<ReturnType<typeof getRanking>> = [];
   let error: string | null = null;
 
+  const [standing, pendingRewards, seasonHistory] = session?.user?.id
+    ? await Promise.all([
+        getUserSeasonStanding(session.user.id),
+        getPendingSeasonRewards(session.user.id),
+        getUserSeasonHistory(session.user.id),
+      ])
+    : [null, [], []];
+
   try {
-    ranking = await getRanking(50, period);
+    if (period === "month" && leagueFilter !== "ALL") {
+      ranking = await getLeagueRanking(leagueFilter, getCurrentSeasonKey(), 50);
+    } else {
+      ranking = await getRanking(50, period);
+    }
   } catch (e) {
     error = e instanceof Error ? e.message : "Erro ao carregar ranking";
     console.error("Erro ao carregar ranking:", error);
@@ -50,14 +86,23 @@ export default async function RankingPage({ searchParams }: Props) {
       </AppLink>
 
       <PageHeader
-        badge="Ranking"
+        badge="Ligas"
         icon={Trophy}
-        title="Top estudantes"
-        description="Estudantes com mais XP na plataforma."
+        title="Ranking por ligas"
+        description="Compita em temporadas mensais nas ligas Bronze, Prata e Ouro. Os melhores sobem e ganham moedas."
       />
 
-      <div className="mt-4">
+      {session?.user && standing && (
+        <div className="mt-4">
+          <RankingSeasonPanel standing={standing} pendingRewards={pendingRewards} />
+        </div>
+      )}
+
+      <div className="mt-6 space-y-3">
         <RankingFilters current={period} />
+        {period === "month" && (
+          <RankingLeagueFilters current={leagueFilter} period={period} />
+        )}
       </div>
 
       {error ? (
@@ -68,7 +113,8 @@ export default async function RankingPage({ searchParams }: Props) {
         <EmptyState
           icon={Trophy}
           title="Ninguém no ranking ainda."
-          description="Seja o primeiro a ganhar XP!"
+          description="Ganhe XP nesta temporada para aparecer na sua liga!"
+          className="mt-6"
         />
       ) : (
         <>
@@ -89,12 +135,15 @@ export default async function RankingPage({ searchParams }: Props) {
                   position={listStartIndex + index + 1}
                   isCurrentUser={session?.user?.id === entry.userId}
                   showTotalXp={period !== "all"}
+                  showLeague={period !== "month"}
                 />
               ))}
             </ol>
           )}
         </>
       )}
+
+      {session?.user && <RankingSeasonHistory history={seasonHistory} />}
     </PageShell>
   );
 }

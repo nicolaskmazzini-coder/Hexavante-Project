@@ -1,26 +1,26 @@
 "use server";
 
 import { auth } from "@/auth";
-import { canModerate, isInstructor } from "@/lib/permissions";
+import { requireModeratorAccount } from "@/lib/moderation/guards";
+import { isInstructor } from "@/lib/permissions";
+import { prisma } from "@/lib/prisma";
 import { courseModerationSchema, instructorApplicationSchema } from "@/lib/validations/moderation";
 import {
   moderateCourse,
   reviewInstructorApplication,
+  setCoursePublished,
   submitCourseForReview,
   submitInstructorApplication,
 } from "@/services/moderation.service";
+import { setExamPublished } from "@/services/exam-admin.service";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 export type ActionResult = { success: boolean; error?: string; message?: string };
 
 async function requireModerator() {
-  const session = await auth();
-  if (!session?.user?.id) throw new Error("Faça login para continuar.");
-  if (!canModerate(session.user.roles)) {
-    throw new Error("Acesso restrito a moderadores.");
-  }
-  return session.user;
+  const user = await requireModeratorAccount();
+  return user;
 }
 
 export async function applyInstructorAction(
@@ -119,8 +119,65 @@ export async function moderateCourseAction(
 
   revalidatePath("/moderacao");
   revalidatePath("/moderacao/cursos");
+  revalidatePath("/moderacao/conteudo");
   revalidatePath("/courses");
-  redirect("/moderacao/cursos");
+
+  const returnTo = formData.get("returnTo");
+  if (typeof returnTo === "string" && returnTo.startsWith("/moderacao")) {
+    redirect(returnTo);
+  }
+
+  redirect(`/moderacao/cursos/${parsed.data.courseId}`);
+}
+
+export async function toggleCoursePublishAction(courseId: string): Promise<ActionResult> {
+  try {
+    const moderator = await requireModerator();
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+      select: { status: true },
+    });
+    if (!course) return { success: false, error: "Curso não encontrado." };
+
+    const publish = course.status !== "APPROVED";
+    await setCoursePublished(courseId, moderator.id, publish);
+
+    revalidatePath("/moderacao/conteudo");
+    revalidatePath("/moderacao/cursos");
+    revalidatePath("/courses");
+    return { success: true, message: publish ? "Curso publicado." : "Curso despublicado." };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao atualizar curso.",
+    };
+  }
+}
+
+export async function toggleExamPublishAction(examId: string): Promise<ActionResult> {
+  try {
+    await requireModerator();
+    const exam = await prisma.exam.findUnique({
+      where: { id: examId },
+      select: { isPublished: true },
+    });
+    if (!exam) return { success: false, error: "Simulado não encontrado." };
+
+    await setExamPublished(examId, !exam.isPublished);
+
+    revalidatePath("/moderacao/conteudo");
+    revalidatePath("/moderacao/simulados");
+    revalidatePath("/simulados");
+    return {
+      success: true,
+      message: !exam.isPublished ? "Simulado publicado." : "Simulado despublicado.",
+    };
+  } catch (error) {
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Erro ao atualizar simulado.",
+    };
+  }
 }
 
 export async function resubmitCourseAction(courseId: string) {

@@ -17,7 +17,18 @@ export async function GET() {
     getUnreadNotificationCount(session.user.id),
   ]);
 
-  return NextResponse.json({ notifications, unreadCount });
+  return NextResponse.json({
+    notifications: notifications.map((row) => ({
+      id: row.id,
+      type: row.type,
+      title: row.title,
+      message: row.message,
+      link: row.link,
+      readAt: row.readAt?.toISOString() ?? null,
+      createdAt: row.createdAt.toISOString(),
+    })),
+    unreadCount,
+  });
 }
 
 export async function PATCH() {

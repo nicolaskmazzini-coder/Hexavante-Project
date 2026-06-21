@@ -58,3 +58,19 @@ export function getSessionCookiesByteSize(cookieHeader: string | null): number {
 export function isSessionCookieTooLarge(cookieHeader: string | null): boolean {
   return getSessionCookiesByteSize(cookieHeader) > 24_000;
 }
+
+/** Cookie de sessão presente no request (mesmo inválido/expirado). */
+export function hasActiveSessionCookie(cookieHeader?: string | null): boolean {
+  if (!cookieHeader) return false;
+
+  for (const part of cookieHeader.split(";")) {
+    const trimmed = part.trim();
+    const eq = trimmed.indexOf("=");
+    if (eq === -1) continue;
+    const name = trimmed.slice(0, eq);
+    const value = trimmed.slice(eq + 1);
+    if (isSessionCookieName(name) && value.length > 0) return true;
+  }
+
+  return false;
+}

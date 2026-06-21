@@ -52,10 +52,60 @@ export async function issueCertificate(userId: string, courseId: string) {
     type: "CERTIFICATE_ISSUED",
     title: "Certificado emitido",
     message: `Seu certificado do curso "${certificate.course.title}" está disponível.`,
-    link: "/certificados",
+    link: `/certificados/c/${certificate.code}`,
   });
 
   return certificate;
+}
+
+export async function getCertificateByCode(code: string) {
+  return prisma.certificate.findUnique({
+    where: { code },
+    include: {
+      user: {
+        select: {
+          fullName: true,
+          username: true,
+        },
+      },
+      course: {
+        select: {
+          title: true,
+          slug: true,
+          category: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
+}
+
+export async function getCertificateForOwner(userId: string, certificateId: string) {
+  return prisma.certificate.findFirst({
+    where: { id: certificateId, userId },
+    include: {
+      user: {
+        select: {
+          fullName: true,
+          username: true,
+        },
+      },
+      course: {
+        select: {
+          title: true,
+          slug: true,
+          category: {
+            select: {
+              name: true,
+            },
+          },
+        },
+      },
+    },
+  });
 }
 
 // Função para verificar certificado

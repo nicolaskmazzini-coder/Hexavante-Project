@@ -1,6 +1,6 @@
 import { auth } from "@/auth";
-import { clearAllSessionCookies, isSessionCookieTooLarge } from "@/lib/auth-cookies";
-import { isStaff } from "@/lib/permissions";
+import { clearAllSessionCookies, hasActiveSessionCookie, isSessionCookieTooLarge } from "@/lib/auth-cookies";
+import { canModerate, isAdmin } from "@/lib/permissions";
 import { NextResponse } from "next/server";
 
 const MODERATOR_REQUIRED = /^\/moderacao(\/|$)/;
@@ -26,6 +26,17 @@ function getInternalOrigin(publicOrigin: string): string {
 
 function clearSessionCookies(response: NextResponse, cookieHeader?: string | null) {
   return clearAllSessionCookies(response, cookieHeader);
+}
+
+function applyStaleSessionCleanup(
+  response: NextResponse,
+  cookieHeader: string | null,
+  isAuthenticated: boolean,
+) {
+  if (!isAuthenticated && hasActiveSessionCookie(cookieHeader)) {
+    return clearSessionCookies(response, cookieHeader);
+  }
+  return response;
 }
 
 function cacheMaintenance(enabled: boolean) {
@@ -60,6 +71,8 @@ async function isMaintenanceEnabled(publicOrigin: string): Promise<boolean> {
 
 export default auth(async (req) => {
   const cookieHeader = req.headers.get("cookie");
+  const isAuthenticated = Boolean(req.auth?.user?.id);
+
   if (isSessionCookieTooLarge(cookieHeader)) {
     const login = new URL("/login", req.nextUrl.origin);
     login.searchParams.set("error", "cookies_cleared");
@@ -72,24 +85,36 @@ export default auth(async (req) => {
   if (user?.isBanned) {
     const suspended = new URL("/suspenso", req.nextUrl.origin);
     if (user.banReason) suspended.searchParams.set("motivo", user.banReason);
-    return clearSessionCookies(NextResponse.redirect(suspended), cookieHeader);
+    return applyStaleSessionCleanup(
+      clearSessionCookies(NextResponse.redirect(suspended), cookieHeader),
+      cookieHeader,
+      isAuthenticated,
+    );
   }
 
   if (!MAINTENANCE_EXEMPT.test(pathname)) {
     const maintenanceOn = await isMaintenanceEnabled(req.nextUrl.origin);
-    if (maintenanceOn && !isStaff(user?.roles)) {
-      return NextResponse.redirect(new URL("/manutencao", req.nextUrl.origin));
+    if (maintenanceOn && !isAdmin(user?.roles)) {
+      return applyStaleSessionCleanup(
+        NextResponse.redirect(new URL("/manutencao", req.nextUrl.origin)),
+        cookieHeader,
+        isAuthenticated,
+      );
     }
   }
 
   if (MODERATOR_REQUIRED.test(pathname)) {
     const roles = user?.roles ?? [];
-    if (!isStaff(roles)) {
-      return NextResponse.redirect(new URL("/", req.nextUrl.origin));
+    if (!canModerate(roles)) {
+      return applyStaleSessionCleanup(
+        NextResponse.redirect(new URL("/", req.nextUrl.origin)),
+        cookieHeader,
+        isAuthenticated,
+      );
     }
   }
 
-  return NextResponse.next();
+  return applyStaleSessionCleanup(NextResponse.next(), cookieHeader, isAuthenticated);
 });
 
 export const config = {

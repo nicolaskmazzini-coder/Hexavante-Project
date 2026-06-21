@@ -1,4 +1,5 @@
 import { getAvatarBorderClassName, resolveAppTheme, resolveProfileIcon } from "@/lib/cosmetics";
+import { resolvePet, resolvePetAccessory } from "@/lib/pets";
 import { buildPremiumStatus } from "@/lib/premium";
 import { prisma } from "@/lib/prisma";
 import { SHOP_CATALOG } from "@/lib/shop-catalog";
@@ -8,7 +9,7 @@ import {
   type ShopOwnershipStatus,
 } from "@/lib/shop-item-utils";
 import { activateBooster } from "@/services/booster.service";
-import { getUserCoinProfile, spendCoins } from "@/services/wallet.service";
+import { getUserCoinProfile, spendCoins, getCoinHistory } from "@/services/wallet.service";
 import type { StoreItem, StoreItemCategory } from "@prisma/client";
 
 const DEPRECATED_SHOP_SLUGS = ["booster-coins-24h"];
@@ -95,14 +96,16 @@ export type ShopItemView = StoreItem & {
 };
 
 export async function getShopState(userId: string) {
-  const [items, inventory, coinProfile, user] = await Promise.all([
+  const [items, inventory, coinProfile, user, cosmetics, coinHistory] = await Promise.all([
     listShopItems(),
     getUserInventory(userId),
     getUserCoinProfile(userId),
     prisma.user.findUnique({
       where: { id: userId },
-      select: { isPremium: true, premiumExpiresAt: true },
+      select: { isPremium: true, premiumExpiresAt: true, fullName: true, username: true, avatarUrl: true },
     }),
+    getProfileCosmetics(userId),
+    getCoinHistory(userId, 10),
   ]);
 
   const premium = user ? buildPremiumStatus(user) : null;
@@ -127,6 +130,13 @@ export async function getShopState(userId: string) {
     premium,
     coinMultiplier: coinProfile.coinMultiplier,
     activeBooster: coinProfile.activeBooster,
+    profilePreview: {
+      fullName: user?.fullName ?? "Estudante",
+      username: user?.username ?? "usuario",
+      avatarUrl: user?.avatarUrl ?? null,
+      cosmetics,
+    },
+    coinHistory,
   };
 }
 
@@ -251,7 +261,81 @@ export async function purchaseStoreItem(userId: string, storeItemId: string) {
   });
 }
 
-const EQUIPPABLE_CATEGORIES: StoreItemCategory[] = ["TITLE", "AVATAR_BORDER", "THEME", "COSMETIC"];
+const EQUIPPABLE_CATEGORIES: StoreItemCategory[] = [
+  "TITLE",
+  "AVATAR_BORDER",
+  "THEME",
+  "COSMETIC",
+  "PET",
+  "PET_COSMETIC",
+];
+
+const DEFAULT_THEME_SLUG = "theme-hexavante";
+
+/** Garante o tema Hexavante padrão no inventário de novos usuários. */
+export async function ensureDefaultUserCosmetics(userId: string) {
+  await ensureShopCatalog();
+
+  const defaultTheme = await prisma.storeItem.findUnique({
+    where: { slug: DEFAULT_THEME_SLUG },
+  });
+  if (!defaultTheme) return;
+
+  const existing = await prisma.userInventory.findUnique({
+    where: { userId_storeItemId: { userId, storeItemId: defaultTheme.id } },
+  });
+
+  if (!existing) {
+    await prisma.userInventory.create({
+      data: {
+        userId,
+        storeItemId: defaultTheme.id,
+        isEquipped: true,
+      },
+    });
+    return;
+  }
+
+  const hasEquippedTheme = await prisma.userInventory.findFirst({
+    where: {
+      userId,
+      isEquipped: true,
+      storeItem: { category: "THEME" },
+      OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+    },
+  });
+
+  if (!hasEquippedTheme && !existing.isEquipped) {
+    await prisma.userInventory.update({
+      where: { id: existing.id },
+      data: { isEquipped: true },
+    });
+  }
+}
+
+function validateEquipMetadata(category: StoreItemCategory, metadata: unknown): boolean {
+  if (!metadata || typeof metadata !== "object" || Array.isArray(metadata)) return false;
+  const meta = metadata as Record<string, unknown>;
+
+  switch (category) {
+    case "THEME":
+      return typeof meta.themeId === "string" && Boolean(resolveAppTheme(meta.themeId));
+    case "AVATAR_BORDER":
+      return typeof meta.borderId === "string";
+    case "TITLE":
+      return true;
+    case "COSMETIC":
+      return meta.cosmeticType === "profile_icon"
+        ? typeof meta.iconId === "string"
+        : meta.cosmeticType === "sticker";
+    case "PET":
+      return typeof meta.petId === "string" && Boolean(resolvePet(meta.petId));
+    case "PET_COSMETIC":
+      return typeof meta.accessoryId === "string" && Boolean(resolvePetAccessory(meta.accessoryId));
+    default:
+      return false;
+  }
+}
 
 export async function equipStoreItem(userId: string, inventoryId: string) {
   const entry = await prisma.userInventory.findFirst({
@@ -259,11 +343,29 @@ export async function equipStoreItem(userId: string, inventoryId: string) {
     include: { storeItem: true },
   });
   if (!entry) throw new Error("Item não encontrado no inventário.");
+  if (!entry.storeItem.isActive) throw new Error("Este item não está mais disponível.");
   if (!EQUIPPABLE_CATEGORIES.includes(entry.storeItem.category)) {
     throw new Error("Este item não pode ser equipado.");
   }
   if (entry.expiresAt && entry.expiresAt <= new Date()) {
     throw new Error("Este item expirou.");
+  }
+  if (!validateEquipMetadata(entry.storeItem.category, entry.storeItem.metadata)) {
+    throw new Error("Metadados do item inválidos. Contate o suporte.");
+  }
+
+  if (entry.storeItem.category === "PET_COSMETIC") {
+    const equippedPet = await prisma.userInventory.findFirst({
+      where: {
+        userId,
+        isEquipped: true,
+        storeItem: { category: "PET" },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: new Date() } }],
+      },
+    });
+    if (!equippedPet) {
+      throw new Error("Equipe um pet antes de usar acessórios.");
+    }
   }
 
   await prisma.$transaction(async (tx) => {
@@ -289,11 +391,14 @@ export async function equipStoreItem(userId: string, inventoryId: string) {
 }
 
 export async function getProfileCosmetics(userId: string) {
+  await ensureDefaultUserCosmetics(userId);
   const equipped = await getEquippedItems(userId);
   const title = equipped.find((e) => e.storeItem.category === "TITLE");
   const border = equipped.find((e) => e.storeItem.category === "AVATAR_BORDER");
   const theme = equipped.find((e) => e.storeItem.category === "THEME");
   const cosmetic = equipped.find((e) => e.storeItem.category === "COSMETIC");
+  const pet = equipped.find((e) => e.storeItem.category === "PET");
+  const petAccessory = equipped.find((e) => e.storeItem.category === "PET_COSMETIC");
 
   const titleMeta = title?.storeItem.metadata as { titleText?: string } | null;
   const borderMeta = border?.storeItem.metadata as { borderId?: string; rarity?: string } | null;
@@ -302,12 +407,17 @@ export async function getProfileCosmetics(userId: string) {
     cosmeticType?: string;
     iconId?: string;
   } | null;
+  const petMeta = pet?.storeItem.metadata as { petId?: string } | null;
+  const petAccessoryMeta = petAccessory?.storeItem.metadata as { accessoryId?: string } | null;
 
   const themeId = themeMeta?.themeId ?? null;
+  const resolvedThemeId = themeId === "default" ? null : themeId;
   const borderId = borderMeta?.borderId ?? null;
   const profileIconId =
     cosmeticMeta?.cosmeticType === "profile_icon" ? (cosmeticMeta.iconId ?? null) : null;
-  const appTheme = resolveAppTheme(themeId);
+  const petId = petMeta?.petId ?? null;
+  const petAccessoryId = petAccessoryMeta?.accessoryId ?? null;
+  const appTheme = resolveAppTheme(resolvedThemeId);
 
   return {
     equippedTitle: titleMeta?.titleText ?? title?.storeItem.name ?? null,
@@ -315,7 +425,11 @@ export async function getProfileCosmetics(userId: string) {
     avatarBorderClassName: getAvatarBorderClassName(borderId),
     profileIconId,
     profileIcon: resolveProfileIcon(profileIconId),
-    themeId,
+    petId,
+    pet: resolvePet(petId),
+    petAccessoryId,
+    petAccessory: resolvePetAccessory(petAccessoryId),
+    themeId: resolvedThemeId,
     themeClassName: appTheme.className,
     themeVars: appTheme.vars,
   };

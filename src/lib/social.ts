@@ -1,4 +1,4 @@
-import type { SocialActivityType } from "@prisma/client";
+import type { SocialActivityType, ActivityReactionType } from "@prisma/client";
 
 export type FeedEventMetadata = {
   course?: string;
@@ -9,15 +9,36 @@ export type FeedEventMetadata = {
   newLevel?: number;
   achievement?: string;
   days?: number;
+  title?: string;
+  body?: string;
 };
 
 export type FeedActivity = {
   id: string;
   type: SocialActivityType;
   metadata: FeedEventMetadata;
+  tags: string[];
+  acceptedCommentId: string | null;
   createdAt: Date;
   likes: number;
   comments: number;
+  likedByViewer: boolean;
+  reactions: Record<ActivityReactionType, number>;
+  viewerReactions: ActivityReactionType[];
+  user: {
+    id: string;
+    username: string;
+    fullName: string;
+    avatarUrl: string | null;
+  };
+};
+
+export type ActivityCommentView = {
+  id: string;
+  content: string;
+  isAccepted: boolean;
+  createdAt: Date;
+  likes: number;
   likedByViewer: boolean;
   user: {
     id: string;
@@ -39,6 +60,8 @@ export function formatEventText(type: SocialActivityType, metadata: FeedEventMet
       return `Desbloqueou a conquista "${metadata.achievement ?? "Conquista"}" 🏅`;
     case "STREAK":
       return `Manteve sequência de ${metadata.days ?? 0} dias 🔥`;
+    case "DISCUSSION":
+      return metadata.title ?? "Nova publicação na comunidade";
     default:
       return "Nova atividade na plataforma";
   }

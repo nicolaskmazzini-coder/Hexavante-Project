@@ -1,13 +1,15 @@
 import type { Metadata } from "next";
 import { Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
-import { auth } from "@/auth";
 import { AppShell } from "@/components/app-shell";
+import { HeaderBar } from "@/components/layout/header-bar";
+import { GlobalThemeLayer } from "@/components/shop/global-theme-layer";
 import { CookieBanner } from "@/components/ui/cookie-banner";
 import { ErrorBoundary } from "@/components/error-boundary";
 import { ToastProvider } from "@/components/ui/toast";
 import { getNavAvatarUrl } from "@/lib/nav-avatar";
 import { toNavSession } from "@/lib/nav-session";
+import { safeAuth } from "@/lib/safe-auth";
 
 const jakarta = Plus_Jakarta_Sans({
   subsets: ["latin"],
@@ -25,7 +27,7 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
+  const session = await safeAuth();
   const avatarUrl = session?.user?.id ? await getNavAvatarUrl(session.user.id) : null;
   const navSession = toNavSession(session, avatarUrl);
 
@@ -34,7 +36,10 @@ export default async function RootLayout({
       <body className={`${jakarta.variable} app-shell antialiased font-sans`}>
         <ErrorBoundary>
           <ToastProvider>
-            <AppShell session={navSession}>{children}</AppShell>
+            <GlobalThemeLayer />
+            <AppShell session={navSession} header={<HeaderBar session={navSession} />}>
+              {children}
+            </AppShell>
           </ToastProvider>
           <CookieBanner />
         </ErrorBoundary>

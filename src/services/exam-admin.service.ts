@@ -118,3 +118,9 @@ export async function addExamQuestion(examId: string, data: ExamQuestionInput) {
 export async function deleteExamQuestion(questionId: string) {
   await prisma.examQuestion.delete({ where: { id: questionId } });
 }
+
+export async function setExamPublished(examId: string, isPublished: boolean) {
+  const exam = await prisma.exam.findUnique({ where: { id: examId }, select: { id: true } });
+  if (!exam) throw new Error("Simulado não encontrado.");
+  return prisma.exam.update({ where: { id: examId }, data: { isPublished } });
+}

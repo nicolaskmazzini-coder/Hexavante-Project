@@ -1,6 +1,12 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 import { SHOP_CATALOG } from "../src/lib/shop-catalog";
+import {
+  DEPRECATED_PARTIAL_ENEM_SLUGS,
+  FULL_ENEM_EXAMS,
+  type SeedExamQuestion,
+  type SeedFullEnemExam,
+} from "./seed-enem-full";
 
 const prisma = new PrismaClient();
 
@@ -22,6 +28,404 @@ const categories = [
   { name: "Português", description: "Disciplinas Fundamentais" },
 ];
 
+type SeedLesson = {
+  title: string;
+  description?: string;
+  videoUrl?: string;
+  videoProvider?: "youtube" | "vimeo" | "other";
+  duration?: number;
+};
+
+type SeedModule = {
+  title: string;
+  description?: string;
+  lessons: SeedLesson[];
+  materials?: { title: string; fileUrl: string; fileType?: string }[];
+};
+
+type SeedCourse = {
+  title: string;
+  slug: string;
+  shortDescription: string;
+  description: string;
+  estimatedHours: number;
+  level: "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
+  courseType?: "FREE" | "PAID" | "PREMIUM";
+  modules: SeedModule[];
+};
+
+const ENEM_TEST_COURSES: SeedCourse[] = [
+  {
+    title: "ENEM Linguagens — Interpretação e Gramática Aplicada",
+    slug: "enem-linguagens-interpretacao-e-gramatica-aplicada",
+    shortDescription:
+      "Domine interpretação textual, variação linguística e gramática no contexto do ENEM.",
+    description:
+      "Curso focado em leitura estratégica, inferência, coesão e temas gramaticais mais cobrados na prova de Linguagens do ENEM.",
+    estimatedHours: 24,
+    level: "BEGINNER",
+    modules: [
+      {
+        title: "Leitura e interpretação de textos",
+        description: "Técnicas para leitura ativa e identificação de tese, argumentos e intencionalidade.",
+        lessons: [
+          {
+            title: "Estratégias de leitura ativa para o ENEM",
+            description: "Como ganhar velocidade sem perder compreensão.",
+            videoUrl: "https://www.youtube.com/watch?v=8mei6uVttho",
+            videoProvider: "youtube",
+            duration: 780,
+          },
+          {
+            title: "Inferência, implícitos e efeitos de sentido",
+            description: "Como resolver questões de interpretação com mais precisão.",
+            videoUrl: "https://www.youtube.com/watch?v=6tNS--WetLI",
+            videoProvider: "youtube",
+            duration: 820,
+          },
+        ],
+      },
+      {
+        title: "Gramática no contexto",
+        description: "Classes gramaticais, concordância e pontuação com foco em aplicação.",
+        lessons: [
+          {
+            title: "Concordância e regência em textos do ENEM",
+            videoUrl: "https://www.youtube.com/watch?v=3JfB0TuN06g",
+            videoProvider: "youtube",
+            duration: 760,
+          },
+          {
+            title: "Pontuação e coesão textual",
+            videoUrl: "https://www.youtube.com/watch?v=6tNS--WetLI",
+            videoProvider: "youtube",
+            duration: 740,
+          },
+        ],
+        materials: [
+          {
+            title: "Resumo rápido de gramática aplicada",
+            fileUrl: "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+            fileType: "pdf",
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "ENEM Matemática — Fundamentos e Questões",
+    slug: "enem-matematica-fundamentos-e-questoes",
+    shortDescription: "Reforce os tópicos-base de Matemática e aplique em questões estilo ENEM.",
+    description:
+      "Curso para consolidar porcentagem, razão, proporção, função e estatística básica com resolução guiada.",
+    estimatedHours: 28,
+    level: "BEGINNER",
+    modules: [
+      {
+        title: "Aritmética e proporcionalidade",
+        lessons: [
+          {
+            title: "Porcentagem e juros em problemas do cotidiano",
+            videoUrl: "https://www.youtube.com/watch?v=8mei6uVttho",
+            videoProvider: "youtube",
+            duration: 810,
+          },
+          {
+            title: "Razão, proporção e regra de três",
+            videoUrl: "https://www.youtube.com/watch?v=3JfB0TuN06g",
+            videoProvider: "youtube",
+            duration: 840,
+          },
+        ],
+      },
+      {
+        title: "Funções e estatística",
+        lessons: [
+          {
+            title: "Função afim e leitura de gráficos",
+            videoUrl: "https://www.youtube.com/watch?v=6tNS--WetLI",
+            videoProvider: "youtube",
+            duration: 890,
+          },
+          {
+            title: "Média, mediana e análise de tabelas",
+            videoUrl: "https://www.youtube.com/watch?v=3JfB0TuN06g",
+            videoProvider: "youtube",
+            duration: 760,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "ENEM Ciências da Natureza — Física, Química e Biologia",
+    slug: "enem-ciencias-da-natureza-fisica-quimica-biologia",
+    shortDescription: "Conceitos essenciais de Natureza com abordagem interdisciplinar.",
+    description:
+      "Curso com foco nos temas mais recorrentes em Física, Química e Biologia no ENEM, contextualizados em situações reais.",
+    estimatedHours: 30,
+    level: "INTERMEDIATE",
+    modules: [
+      {
+        title: "Física e energia",
+        lessons: [
+          {
+            title: "Cinemática e interpretação de gráficos",
+            videoUrl: "https://www.youtube.com/watch?v=8mei6uVttho",
+            videoProvider: "youtube",
+            duration: 860,
+          },
+          {
+            title: "Energia, potência e eficiência",
+            videoUrl: "https://www.youtube.com/watch?v=6tNS--WetLI",
+            videoProvider: "youtube",
+            duration: 830,
+          },
+        ],
+      },
+      {
+        title: "Química e biologia aplicada",
+        lessons: [
+          {
+            title: "pH, soluções e reações químicas",
+            videoUrl: "https://www.youtube.com/watch?v=3JfB0TuN06g",
+            videoProvider: "youtube",
+            duration: 790,
+          },
+          {
+            title: "Ecologia e cadeias alimentares",
+            videoUrl: "https://www.youtube.com/watch?v=8mei6uVttho",
+            videoProvider: "youtube",
+            duration: 780,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "ENEM Ciências Humanas — História, Geografia e Sociologia",
+    slug: "enem-ciencias-humanas-historia-geografia-sociologia",
+    shortDescription: "Estude processos históricos e fenômenos sociais com leitura crítica.",
+    description:
+      "Curso para revisão de conteúdos de Humanas, relacionando temas históricos e geopolíticos com cidadania e sociedade.",
+    estimatedHours: 26,
+    level: "BEGINNER",
+    modules: [
+      {
+        title: "História e formação do Brasil",
+        lessons: [
+          {
+            title: "Brasil Colônia e Império em questões",
+            videoUrl: "https://www.youtube.com/watch?v=6tNS--WetLI",
+            videoProvider: "youtube",
+            duration: 780,
+          },
+          {
+            title: "República, industrialização e cidadania",
+            videoUrl: "https://www.youtube.com/watch?v=8mei6uVttho",
+            videoProvider: "youtube",
+            duration: 810,
+          },
+        ],
+      },
+      {
+        title: "Geografia e sociedade",
+        lessons: [
+          {
+            title: "Globalização e blocos econômicos",
+            videoUrl: "https://www.youtube.com/watch?v=3JfB0TuN06g",
+            videoProvider: "youtube",
+            duration: 760,
+          },
+          {
+            title: "Urbanização, desigualdade e território",
+            videoUrl: "https://www.youtube.com/watch?v=6tNS--WetLI",
+            videoProvider: "youtube",
+            duration: 790,
+          },
+        ],
+      },
+    ],
+  },
+  {
+    title: "ENEM Redação Nota 1000 — Estrutura e Repertório",
+    slug: "enem-redacao-nota-1000-estrutura-e-repertorio",
+    shortDescription: "Aprenda a construir redações com argumentação sólida e proposta de intervenção.",
+    description:
+      "Curso direcionado às 5 competências da redação do ENEM, com foco em planejamento, repertório sociocultural e revisão.",
+    estimatedHours: 20,
+    level: "INTERMEDIATE",
+    modules: [
+      {
+        title: "Base da redação ENEM",
+        lessons: [
+          {
+            title: "Competências e estrutura dissertativo-argumentativa",
+            videoUrl: "https://www.youtube.com/watch?v=8mei6uVttho",
+            videoProvider: "youtube",
+            duration: 900,
+          },
+          {
+            title: "Introdução e tese com clareza",
+            videoUrl: "https://www.youtube.com/watch?v=6tNS--WetLI",
+            videoProvider: "youtube",
+            duration: 760,
+          },
+        ],
+      },
+      {
+        title: "Desenvolvimento e fechamento",
+        lessons: [
+          {
+            title: "Argumentação e repertório produtivo",
+            videoUrl: "https://www.youtube.com/watch?v=3JfB0TuN06g",
+            videoProvider: "youtube",
+            duration: 840,
+          },
+          {
+            title: "Proposta de intervenção completa",
+            videoUrl: "https://www.youtube.com/watch?v=8mei6uVttho",
+            videoProvider: "youtube",
+            duration: 790,
+          },
+        ],
+      },
+    ],
+  },
+];
+
+async function upsertEnemCourse(course: SeedCourse, categoryId: string, instructorId: string) {
+  const moduleCreates = course.modules.map((module, moduleIdx) => ({
+    title: module.title,
+    description: module.description,
+    orderNumber: moduleIdx + 1,
+    lessons: {
+      create: module.lessons.map((lesson, lessonIdx) => ({
+        title: lesson.title,
+        description: lesson.description,
+        videoUrl: lesson.videoUrl,
+        videoProvider: lesson.videoProvider,
+        duration: lesson.duration,
+        orderNumber: lessonIdx + 1,
+      })),
+    },
+    ...(module.materials?.length
+      ? {
+          materials: {
+            create: module.materials.map((material) => ({
+              title: material.title,
+              fileUrl: material.fileUrl,
+              fileType: material.fileType ?? "pdf",
+            })),
+          },
+        }
+      : {}),
+  }));
+
+  await prisma.course.upsert({
+    where: { slug: course.slug },
+    update: {
+      title: course.title,
+      categoryId,
+      shortDescription: course.shortDescription,
+      description: course.description,
+      courseType: course.courseType ?? "FREE",
+      level: course.level,
+      estimatedHours: course.estimatedHours,
+      progressionType: "PROGRESSIVE",
+      status: "APPROVED",
+      instructors: {
+        deleteMany: {},
+        create: { userId: instructorId },
+      },
+      modules: {
+        deleteMany: {},
+        create: moduleCreates,
+      },
+    },
+    create: {
+      title: course.title,
+      slug: course.slug,
+      categoryId,
+      shortDescription: course.shortDescription,
+      description: course.description,
+      courseType: course.courseType ?? "FREE",
+      level: course.level,
+      estimatedHours: course.estimatedHours,
+      progressionType: "PROGRESSIVE",
+      status: "APPROVED",
+      instructors: {
+        create: { userId: instructorId },
+      },
+      modules: {
+        create: moduleCreates,
+      },
+    },
+  });
+}
+
+function mapSeedQuestion(question: SeedExamQuestion, orderNumber: number) {
+  if (question.type === "ESSAY") {
+    return {
+      statement: question.statement,
+      orderNumber,
+      points: 1000,
+      type: "ESSAY" as const,
+      expectedAnswer: question.expectedAnswer ?? null,
+      subject: "Redação",
+      explanation: null,
+      difficulty: 3,
+    };
+  }
+
+  return {
+    statement: question.statement,
+    orderNumber,
+    points: 1,
+    type: "MULTIPLE_CHOICE" as const,
+    subject: question.subject ?? null,
+    explanation: question.explanation ?? null,
+    difficulty: question.difficulty ?? 2,
+    alternatives: {
+      create: question.alternatives,
+    },
+  };
+}
+
+async function upsertEnemExam(exam: SeedFullEnemExam) {
+  const questionCreates = exam.questions.map((question, idx) =>
+    mapSeedQuestion(question, idx + 1),
+  );
+
+  await prisma.exam.upsert({
+    where: { slug: exam.slug },
+    update: {
+      title: exam.title,
+      examType: exam.examType,
+      description: exam.description,
+      timeLimit: exam.timeLimit,
+      isPublished: true,
+      isPremiumOnly: exam.isPremiumOnly ?? false,
+      questions: {
+        deleteMany: {},
+        create: questionCreates,
+      },
+    },
+    create: {
+      title: exam.title,
+      slug: exam.slug,
+      examType: exam.examType,
+      description: exam.description,
+      timeLimit: exam.timeLimit,
+      isPublished: true,
+      isPremiumOnly: exam.isPremiumOnly ?? false,
+      questions: {
+        create: questionCreates,
+      },
+    },
+  });
+}
+
 async function main() {
   for (const role of roles) {
     await prisma.role.upsert({
@@ -42,8 +446,9 @@ async function main() {
   const instructorRole = await prisma.role.findUnique({ where: { name: "INSTRUCTOR" } });
   const userRole = await prisma.role.findUnique({ where: { name: "USER" } });
   const progCategory = await prisma.category.findUnique({ where: { name: "Programação" } });
+  const enemCategory = await prisma.category.findUnique({ where: { name: "ENEM" } });
 
-  if (!instructorRole || !userRole || !progCategory) {
+  if (!instructorRole || !userRole || !progCategory || !enemCategory) {
     throw new Error("Seed incompleto: roles ou categorias não encontradas.");
   }
 
@@ -143,86 +548,130 @@ async function main() {
     });
   }
 
-  const existingExam = await prisma.exam.findUnique({
+  const demoQuestions = [
+    {
+      statement: "O que é um algoritmo?",
+      orderNumber: 1,
+      subject: "Algoritmos",
+      explanation:
+        "Algoritmo é uma sequência finita e ordenada de passos para resolver um problema. Não é linguagem, banco de dados nem sistema operacional.",
+      difficulty: 1,
+      alternatives: {
+        create: [
+          { text: "Uma sequência finita de passos para resolver um problema", isCorrect: true },
+          { text: "Um tipo de linguagem de programação", isCorrect: false },
+          { text: "Um banco de dados relacional", isCorrect: false },
+          { text: "Um sistema operacional", isCorrect: false },
+        ],
+      },
+    },
+    {
+      statement:
+        "Qual estrutura é usada para repetir um bloco de código enquanto uma condição for verdadeira?",
+      orderNumber: 2,
+      subject: "Estruturas de repetição",
+      explanation:
+        "Laços como while e for repetem um bloco enquanto a condição permanece verdadeira. if executa uma vez; switch seleciona entre casos.",
+      difficulty: 1,
+      alternatives: {
+        create: [
+          { text: "while", isCorrect: true },
+          { text: "if", isCorrect: false },
+          { text: "switch", isCorrect: false },
+          { text: "return", isCorrect: false },
+        ],
+      },
+    },
+    {
+      statement: "Em programação, uma variável serve para:",
+      orderNumber: 3,
+      subject: "Variáveis",
+      explanation:
+        "Variáveis armazenam valores na memória para uso posterior no programa. Compilar, conectar ao banco e estilizar interface são outras tarefas.",
+      difficulty: 1,
+      alternatives: {
+        create: [
+          { text: "Armazenar um valor na memória", isCorrect: true },
+          { text: "Compilar o código-fonte", isCorrect: false },
+          { text: "Conectar ao banco de dados", isCorrect: false },
+          { text: "Estilizar a interface do usuário", isCorrect: false },
+        ],
+      },
+    },
+    {
+      statement: "Qual operador compara se dois valores são iguais em JavaScript?",
+      orderNumber: 4,
+      subject: "Operadores",
+      explanation:
+        "O operador === compara valor e tipo. = atribui valor; => define arrow function; && é operador lógico E.",
+      difficulty: 2,
+      alternatives: {
+        create: [
+          { text: "===", isCorrect: true },
+          { text: "=", isCorrect: false },
+          { text: "=>", isCorrect: false },
+          { text: "&&", isCorrect: false },
+        ],
+      },
+    },
+    {
+      statement: "O que significa 'debugging'?",
+      orderNumber: 5,
+      subject: "Depuração",
+      explanation:
+        "Debugging é o processo de encontrar e corrigir erros (bugs) no código. Publicar, desenhar interface e fazer backup são atividades distintas.",
+      difficulty: 2,
+      alternatives: {
+        create: [
+          { text: "Encontrar e corrigir erros no código", isCorrect: true },
+          { text: "Publicar a aplicação em produção", isCorrect: false },
+          { text: "Criar o design da interface", isCorrect: false },
+          { text: "Fazer backup do banco de dados", isCorrect: false },
+        ],
+      },
+    },
+  ];
+
+  await prisma.exam.upsert({
     where: { slug: "logica-programacao-basica" },
+    update: {
+      title: "Simulado — Lógica de Programação",
+      examType: "TECNOLOGIA",
+      description:
+        "Questões objetivas sobre algoritmos, variáveis, condicionais e estruturas de repetição.",
+      timeLimit: 20,
+      isPublished: true,
+      questions: {
+        deleteMany: {},
+        create: demoQuestions,
+      },
+    },
+    create: {
+      title: "Simulado — Lógica de Programação",
+      slug: "logica-programacao-basica",
+      examType: "TECNOLOGIA",
+      description:
+        "Questões objetivas sobre algoritmos, variáveis, condicionais e estruturas de repetição.",
+      timeLimit: 20,
+      isPublished: true,
+      questions: {
+        create: demoQuestions,
+      },
+    },
   });
 
-  if (!existingExam) {
-    await prisma.exam.create({
-      data: {
-        title: "Simulado — Lógica de Programação",
-        slug: "logica-programacao-basica",
-        examType: "TECNOLOGIA",
-        description:
-          "Questões objetivas sobre algoritmos, variáveis, condicionais e estruturas de repetição.",
-        timeLimit: 20,
-        isPublished: true,
-        questions: {
-          create: [
-            {
-              statement: "O que é um algoritmo?",
-              orderNumber: 1,
-              alternatives: {
-                create: [
-                  { text: "Uma sequência finita de passos para resolver um problema", isCorrect: true },
-                  { text: "Um tipo de linguagem de programação", isCorrect: false },
-                  { text: "Um banco de dados relacional", isCorrect: false },
-                  { text: "Um sistema operacional", isCorrect: false },
-                ],
-              },
-            },
-            {
-              statement: "Qual estrutura é usada para repetir um bloco de código enquanto uma condição for verdadeira?",
-              orderNumber: 2,
-              alternatives: {
-                create: [
-                  { text: "while", isCorrect: true },
-                  { text: "if", isCorrect: false },
-                  { text: "switch", isCorrect: false },
-                  { text: "return", isCorrect: false },
-                ],
-              },
-            },
-            {
-              statement: "Em programação, uma variável serve para:",
-              orderNumber: 3,
-              alternatives: {
-                create: [
-                  { text: "Armazenar um valor na memória", isCorrect: true },
-                  { text: "Compilar o código-fonte", isCorrect: false },
-                  { text: "Conectar ao banco de dados", isCorrect: false },
-                  { text: "Estilizar a interface do usuário", isCorrect: false },
-                ],
-              },
-            },
-            {
-              statement: "Qual operador compara se dois valores são iguais em JavaScript?",
-              orderNumber: 4,
-              alternatives: {
-                create: [
-                  { text: "===", isCorrect: true },
-                  { text: "=" , isCorrect: false },
-                  { text: "=>", isCorrect: false },
-                  { text: "&&", isCorrect: false },
-                ],
-              },
-            },
-            {
-              statement: "O que significa 'debugging'?",
-              orderNumber: 5,
-              alternatives: {
-                create: [
-                  { text: "Encontrar e corrigir erros no código", isCorrect: true },
-                  { text: "Publicar a aplicação em produção", isCorrect: false },
-                  { text: "Criar o design da interface", isCorrect: false },
-                  { text: "Fazer backup do banco de dados", isCorrect: false },
-                ],
-              },
-            },
-          ],
-        },
-      },
+  for (const course of ENEM_TEST_COURSES) {
+    await upsertEnemCourse(course, enemCategory.id, instructor.id);
+  }
+
+  if (DEPRECATED_PARTIAL_ENEM_SLUGS.length > 0) {
+    await prisma.exam.deleteMany({
+      where: { slug: { in: DEPRECATED_PARTIAL_ENEM_SLUGS } },
     });
+  }
+
+  for (const exam of FULL_ENEM_EXAMS) {
+    await upsertEnemExam(exam);
   }
 
   const moderatorRole = await prisma.role.findUnique({ where: { name: "MODERATOR" } });
@@ -311,23 +760,46 @@ async function main() {
       },
     });
 
+    const alunoDemo = await prisma.user.findUniqueOrThrow({
+      where: { email: "aluno@hexavante.com" },
+      select: { id: true },
+    });
+
     await prisma.courseEnrollment.upsert({
       where: {
         userId_courseId: {
-          userId: (
-            await prisma.user.findUniqueOrThrow({ where: { email: "aluno@hexavante.com" } })
-          ).id,
+          userId: alunoDemo.id,
           courseId: demoCourse.id,
         },
       },
       update: {},
       create: {
-        userId: (
-          await prisma.user.findUniqueOrThrow({ where: { email: "aluno@hexavante.com" } })
-        ).id,
+        userId: alunoDemo.id,
         courseId: demoCourse.id,
       },
     });
+
+    for (const course of ENEM_TEST_COURSES.slice(0, 3)) {
+      const dbCourse = await prisma.course.findUnique({
+        where: { slug: course.slug },
+        select: { id: true },
+      });
+      if (!dbCourse) continue;
+
+      await prisma.courseEnrollment.upsert({
+        where: {
+          userId_courseId: {
+            userId: alunoDemo.id,
+            courseId: dbCourse.id,
+          },
+        },
+        update: {},
+        create: {
+          userId: alunoDemo.id,
+          courseId: dbCourse.id,
+        },
+      });
+    }
   }
 
   for (const item of SHOP_CATALOG) {
@@ -424,6 +896,11 @@ async function main() {
   console.log("- Simulado demo: /simulados/logica-programacao-basica");
   console.log("- Simulado Premium: /simulados/desafio-premium-logica-avancada");
   console.log("- Loja: /shop (aluno demo com 500 moedas)");
+  console.log(`- Cursos ENEM de teste: ${ENEM_TEST_COURSES.length}`);
+  console.log(`- Simulados ENEM completos: ${FULL_ENEM_EXAMS.length} (100 questões + Redação cada)`);
+  for (const exam of FULL_ENEM_EXAMS) {
+    console.log(`  • /simulados/${exam.slug}`);
+  }
 }
 
 main()

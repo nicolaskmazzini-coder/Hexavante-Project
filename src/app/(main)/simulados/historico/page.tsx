@@ -13,6 +13,8 @@ import {
   getUserExamStats,
   listUserAttemptsFiltered,
 } from "@/services/exam.service";
+import { getUserGlobalSubjectStats } from "@/services/exam-learning.service";
+import { ExamSubjectStatsPanel } from "@/components/exams/exam-subject-stats-panel";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { BarChart3 } from "lucide-react";
@@ -28,7 +30,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
   const params = await searchParams;
   const page = Math.max(1, Number(params.page) || 1);
 
-  const [history, stats, evolution] = await Promise.all([
+  const [history, stats, evolution, globalSubjectStats] = await Promise.all([
     listUserAttemptsFiltered(session.user.id, {
       examType: params.tipo,
       page,
@@ -36,6 +38,7 @@ export default async function HistoricoPage({ searchParams }: Props) {
     }),
     getUserExamStats(session.user.id),
     getUserExamEvolution(session.user.id, 10),
+    getUserGlobalSubjectStats(session.user.id),
   ]);
 
   return (
@@ -63,6 +66,15 @@ export default async function HistoricoPage({ searchParams }: Props) {
       </div>
 
       <ExamEvolutionChart data={evolution} />
+
+      {globalSubjectStats.length > 0 && (
+        <div className="mt-6">
+          <ExamSubjectStatsPanel
+            stats={globalSubjectStats}
+            title="Desempenho por assunto (todos os simulados)"
+          />
+        </div>
+      )}
 
       <Card padding="md" className="mt-8">
         <form method="get" className="flex flex-wrap items-end gap-3">

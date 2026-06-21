@@ -2,13 +2,27 @@ import { auth } from "@/auth";
 import { getAttemptResult } from "@/services/exam.service";
 import { getCoinsForSource } from "@/services/wallet.service";
 import { getXpForSource } from "@/services/xp.service";
+import {
+  compareWithPreviousAttempt,
+  getExamQuestionFavoriteIds,
+  getUserSubjectStats,
+} from "@/services/exam-learning.service";
 import { AppLink } from "@/components/ui/app-link";
 import { Alert } from "@/components/ui/alert";
 import { Card } from "@/components/ui/card";
 import { LinkButton } from "@/components/ui/button";
 import { PageShell } from "@/components/ui/page-shell";
 import { ExamQuestionImage } from "@/components/exams/exam-question-image";
+import { ExamQuestionFavoriteButton } from "@/components/exams/exam-question-favorite-button";
+import { ExamSubjectStatsPanel } from "@/components/exams/exam-subject-stats-panel";
+import { ExamAttemptComparisonPanel } from "@/components/exams/exam-attempt-comparison-panel";
 import { EXAM_PASS_SCORE } from "@/lib/gamification";
+import {
+  EXAM_STUDY_MODE_LABELS,
+  formatSubjectLabel,
+  getDifficultyLabel,
+  type ExamStudyMode,
+} from "@/lib/exam-learning";
 import { getDailyRewardTierLabel } from "@/lib/exam-daily-rewards";
 import { notFound, redirect } from "next/navigation";
 
@@ -30,6 +44,15 @@ export default async function ExamResultPage({ params }: Props) {
 
   const attempt = await getAttemptResult(session.user.id, attemptId);
   if (!attempt || !attempt.finishedAt || attempt.exam.slug !== slug) notFound();
+
+  const [comparison, subjectStats, favoriteIds] = await Promise.all([
+    compareWithPreviousAttempt(session.user.id, attempt.examId, attemptId),
+    getUserSubjectStats(session.user.id, attempt.examId),
+    getExamQuestionFavoriteIds(
+      session.user.id,
+      attempt.answers.map((a) => a.questionId),
+    ),
+  ]);
 
   const pendingEssays = attempt.answers.filter((a) => a.essayStatus === "PENDING").length;
   const mcAnswers = attempt.answers.filter((a) => a.alternativeId);
@@ -54,6 +77,9 @@ export default async function ExamResultPage({ params }: Props) {
   const answeredQuestionIds = new Set(attempt.answers.map((a) => a.questionId));
   const unanswered = attempt.exam.questions.filter((q) => !answeredQuestionIds.has(q.id));
 
+  const modeLabel =
+    EXAM_STUDY_MODE_LABELS[attempt.studyMode as ExamStudyMode] ?? attempt.studyMode;
+
   return (
     <PageShell size="md">
       <AppLink href="/simulados/historico" muted className="mb-4 inline-flex items-center gap-1">
@@ -66,6 +92,7 @@ export default async function ExamResultPage({ params }: Props) {
       >
         <h1 className="text-2xl font-bold">Resultado</h1>
         <p className="mt-1 opacity-90">{attempt.exam.title}</p>
+        <p className="mt-1 text-sm opacity-75">{modeLabel}</p>
         <p className="mt-4 text-4xl font-bold">
           {pendingEssays > 0 ? "—" : `${Math.round(attempt.score)}%`}
         </p>
@@ -99,17 +126,38 @@ export default async function ExamResultPage({ params }: Props) {
         )}
       </Alert>
 
+      {comparison && (
+        <div className="mt-6">
+          <ExamAttemptComparisonPanel comparison={comparison} />
+        </div>
+      )}
+
+      {subjectStats.length > 0 && (
+        <div className="mt-6">
+          <ExamSubjectStatsPanel stats={subjectStats} />
+        </div>
+      )}
+
       <div className="mt-8 space-y-4">
-        <h2 className="font-semibold text-white">Revisão com gabarito</h2>
+        <h2 className="font-semibold text-white">Revisão com gabarito e explicações</h2>
         {attempt.answers
           .sort((a, b) => a.question.orderNumber - b.question.orderNumber)
           .map((answer) => {
             if (answer.question.type === "ESSAY") {
               return (
                 <Card key={answer.id} padding="md" className="border-amber-400/30 bg-amber-400/5">
-                  <p className="font-medium text-white">
-                    {answer.question.orderNumber}. {answer.question.statement}
-                  </p>
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="font-medium text-white">
+                      {answer.question.orderNumber}. {answer.question.statement}
+                    </p>
+                    <ExamQuestionFavoriteButton
+                      examSlug={slug}
+                      questionId={answer.questionId}
+                      attemptId={attemptId}
+                      initialFavorite={favoriteIds.has(answer.questionId)}
+                      compact
+                    />
+                  </div>
                   <ExamQuestionImage
                     url={answer.question.imageUrl}
                     naturalWidth={answer.question.imageWidth}
@@ -147,9 +195,30 @@ export default async function ExamResultPage({ params }: Props) {
                     : "border-red-400/30 bg-red-400/5"
                 }
               >
-                <p className="font-medium text-white">
-                  {answer.question.orderNumber}. {answer.question.statement}
-                </p>
+                <div className="flex flex-wrap items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-1 flex flex-wrap gap-2 text-xs text-slate-400">
+                      {answer.question.subject && (
+                        <span className="rounded-full border border-white/10 px-2 py-0.5">
+                          {formatSubjectLabel(answer.question.subject)}
+                        </span>
+                      )}
+                      <span className="rounded-full border border-white/10 px-2 py-0.5">
+                        {getDifficultyLabel(answer.question.difficulty)}
+                      </span>
+                    </div>
+                    <p className="font-medium text-white">
+                      {answer.question.orderNumber}. {answer.question.statement}
+                    </p>
+                  </div>
+                  <ExamQuestionFavoriteButton
+                    examSlug={slug}
+                    questionId={answer.questionId}
+                    attemptId={attemptId}
+                    initialFavorite={favoriteIds.has(answer.questionId)}
+                    compact
+                  />
+                </div>
                 <ExamQuestionImage
                   url={answer.question.imageUrl}
                   naturalWidth={answer.question.imageWidth}
@@ -165,8 +234,16 @@ export default async function ExamResultPage({ params }: Props) {
                     Gabarito: {correctAlternative.text}
                   </p>
                 )}
+                {answer.question.explanation && (
+                  <div className="mt-3 rounded-lg border border-sky-400/20 bg-sky-400/5 p-3">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-sky-300">
+                      Explicação
+                    </p>
+                    <p className="mt-1 text-sm text-slate-200">{answer.question.explanation}</p>
+                  </div>
+                )}
                 <p
-                  className={`mt-1 text-sm font-medium ${
+                  className={`mt-2 text-sm font-medium ${
                     answer.isCorrect ? "text-emerald-400" : "text-red-400"
                   }`}
                 >
@@ -193,7 +270,7 @@ export default async function ExamResultPage({ params }: Props) {
         ))}
       </div>
 
-      <div className="mt-8 flex gap-3">
+      <div className="mt-8 flex flex-wrap gap-3">
         <LinkButton href={`/simulados/${slug}`} variant="outline" aria-label="Refazer simulado">
           Refazer simulado
         </LinkButton>

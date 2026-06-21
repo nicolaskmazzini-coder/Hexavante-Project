@@ -62,5 +62,6 @@ export const COIN_SOURCE_LABELS: Record<string, string> = {
   MODULE: "Módulo concluído",
   COURSE: "Curso concluído",
   PREMIUM_GRANT: "Bônus Premium",
+  LEAGUE_REWARD: "Recompensa de liga",
   ADMIN: "Ajuste administrativo",
 };

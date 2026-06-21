@@ -1,9 +1,8 @@
-"use client";
-
 import Link from "next/link";
 import { Sparkles } from "lucide-react";
 import { Avatar } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { LeagueBadge } from "@/components/ranking/league-badge";
 import type { RankingEntry } from "@/services/xp.service";
 
 type Props = {
@@ -11,9 +10,16 @@ type Props = {
   position: number;
   isCurrentUser: boolean;
   showTotalXp: boolean;
+  showLeague?: boolean;
 };
 
-export function RankingRow({ entry, position, isCurrentUser, showTotalXp }: Props) {
+export function RankingRow({
+  entry,
+  position,
+  isCurrentUser,
+  showTotalXp,
+  showLeague = false,
+}: Props) {
   return (
     <li>
       <Link
@@ -29,9 +35,10 @@ export function RankingRow({ entry, position, isCurrentUser, showTotalXp }: Prop
         <Avatar src={entry.user.avatarUrl} alt={entry.user.username} size="sm" />
 
         <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <p className="truncate font-semibold text-white">{entry.user.fullName}</p>
             {isCurrentUser && <Badge variant="sky">Você</Badge>}
+            {showLeague && entry.league && <LeagueBadge league={entry.league} />}
           </div>
           <p className="truncate text-sm text-slate-400">@{entry.user.username}</p>
           <div className="mt-1 flex items-center gap-1.5 text-sm text-slate-400">

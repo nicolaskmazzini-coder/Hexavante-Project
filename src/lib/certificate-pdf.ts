@@ -1,4 +1,6 @@
 import { PDFDocument, StandardFonts, rgb } from "pdf-lib";
+import { generateCertificateQrPng } from "@/lib/certificate-qr";
+import { getCertificatePublicUrl } from "@/lib/certificate-share";
 
 type CertificatePdfData = {
   studentName: string;
@@ -95,6 +97,23 @@ export async function buildCertificatePdf(data: CertificatePdfData): Promise<Uin
     size: 11,
     font: bold,
     color: rgb(0.15, 0.45, 0.85),
+  });
+
+  const qrPng = await generateCertificateQrPng(getCertificatePublicUrl(data.code), 140);
+  const qrImage = await pdf.embedPng(qrPng);
+  page.drawImage(qrImage, {
+    x: width - 180,
+    y: 40,
+    width: 120,
+    height: 120,
+  });
+
+  page.drawText("Verificar online", {
+    x: width - 178,
+    y: 28,
+    size: 9,
+    font: regular,
+    color: rgb(0.4, 0.4, 0.45),
   });
 
   return pdf.save();

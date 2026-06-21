@@ -16,10 +16,12 @@ const BARE_LAYOUT_PREFIXES = [
 
 type Props = {
   session: NavSession;
+  /** Server Component slot — must be passed from a Server Layout, not imported here. */
+  header: React.ReactNode;
   children: React.ReactNode;
 };
 
-export function AppShell({ session, children }: Props) {
+export function AppShell({ session, header, children }: Props) {
   const pathname = usePathname();
   const useBareLayout = BARE_LAYOUT_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
@@ -30,7 +32,10 @@ export function AppShell({ session, children }: Props) {
   return (
     <SidebarProvider defaultOpen>
       <AppSidebar session={session} />
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="min-h-svh">
+        {header}
+        {children}
+      </SidebarInset>
     </SidebarProvider>
   );
 }

@@ -1,10 +1,18 @@
-import type { Prisma, SocialActivityType } from "@prisma/client";
+import type { ActivityReactionType, Prisma, SocialActivityType } from "@prisma/client";
 import type { FeedActivity, FeedEventMetadata } from "@/lib/social";
+import { parseTags } from "@/lib/community";
+import { filterProfanity } from "@/lib/profanity-filter";
 import { prisma } from "@/lib/prisma";
+import { getReactionSummary } from "@/services/community.service";
 
 function parseMetadata(value: Prisma.JsonValue): FeedEventMetadata {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
-  return value as FeedEventMetadata;
+  const metadata = value as FeedEventMetadata;
+  return {
+    ...metadata,
+    title: metadata.title ? filterProfanity(metadata.title) : metadata.title,
+    body: metadata.body ? filterProfanity(metadata.body) : metadata.body,
+  };
 }
 
 export async function recordSocialActivity(
@@ -89,6 +97,8 @@ async function mapActivities(
     id: string;
     type: SocialActivityType;
     metadata: Prisma.JsonValue;
+    tags: Prisma.JsonValue | null;
+    acceptedCommentId: string | null;
     createdAt: Date;
     user: {
       id: string;
@@ -100,17 +110,31 @@ async function mapActivities(
     likes: Array<{ userId: string }>;
   }>,
   viewerId?: string,
+  reactionMap?: Map<
+    string,
+    { counts: Record<ActivityReactionType, number>; viewer: ActivityReactionType[] }
+  >,
 ): Promise<FeedActivity[]> {
-  return rows.map((row) => ({
-    id: row.id,
-    type: row.type,
-    metadata: parseMetadata(row.metadata),
-    createdAt: row.createdAt,
-    likes: row._count.likes,
-    comments: row._count.comments,
-    likedByViewer: viewerId ? row.likes.some((like) => like.userId === viewerId) : false,
-    user: row.user,
-  }));
+  return rows.map((row) => {
+    const reactions = reactionMap?.get(row.id);
+    return {
+      id: row.id,
+      type: row.type,
+      metadata: parseMetadata(row.metadata),
+      tags: parseTags(row.tags),
+      acceptedCommentId: row.acceptedCommentId,
+      createdAt: row.createdAt,
+      likes: row._count.likes,
+      comments: row._count.comments,
+      likedByViewer: viewerId ? row.likes.some((like) => like.userId === viewerId) : false,
+      reactions: reactions?.counts ?? { CLAP: 0, FIRE: 0, IDEA: 0 },
+      viewerReactions: reactions?.viewer ?? [],
+      user: {
+        ...row.user,
+        fullName: filterProfanity(row.user.fullName),
+      },
+    };
+  });
 }
 
 export async function getUserActivities(userId: string, viewerId?: string, limit = 20) {
@@ -131,10 +155,69 @@ export async function getUserActivities(userId: string, viewerId?: string, limit
     },
   });
 
-  return mapActivities(rows, viewerId);
+  const reactionMap = await getReactionSummary(
+    rows.map((row) => row.id),
+    viewerId,
+  );
+
+  return mapActivities(rows, viewerId, reactionMap);
 }
 
-export async function getSocialFeed(mode: "explore" | "following", viewerId?: string, limit = 30) {
+export type SocialFeedMode = "explore" | "following" | "questions";
+
+export type SocialFeedOptions = {
+  mode: SocialFeedMode;
+  viewerId?: string;
+  limit?: number;
+  tag?: string;
+};
+
+function buildFeedWhere(mode: SocialFeedMode, userIds?: string[]): Prisma.SocialActivityWhereInput {
+  const base: Prisma.SocialActivityWhereInput = {
+    ...(mode === "questions" ? { type: "DISCUSSION" } : {}),
+  };
+
+  if (userIds) {
+    return { ...base, userId: { in: userIds } };
+  }
+
+  return base;
+}
+
+async function fetchFeedRows(where: Prisma.SocialActivityWhereInput, viewerId: string | undefined, limit: number) {
+  return prisma.socialActivity.findMany({
+    where,
+    orderBy: { createdAt: "desc" },
+    take: limit,
+    include: {
+      user: {
+        select: { id: true, username: true, fullName: true, avatarUrl: true },
+      },
+      _count: { select: { likes: true, comments: true } },
+      likes: viewerId
+        ? { where: { userId: viewerId }, select: { userId: true } }
+        : { take: 0, select: { userId: true } },
+    },
+  });
+}
+
+export async function getSocialFeed(
+  modeOrLegacy: SocialFeedMode | "explore" | "following",
+  viewerId?: string,
+  limit = 30,
+  tag?: string,
+) {
+  const mode = modeOrLegacy;
+  const options: SocialFeedOptions = { mode, viewerId, limit, tag };
+  return getSocialFeedAdvanced(options);
+}
+
+export async function getSocialFeedAdvanced({
+  mode,
+  viewerId,
+  limit = 30,
+  tag,
+}: SocialFeedOptions) {
   if (mode === "following") {
     if (!viewerId) return [];
 
@@ -148,20 +231,15 @@ export async function getSocialFeed(mode: "explore" | "following", viewerId?: st
 
     await Promise.all(userIds.map((id) => syncUserActivitiesFromHistory(id)));
 
-    const rows = await prisma.socialActivity.findMany({
-      where: { userId: { in: userIds } },
-      orderBy: { createdAt: "desc" },
-      take: limit,
-      include: {
-        user: {
-          select: { id: true, username: true, fullName: true, avatarUrl: true },
-        },
-        _count: { select: { likes: true, comments: true } },
-        likes: { where: { userId: viewerId }, select: { userId: true } },
-      },
-    });
-
-    return mapActivities(rows, viewerId);
+    const rows = await fetchFeedRows(buildFeedWhere(mode, userIds), viewerId, limit);
+    const filtered = tag
+      ? rows.filter((row) => parseTags(row.tags).includes(tag))
+      : rows;
+    const reactionMap = await getReactionSummary(
+      filtered.map((row) => row.id),
+      viewerId,
+    );
+    return mapActivities(filtered, viewerId, reactionMap);
   }
 
   const recentUsers = await prisma.socialActivity.findMany({
@@ -171,23 +249,17 @@ export async function getSocialFeed(mode: "explore" | "following", viewerId?: st
     select: { userId: true },
   });
 
-  await Promise.all(recentUsers.map((row) => syncUserActivitiesFromHistory(row.userId)));
+  if (mode === "explore") {
+    await Promise.all(recentUsers.map((row) => syncUserActivitiesFromHistory(row.userId)));
+  }
 
-  const rows = await prisma.socialActivity.findMany({
-    orderBy: { createdAt: "desc" },
-    take: limit,
-    include: {
-      user: {
-        select: { id: true, username: true, fullName: true, avatarUrl: true },
-      },
-      _count: { select: { likes: true, comments: true } },
-      likes: viewerId
-        ? { where: { userId: viewerId }, select: { userId: true } }
-        : { take: 0, select: { userId: true } },
-    },
-  });
-
-  return mapActivities(rows, viewerId);
+  const rows = await fetchFeedRows(buildFeedWhere(mode), viewerId, tag ? limit * 3 : limit);
+  const filtered = tag ? rows.filter((row) => parseTags(row.tags).includes(tag)).slice(0, limit) : rows;
+  const reactionMap = await getReactionSummary(
+    filtered.map((row) => row.id),
+    viewerId,
+  );
+  return mapActivities(filtered, viewerId, reactionMap);
 }
 
 export async function toggleActivityLike(activityId: string, userId: string) {

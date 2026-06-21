@@ -4,8 +4,11 @@ import { AppLink } from "@/components/ui/app-link";
 import { Card } from "@/components/ui/card";
 import { PageHeader } from "@/components/ui/page-header";
 import { PageShell } from "@/components/ui/page-shell";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { COURSE_STATUS_LABELS } from "@/lib/course-status";
 import { canModerate } from "@/lib/permissions";
 import { getCourseForModeration } from "@/services/moderation.service";
+import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Shield } from "lucide-react";
 
@@ -18,22 +21,36 @@ export default async function ModerateCourseDetailPage({ params }: Props) {
   if (!canModerate(session.user.roles)) redirect("/");
 
   const course = await getCourseForModeration(id);
-  if (!course || course.status !== "PENDING_REVIEW") notFound();
+  if (!course) notFound();
+
+  const instructorName = course.instructors[0]?.user.fullName ?? "—";
 
   return (
     <PageShell size="md">
-      <AppLink href="/moderacao/cursos" muted className="mb-4 inline-flex items-center gap-1">
-        ← Cursos pendentes
+      <AppLink href="/moderacao/conteudo" muted className="mb-4 inline-flex items-center gap-1">
+        ← Conteúdo
       </AppLink>
 
       <PageHeader
         badge="Moderação"
         icon={Shield}
         title={course.title}
-        description={`${course.category.name} · Instrutor: ${course.instructors[0]?.user.fullName}`}
+        description={`${course.category.name} · Instrutor: ${instructorName}`}
       />
 
-      {course.shortDescription && <p className="text-slate-300">{course.shortDescription}</p>}
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        <StatusBadge status={course.status} label={COURSE_STATUS_LABELS[course.status]} />
+        {course.status === "APPROVED" && (
+          <Link
+            href={`/courses/${course.slug}`}
+            className="text-sm font-semibold text-sky-400 hover:underline"
+          >
+            Ver curso publicado →
+          </Link>
+        )}
+      </div>
+
+      {course.shortDescription && <p className="mt-4 text-slate-300">{course.shortDescription}</p>}
       {course.description && (
         <Card padding="md" className="mt-4 whitespace-pre-wrap text-sm text-slate-300">
           {course.description}
@@ -49,11 +66,11 @@ export default async function ModerateCourseDetailPage({ params }: Props) {
                 {mod.orderNumber}. {mod.title}
               </p>
               <ul className="mt-1 pl-4 text-slate-400">
-                {mod.lessons.map((l) => (
-                  <li key={l.id}>Aula: {l.title}</li>
+                {mod.lessons.map((lesson) => (
+                  <li key={lesson.id}>Aula: {lesson.title}</li>
                 ))}
-                {mod.materials.map((m) => (
-                  <li key={m.id}>Material: {m.title}</li>
+                {mod.materials.map((material) => (
+                  <li key={material.id}>Material: {material.title}</li>
                 ))}
               </ul>
             </Card>
@@ -61,8 +78,36 @@ export default async function ModerateCourseDetailPage({ params }: Props) {
         </ul>
       </div>
 
+      {course.moderations.length > 0 && (
+        <div className="mt-8">
+          <h2 className="font-semibold text-white">Histórico de moderação</h2>
+          <ul className="mt-3 space-y-2 text-sm text-slate-400">
+            {course.moderations.map((entry) => (
+              <li key={entry.id} className="rounded-lg border border-white/5 bg-white/[0.02] px-3 py-2">
+                <span className="font-medium text-slate-200">
+                  {COURSE_STATUS_LABELS[entry.status]}
+                </span>{" "}
+                · {entry.moderator.fullName} ·{" "}
+                {entry.reviewedAt.toLocaleDateString("pt-BR", {
+                  day: "2-digit",
+                  month: "short",
+                  year: "numeric",
+                })}
+                {entry.reviewNotes && (
+                  <p className="mt-1 text-slate-500">{entry.reviewNotes}</p>
+                )}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <div className="mt-8">
-        <CourseModerationForm courseId={course.id} />
+        <CourseModerationForm
+          courseId={course.id}
+          currentStatus={course.status}
+          returnTo="/moderacao/conteudo"
+        />
       </div>
     </PageShell>
   );

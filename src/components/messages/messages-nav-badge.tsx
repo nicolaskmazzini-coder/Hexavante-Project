@@ -4,23 +4,27 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { MessageCircle } from "lucide-react";
 import { cn } from "@/lib/cn";
+import { usePollFeedback } from "@/hooks/use-poll-feedback";
 
 export function MessagesNavBadge() {
   const [unreadCount, setUnreadCount] = useState(0);
+  const { onSuccess, onFailure } = usePollFeedback("contagem de mensagens");
 
   const load = useCallback(async () => {
     try {
       const response = await fetch("/api/messages/unread-count");
       if (!response.ok) {
         if (response.status === 401) setUnreadCount(0);
+        else onFailure();
         return;
       }
       const data = (await response.json()) as { unreadCount: number };
-      setUnreadCount(data.unreadCount);
+      setUnreadCount(data.unreadCount ?? 0);
+      onSuccess();
     } catch {
-      // Ignora falhas temporárias
+      onFailure();
     }
-  }, []);
+  }, [onSuccess, onFailure]);
 
   useEffect(() => {
     const run = () => void load();
@@ -38,7 +42,7 @@ export function MessagesNavBadge() {
     <Link
       href="/mensagens"
       className={cn(
-        "relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-sky-400/30 hover:text-sky-200",
+        "relative inline-flex h-11 w-11 items-center justify-center rounded-lg border border-white/10 bg-white/[0.04] text-slate-300 transition hover:border-sky-400/30 hover:text-sky-200",
       )}
       aria-label={unreadCount > 0 ? `Mensagens (${unreadCount} não lidas)` : "Mensagens"}
     >

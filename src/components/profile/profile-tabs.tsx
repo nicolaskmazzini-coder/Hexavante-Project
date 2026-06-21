@@ -2,8 +2,14 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Award, BookOpen, History } from "lucide-react";
+import { Award, BookOpen, GraduationCap, History } from "lucide-react";
 import { ActivityCard } from "@/components/social/activity-card";
+import { AchievementGrid } from "@/components/achievements/achievement-grid";
+import {
+  ProfileCertificatesGrid,
+  type ProfileCertificate,
+} from "@/components/profile/profile-certificates-grid";
+import type { UserAchievementView } from "@/services/achievement.service";
 import type { FeedActivity } from "@/lib/social";
 import { cn } from "@/lib/cn";
 
@@ -19,17 +25,25 @@ type Enrollment = {
 type Props = {
   activities: FeedActivity[];
   enrollments: Enrollment[];
-  equippedTitle: string | null;
   canInteract: boolean;
+  achievements?: UserAchievementView[];
+  certificates?: ProfileCertificate[];
 };
 
 const tabs = [
   { id: "achievements", label: "Conquistas", icon: Award },
   { id: "courses", label: "Cursos", icon: BookOpen },
+  { id: "certificates", label: "Certificados", icon: GraduationCap },
   { id: "activity", label: "Atividade", icon: History },
 ] as const;
 
-export function ProfileTabs({ activities, enrollments, equippedTitle, canInteract }: Props) {
+export function ProfileTabs({
+  activities,
+  enrollments,
+  canInteract,
+  achievements = [],
+  certificates = [],
+}: Props) {
   const [active, setActive] = useState<(typeof tabs)[number]["id"]>("achievements");
 
   return (
@@ -57,24 +71,7 @@ export function ProfileTabs({ activities, enrollments, equippedTitle, canInterac
       </div>
 
       <div className="mt-4">
-        {active === "achievements" && (
-          <div className="grid gap-3 sm:grid-cols-2">
-            {equippedTitle ? (
-              <div className="rounded-xl border border-amber-400/20 bg-amber-400/10 p-4">
-                <p className="text-xs font-semibold uppercase text-amber-200">Título equipado</p>
-                <p className="mt-2 font-semibold text-white">{equippedTitle}</p>
-              </div>
-            ) : (
-              <p className="text-sm text-slate-400">Nenhuma conquista exibida ainda.</p>
-            )}
-            {enrollments.length > 0 && (
-              <div className="rounded-xl border border-teal-400/20 bg-teal-400/10 p-4">
-                <p className="text-xs font-semibold uppercase text-teal-200">Cursos concluídos</p>
-                <p className="mt-2 text-2xl font-black text-white">{enrollments.length}</p>
-              </div>
-            )}
-          </div>
-        )}
+        {active === "achievements" && <AchievementGrid achievements={achievements} />}
 
         {active === "courses" && (
           <div className="space-y-3">
@@ -93,6 +90,10 @@ export function ProfileTabs({ activities, enrollments, equippedTitle, canInterac
               ))
             )}
           </div>
+        )}
+
+        {active === "certificates" && (
+          <ProfileCertificatesGrid certificates={certificates} />
         )}
 
         {active === "activity" && (

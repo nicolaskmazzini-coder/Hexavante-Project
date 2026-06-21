@@ -125,7 +125,10 @@ const SidebarProvider = React.forwardRef<
                 ...style,
               } as React.CSSProperties
             }
-            className={cn("group/sidebar-wrapper flex min-h-svh w-full", className)}
+            className={cn(
+              "group/sidebar-wrapper flex min-h-svh w-full min-w-0 overflow-x-hidden",
+              className,
+            )}
             ref={ref}
             {...props}
           >
@@ -158,12 +161,13 @@ const Sidebar = React.forwardRef<
     ref,
   ) => {
     const { isMobile, state, openMobile, setOpenMobile } = useSidebar();
+    const isCollapsed = state === "collapsed" && collapsible === "offcanvas";
 
     if (collapsible === "none") {
       return (
         <div
           className={cn(
-            "flex h-full w-[--sidebar-width] flex-col bg-sidebar text-sidebar-foreground",
+            "flex h-full w-[var(--sidebar-width)] flex-col bg-sidebar text-sidebar-foreground",
             className,
           )}
           ref={ref}
@@ -180,7 +184,7 @@ const Sidebar = React.forwardRef<
           <SheetContent
             data-sidebar="sidebar"
             data-mobile="true"
-            className="w-[--sidebar-width] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
+            className="w-[var(--sidebar-width)] bg-sidebar p-0 text-sidebar-foreground [&>button]:hidden"
             style={{ "--sidebar-width": SIDEBAR_WIDTH_MOBILE } as React.CSSProperties}
             side={side}
           >
@@ -197,28 +201,35 @@ const Sidebar = React.forwardRef<
     return (
       <div
         ref={ref}
-        className="group peer hidden text-sidebar-foreground md:block"
+        className="group peer hidden shrink-0 text-sidebar-foreground md:block"
         data-state={state}
-        data-collapsible={state === "collapsed" ? collapsible : ""}
+        data-collapsible={isCollapsed ? collapsible : ""}
         data-variant={variant}
         data-side={side}
       >
         <div
+          data-sidebar="spacer"
           className={cn(
-            "relative w-[--sidebar-width] bg-transparent transition-[width] duration-200 ease-linear",
-            "group-data-[collapsible=offcanvas]:w-0",
+            "relative shrink-0 bg-transparent transition-[width] duration-200 ease-linear",
             "group-data-[side=right]:rotate-180",
           )}
+          style={{ width: isCollapsed ? 0 : "var(--sidebar-width)" }}
         />
         <div
           className={cn(
-            "fixed inset-y-0 z-10 hidden h-svh w-[--sidebar-width] transition-[left,right,width] duration-200 ease-linear md:flex",
-            side === "left"
-              ? "left-0 group-data-[collapsible=offcanvas]:left-[calc(var(--sidebar-width)*-1)]"
-              : "right-0 group-data-[collapsible=offcanvas]:right-[calc(var(--sidebar-width)*-1)]",
+            "fixed inset-y-0 z-10 flex h-svh transition-[left,right,width] duration-200 ease-linear",
             "group-data-[side=left]:border-r group-data-[side=right]:border-l border-sidebar-border",
+            side === "left" ? "left-0" : "right-0",
             className,
           )}
+          style={{
+            width: "var(--sidebar-width)",
+            ...(isCollapsed
+              ? side === "left"
+                ? { left: "calc(var(--sidebar-width) * -1)" }
+                : { right: "calc(var(--sidebar-width) * -1)" }
+              : {}),
+          }}
           {...props}
         >
           <div
@@ -243,7 +254,8 @@ const SidebarTrigger = React.forwardRef<HTMLButtonElement, React.ComponentProps<
         ref={ref}
         data-sidebar="trigger"
         variant="ghost"
-        className={cn("h-9 w-9 shrink-0 p-0", className)}
+        size="lg"
+        className={cn("size-11 shrink-0 p-0", className)}
         onClick={(event) => {
           onClick?.(event);
           toggleSidebar();
@@ -262,7 +274,10 @@ const SidebarInset = React.forwardRef<HTMLDivElement, React.ComponentProps<"main
   ({ className, ...props }, ref) => (
     <main
       ref={ref}
-      className={cn("relative flex min-h-svh flex-1 flex-col bg-background", className)}
+      className={cn(
+        "relative flex min-h-svh min-w-0 flex-1 flex-col overflow-x-hidden bg-background",
+        className,
+      )}
       {...props}
     />
   ),
